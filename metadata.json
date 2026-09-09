@@ -1,0 +1,6 @@
+{
+  "name": "TANEXPO — Tanzania Tourism Marketplace & Provider OS",
+  "description": "Next-generation tourism marketplace and provider operating system for Tanzania. Empowering local tour operators, safari guides, and travelers with direct booking, dynamic quoting, and legal TZS currency compliance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

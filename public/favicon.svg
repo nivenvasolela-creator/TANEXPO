@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="8" fill="#284435" />
+  <!-- Stylized safari mountain & compass star -->
+  <path d="M16 4 L19 13 L28 16 L19 19 L16 28 L13 19 L4 16 L13 13 Z" fill="#E8B94A" />
+  <path d="M16 8 L18 14 L24 16 L18 18 L16 24 L14 18 L8 16 L14 14 Z" fill="#D97843" />
+  <circle cx="16" cy="16" r="2.5" fill="#FAF7F2" />
+</svg>

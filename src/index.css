@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --color-safari-green: #284435;
+  --color-safari-dark: #192C23;
+  --color-safari-ochre: #D97843;
+  --color-safari-sand: #F7F3E9;
+  --color-safari-card: #FFFFFF;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background-color: #FAF7F2;
+  color: #1F2A24;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.font-serif {
+  font-family: 'Fraunces', Georgia, serif;
+}
+
+/* Base HTML Dark Mode Support */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0D1511;
+  color: #EDF3EF;
+}
+
+/* Comprehensive Dark Mode Adapters for all core surface and layout containers */
+html.dark .bg-\[\#FAF7F2\],
+html.dark .bg-\[\#FAF7F2\]\/95,
+html.dark .bg-\[\#FAF7F2\]\/90,
+html.dark .bg-\[\#FAF7F2\]\/80 {
+  background-color: rgba(13, 21, 17, var(--tw-bg-opacity, 1)) !important;
+}
+
+html.dark header.bg-\[\#FAF7F2\]\/95 {
+  background-color: rgba(13, 21, 17, 0.95) !important;
+  border-color: #23352A !important;
+}
+
+html.dark .bg-white {
+  background-color: #152019 !important;
+  color: #EDF3EF !important;
+}
+
+html.dark .bg-\[\#FAF0E9\] {
+  background-color: #231B15 !important;
+  color: #F0D5C3 !important;
+}
+
+html.dark .bg-\[\#EAF3EC\] {
+  background-color: #13241A !important;
+  color: #D2E9DA !important;
+}
+
+html.dark .bg-\[\#FAF7E8\] {
+  background-color: #252214 !important;
+  color: #EFE4BF !important;
+}
+
+html.dark .bg-\[\#F3EFE6\],
+html.dark .bg-\[\#EDE5D5\],
+html.dark .bg-\[\#EFEBE1\] {
+  background-color: #1A2820 !important;
+  color: #EDF3EF !important;
+}
+
+/* Emerald Badges in Dark Mode */
+html.dark .bg-emerald-50 {
+  background-color: #12281D !important;
+  color: #A3E6C0 !important;
+  border-color: #1D4330 !important;
+}
+
+html.dark .text-emerald-800,
+html.dark .text-emerald-900 {
+  color: #A3E6C0 !important;
+}
+
+html.dark .border-emerald-200 {
+  border-color: #1D4330 !important;
+}
+
+/* Amber Badges in Dark Mode */
+html.dark .bg-amber-50 {
+  background-color: #292010 !important;
+  color: #F5D38A !important;
+  border-color: #4A3A1C !important;
+}
+
+html.dark .text-amber-700,
+html.dark .text-amber-800 {
+  color: #F5D38A !important;
+}
+
+html.dark .border-amber-200 {
+  border-color: #4A3A1C !important;
+}
+
+/* Global Border Adapters */
+html.dark .border-\[\#E8DFC9\],
+html.dark .border-\[\#E7DFD3\],
+html.dark .border-\[\#DDD5C5\],
+html.dark .border-\[\#DED5C6\],
+html.dark .border-\[\#D9CEBF\],
+html.dark .border-\[\#F0EBE0\],
+html.dark .border-\[\#E0D5C1\],
+html.dark .border-\[\#E2D9C8\] {
+  border-color: #23352A !important;
+}
+
+html.dark .border-\[\#CDE3D4\] {
+  border-color: #1E3B29 !important;
+}
+
+html.dark .border-\[\#EBD0BC\] {
+  border-color: #3D291C !important;
+}
+
+/* Typography Adapters */
+html.dark .text-\[\#1F2A24\] {
+  color: #EDF3EF !important;
+}
+
+html.dark .text-\[\#284435\] {
+  color: #E2ECE5 !important;
+}
+
+html.dark .text-\[\#384840\],
+html.dark .text-\[\#4D5E55\],
+html.dark .text-\[\#52645A\] {
+  color: #B5C5BC !important;
+}
+
+html.dark .text-\[\#6B7A72\],
+html.dark .text-\[\#8A9790\] {
+  color: #8DA195 !important;
+}
+
+/* Input Fields & Textareas */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #16221B !important;
+  color: #EDF3EF !important;
+  border-color: #23352A !important;
+}
+
+/* Custom Scrollbar for Dark Mode */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #0D1511;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #23352A;
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #2F4738;
+}
