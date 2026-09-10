@@ -102,7 +102,7 @@ export const TouristHome: React.FC = () => {
             {isDomesticTourist ? (
               'Explore resident-tier park fees, weekend safari escapes, family coastal getaways, and local transport deals with official TZS transparent rates.'
             ) : isInternationalTourist ? (
-              'Connect directly with TALA-registered safari guides, Kilimanjaro expedition leaders, and Zanzibar dhow captains with zero foreign markups and escrow protection.'
+              'Connect directly with TALA-registered safari guides, Kilimanjaro expedition leaders, and Zanzibar dhow captains with zero foreign markups and licensed payment partner settlement.'
             ) : (
               t('hero.subtitle', 'Connect directly with TALA-registered safari guides, Kilimanjaro leaders, and Zanzibar dhow captains. No foreign markups. Custom itineraries quoted directly in official Tanzanian Shillings.')
             )}
@@ -217,39 +217,39 @@ export const TouristHome: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>100% Verified TALA Tourism Licenses & Escrow Protection</span>
+            <span>100% Verified TALA Tourism Licenses & Licensed Payment Processing</span>
           </div>
         </div>
       </section>
 
       {/* Persona Callout Banner */}
       {isGuest ? (
-        <section className="p-4 sm:p-5 bg-[#FAF0E9] border border-[#EBD0BC] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <section className="p-4 sm:p-5 bg-[#FAF0E9] dark:bg-[#1E1712] border border-[#EBD0BC] dark:border-[#382618] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-left">
             <div className="w-10 h-10 rounded-xl bg-[#D97843] text-white flex items-center justify-center shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-serif font-bold text-sm text-[#1C2C24]">Looking to save operators and request direct quotes?</h4>
-              <p className="text-xs text-[#52645A]">Create a free traveler account to negotiate live quotes, save favorite itineraries, and receive personalized park rate estimates.</p>
+              <h4 className="font-serif font-bold text-sm text-[#1C2C24] dark:text-[#F3EFEA]">Looking to save operators and request direct quotes?</h4>
+              <p className="text-xs text-[#52645A] dark:text-[#A7B9B0]">Create a free traveler account to negotiate live quotes, save favorite itineraries, and receive personalized park rate estimates.</p>
             </div>
           </div>
           <button
             onClick={() => startOnboarding('role_select')}
-            className="shrink-0 px-5 py-2.5 bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors"
+            className="shrink-0 px-5 py-2.5 bg-[#284435] hover:bg-[#1E332A] dark:bg-[#D97843] dark:hover:bg-[#C26330] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors"
           >
             Create Account / Sign In
           </button>
         </section>
       ) : isDomesticTourist ? (
-        <section className="p-4 sm:p-5 bg-emerald-50/70 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <section className="p-4 sm:p-5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-left">
-            <div className="w-10 h-10 rounded-xl bg-emerald-800 text-emerald-200 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-800 dark:bg-emerald-700 text-emerald-200 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div className="space-y-0.5">
-              <h4 className="font-serif font-bold text-sm text-emerald-950">Tanzanian Citizen & Resident Conservation Entry Guidance</h4>
-              <p className="text-xs text-emerald-800">
+              <h4 className="font-serif font-bold text-sm text-emerald-950 dark:text-emerald-200">Tanzanian Citizen & Resident Conservation Entry Guidance</h4>
+              <p className="text-xs text-emerald-800 dark:text-emerald-300/90">
                 TANAPA national park permits offer subsidized entry for Tanzanian citizens (e.g. Serengeti ~TZS 11,800) vs foreign visitors ($82.60 USD). When requesting a quote, mention your resident status so operators factor in local rates!
               </p>
             </div>

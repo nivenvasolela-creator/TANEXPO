@@ -52,7 +52,8 @@ export const initialDestinations: DestinationPlace[] = [
       concessionOrCampFee: 'USD 59.00 / night (Special luxury tented campsite) or USD 35.40 / night (Public campsite)',
       vehicleOrDescentPermit: 'TZS 41,300 per day for locally registered 4x4 Land Cruiser (up to 3,000 kg)',
       vatApplicable: '18% statutory Tanzania VAT included in official licensed operator packages',
-      currencyNote: 'All local safari operators on TANEXPO quote and settle park permits in official TZS.'
+      currencyNote: 'All local safari operators on TANEXPO quote and settle park permits in official TZS.',
+      lastVerified: 'March 2025'
     },
     logisticsInfo: {
       accessRoute: 'Fly-in via Seronera Airstrip (SEU), Kogatende, or 7-8 hr overland safari drive from Arusha via Ngorongoro Gate.',
@@ -122,7 +123,8 @@ export const initialDestinations: DestinationPlace[] = [
       conservationFeePerDay: 'USD 70.80 per adult / 24 hours for Non-Residents (TZS ~187,000); TZS 11,800 for EAC Citizens',
       vehicleOrDescentPermit: 'Crater Descent Permit: USD 295.00 (TZS ~780,000) per vehicle / descent (valid for max 6 hours)',
       vatApplicable: 'Included in NCAA tariffs',
-      currencyNote: 'NCAA electronic smart card payments are handled directly by your licensed TANEXPO operator.'
+      currencyNote: 'NCAA electronic smart card payments are handled directly by your licensed TANEXPO operator.',
+      lastVerified: 'March 2025'
     },
     logisticsInfo: {
       accessRoute: 'Paved highway from Arusha to Loduare Gate (160 km, ~3 hours), followed by crater rim dirt ascent.',
@@ -191,7 +193,8 @@ export const initialDestinations: DestinationPlace[] = [
       conservationFeePerDay: 'Conservation fee USD 70/day + Camping fee USD 50/night + Rescue fee USD 20/trip (TZS ~3,200,000 for 7-day climb)',
       vehicleOrDescentPermit: 'Mandatory licensed mountain guide ratio (1 guide per 2 climbers) + certified porter quota',
       vatApplicable: '18% VAT included in all ethical operator quotes',
-      currencyNote: 'Fair porter tips (KPAP standard: TZS 25,000 - 35,000/day per porter) paid directly in TZS.'
+      currencyNote: 'Fair porter tips (KPAP standard: TZS 25,000 - 35,000/day per porter) paid directly in TZS.',
+      lastVerified: 'March 2025'
     },
     logisticsInfo: {
       accessRoute: 'Direct highway from Moshi town (45 mins to Machame/Marangu Gate) or Arusha (2 hrs).',
@@ -261,7 +264,8 @@ export const initialDestinations: DestinationPlace[] = [
       conservationFeePerDay: 'Infrastructure Tax USD 5.00/person/night at registered hotels; Marine Park permit TZS 25,000 - 50,000',
       vehicleOrDescentPermit: 'ZCT Maritime vessel inspection certificate & passenger manifest required for all dhow charters',
       vatApplicable: 'Zanzibar Revenue Board (ZRB) tariffs included in local quotes',
-      currencyNote: 'All local island excursions settle directly in Tanzanian Shillings (TZS).'
+      currencyNote: 'All local island excursions settle directly in Tanzanian Shillings (TZS).',
+      lastVerified: 'March 2025'
     },
     logisticsInfo: {
       accessRoute: 'Azam Marine high-speed ferry from Dar es Salaam (1 hr 45 min) or direct flights to Abeid Amani Karume (ZNZ).',
@@ -331,7 +335,8 @@ export const initialDestinations: DestinationPlace[] = [
       conservationFeePerDay: 'Community Cultural Fee: TZS 65,000 - 120,000 per person (distributed directly to village healthcare & water boreholes)',
       vehicleOrDescentPermit: 'Authorized Hadzabe community interpreter escort fee required (TZS 50,000 per group)',
       vatApplicable: 'Local district levy included in package',
-      currencyNote: 'All village disbursements managed through certified community bank accounts.'
+      currencyNote: 'All village disbursements managed through certified community bank accounts.',
+      lastVerified: 'March 2025'
     },
     logisticsInfo: {
       accessRoute: 'Gravel and murram road from Karatu town descending through the rift valley escarpment (2 hours).',
@@ -401,7 +406,8 @@ export const initialDestinations: DestinationPlace[] = [
       conservationFeePerDay: 'Marine Park Conservation Fee: USD 23.60 per person / 24 hours (TZS ~62,500)',
       vehicleOrDescentPermit: 'Licensed whale shark spotter boat permit & certified marine guide required',
       vatApplicable: 'Included in official MIMPA park fee receipts',
-      currencyNote: 'Local dive centers and boat skippers operate strictly in official TZS.'
+      currencyNote: 'Local dive centers and boat skippers operate strictly in official TZS.',
+      lastVerified: 'March 2025'
     },
     logisticsInfo: {
       accessRoute: 'Scheduled 30-minute domestic flights from Dar es Salaam (DAR) via Auric Air or Coastal Aviation.',

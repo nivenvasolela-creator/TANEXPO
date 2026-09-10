@@ -94,6 +94,7 @@ export interface DestinationPlace {
     vehicleOrDescentPermit?: string;
     vatApplicable: string;
     currencyNote: string;
+    lastVerified?: string;
   };
   logisticsInfo?: {
     accessRoute: string;

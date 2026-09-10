@@ -302,13 +302,13 @@ export const OnboardingFlow: React.FC = () => {
                 </p>
               </div>
 
-              <div className="p-4 bg-white rounded-xl border border-[#E7DFD3] text-left text-xs space-y-1.5">
-                <p className="font-bold text-[#1C2C24]">What will you find inside?</p>
-                <div className="grid grid-cols-2 gap-2 text-zinc-600 pt-1">
+              <div className="p-4 bg-white dark:bg-[#152019] rounded-xl border border-[#E7DFD3] dark:border-[#23352A] text-left text-xs space-y-1.5 transition-colors">
+                <p className="font-bold text-[#1C2C24] dark:text-[#EDF3EF]">What will you find inside?</p>
+                <div className="grid grid-cols-2 gap-2 text-zinc-600 dark:text-[#A7B9B0] pt-1">
                   <div>✓ Verified Operator Comparison</div>
                   <div>✓ Direct Real-Time Quotes</div>
                   <div>✓ Resident & Foreigner Rates</div>
-                  <div>✓ Escrow-Protected Bookings</div>
+                  <div>✓ Secure Partner Payments</div>
                 </div>
               </div>
 

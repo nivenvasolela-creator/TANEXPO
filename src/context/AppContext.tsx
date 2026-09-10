@@ -78,7 +78,7 @@ interface AppContextType {
       inclusions: string[];
     };
   }) => User;
-  login: (emailOrPhone: string, role: UserRole) => boolean;
+  login: (emailOrPhone: string, role: UserRole, password?: string) => boolean | Promise<boolean>;
   continueAsGuest: () => void;
   logout: () => void;
   updateTouristProfile: (profile: Partial<TouristProfile>) => void;
@@ -215,42 +215,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Static collections
   const destinations = initialDestinations;
 
-  // Load from local storage or defaults
-  const [providers, setProviders] = useState<Provider[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PROVIDERS);
-    return saved ? JSON.parse(saved) : initialProviders;
-  });
-
-  const [listings, setListings] = useState<ListingPackage[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.LISTINGS);
-    return saved ? JSON.parse(saved) : initialListings;
-  });
-
-  const [leads, setLeads] = useState<Lead[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.LEADS);
-    return saved ? JSON.parse(saved) : initialLeads;
-  });
-
-  const [bookings, setBookings] = useState<Booking[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
-    return saved ? JSON.parse(saved) : initialBookings;
-  });
-
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.REVIEWS);
-    return saved ? JSON.parse(saved) : initialReviews;
-  });
-
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-    return saved ? JSON.parse(saved) : initialTransactions;
-  });
-
-  const [savedProviderIds, setSavedProviderIds] = useState<number[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SAVED);
-    return saved ? JSON.parse(saved) : [1, 2];
-  });
-
+  // State managed via backend API with initial fallback
+  const [providers, setProviders] = useState<Provider[]>(initialProviders);
+  const [listings, setListings] = useState<ListingPackage[]>(initialListings);
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [savedProviderIds, setSavedProviderIds] = useState<number[]>([1, 2]);
   const [comparedProviderIds, setComparedProviderIds] = useState<number[]>([]);
 
   // Identity, User Session & Onboarding
@@ -274,6 +246,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro_1');
   const [guestPendingAction, setGuestPendingAction] = useState<GuestPendingAction | null>(null);
+
+  // Fetch persistent state from Backend API on mount
+  useEffect(() => {
+    fetch('/api/state')
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Backend state fetch error');
+      })
+      .then(data => {
+        if (data.providers && data.providers.length > 0) setProviders(data.providers);
+        if (data.listings && data.listings.length > 0) setListings(data.listings);
+        if (data.leads) setLeads(data.leads);
+        if (data.bookings) setBookings(data.bookings);
+        if (data.reviews) setReviews(data.reviews);
+        if (data.transactions) setTransactions(data.transactions);
+        if (data.savedProviderIds) setSavedProviderIds(data.savedProviderIds);
+      })
+      .catch(err => {
+        console.warn('Connecting to local backend /api/state:', err);
+      });
+
+    const token = localStorage.getItem('tanexpo_auth_token');
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.user) {
+            setCurrentUser(data.user);
+            if (data.user.role === 'provider' && data.user.providerProfile?.providerId) {
+              setActiveProviderId(data.user.providerProfile.providerId);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   // UI state
   const [currentView, setCurrentView] = useState<'tourist' | 'provider'>(() => {
@@ -338,34 +348,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(providers));
-  }, [providers]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LISTINGS, JSON.stringify(listings));
-  }, [listings]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.LEADS, JSON.stringify(leads));
-  }, [leads]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(bookings));
-  }, [bookings]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
-  }, [reviews]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
-  }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SAVED, JSON.stringify(savedProviderIds));
-  }, [savedProviderIds]);
-
   // Session & Onboarding Methods
   const startOnboarding = (step: OnboardingStep = 'role_select') => {
     setOnboardingStep(step);
@@ -400,6 +382,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     language: Language;
     travelParty?: 'solo' | 'couple' | 'family' | 'group';
     interests?: string[];
+    password?: string;
   }): User => {
     const newUser: User = {
       id: `tourist-${Date.now()}`,
@@ -424,6 +407,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setShowUSDApprox(data.currency === 'USD' || data.touristType === 'international');
     closeOnboarding();
 
+    // Persist to backend auth API
+    fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: data.email,
+        phone: data.phone,
+        name: data.name,
+        role: 'tourist',
+        touristProfile: newUser.touristProfile,
+        password: data.password || 'tanexpo2026'
+      })
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(result => {
+        if (result && result.token) localStorage.setItem('tanexpo_auth_token', result.token);
+        if (result && result.user) setCurrentUser(result.user);
+      })
+      .catch(err => console.warn('Backend registerTourist error:', err));
+
     // If guest had a pending action, resume it
     if (guestPendingAction) {
       handleResumePendingAction(guestPendingAction);
@@ -444,6 +447,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     email: string;
     talaLicense?: string;
     about: string;
+    password?: string;
     firstPackage?: {
       title: string;
       priceTZS: number;
@@ -525,10 +529,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProviderTab('overview');
     closeOnboarding();
 
+    // Persist to backend auth API
+    fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: data.email,
+        phone: data.phone,
+        name: data.businessName,
+        role: 'provider',
+        providerProfile: newUser.providerProfile,
+        password: data.password || 'tanexpo2026'
+      })
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(result => {
+        if (result && result.token) localStorage.setItem('tanexpo_auth_token', result.token);
+        if (result && result.user) setCurrentUser(result.user);
+      })
+      .catch(err => console.warn('Backend registerProvider error:', err));
+
     return newUser;
   };
 
-  const login = (emailOrPhone: string, role: UserRole): boolean => {
+  const login = (emailOrPhone: string, role: UserRole, password?: string): boolean => {
+    // Attempt backend login
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emailOrPhone, role, password: password || 'tanexpo2026' })
+    })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.token) {
+          localStorage.setItem('tanexpo_auth_token', data.token);
+        }
+        if (data && data.user) {
+          setCurrentUser(data.user);
+          if (data.user.role === 'provider' && data.user.providerProfile?.providerId) {
+            setActiveProviderId(data.user.providerProfile.providerId);
+          }
+        }
+      })
+      .catch(e => console.warn('Login API fallback:', e));
+
     if (role === 'provider') {
       const existingP = providers[0];
       const provUser: User = {
@@ -589,6 +633,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = () => {
+    const token = localStorage.getItem('tanexpo_auth_token');
+    if (token) {
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      }).catch(() => {});
+      localStorage.removeItem('tanexpo_auth_token');
+    }
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
     setCurrentView('tourist');
@@ -723,6 +775,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       messages: initialMsg
     };
     setLeads(prev => [newLead, ...prev]);
+
+    // Backend sync
+    fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newLead)
+    }).catch(e => console.warn('Backend create lead error:', e));
+
     return newLead;
   };
 
@@ -730,9 +790,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLeads(prev =>
       prev.map(l => (l.id === leadId ? { ...l, status, lastUpdated: new Date().toISOString() } : l))
     );
+
+    // Backend sync
+    fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, lastUpdated: new Date().toISOString() })
+    }).catch(e => console.warn('Backend update lead error:', e));
   };
 
   const sendQuote = (leadId: number, quote: Quote) => {
+    let updatedLead: Lead | null = null;
     setLeads(prev =>
       prev.map(l => {
         if (l.id !== leadId) return l;
@@ -742,15 +810,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           text: `Official Custom Quote generated: TZS ${quote.total.toLocaleString()} (Valid until ${quote.validUntil}). ${quote.note || ''}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        return {
+        updatedLead = {
           ...l,
           quote,
           status: 'Negotiating',
           lastUpdated: new Date().toISOString(),
           messages: [...(l.messages || []), autoMsg]
         };
+        return updatedLead;
       })
     );
+
+    if (updatedLead) {
+      fetch(`/api/leads/${leadId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedLead)
+      }).catch(e => console.warn('Backend send quote error:', e));
+    }
   };
 
   const sendMessageOnLead = (leadId: number, text: string, sender: 'tourist' | 'provider') => {
@@ -761,17 +838,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       text: text.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
+    let updatedLead: Lead | null = null;
     setLeads(prev =>
-      prev.map(l =>
-        l.id === leadId
-          ? {
-              ...l,
-              messages: [...(l.messages || []), newMsg],
-              lastUpdated: new Date().toISOString()
-            }
-          : l
-      )
+      prev.map(l => {
+        if (l.id === leadId) {
+          updatedLead = {
+            ...l,
+            messages: [...(l.messages || []), newMsg],
+            lastUpdated: new Date().toISOString()
+          };
+          return updatedLead;
+        }
+        return l;
+      })
     );
+
+    if (updatedLead) {
+      fetch(`/api/leads/${leadId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedLead)
+      }).catch(e => console.warn('Backend send message error:', e));
+    }
   };
 
   const processPaymentConfirmation = (
@@ -820,7 +908,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       netTZS: netPayout,
       paymentRail,
       status: 'Paid',
-      payoutRef: `ESCROW-${ref}`,
+      payoutRef: `PAYOUT-${ref}`,
       date: new Date().toISOString().split('T')[0]
     };
 
@@ -829,6 +917,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLeads(prev =>
       prev.map(l => (l.id === leadId ? { ...l, status: 'Booked', lastUpdated: new Date().toISOString() } : l))
     );
+
+    // Backend sync
+    fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBooking)
+    }).catch(e => console.warn('Backend create booking error:', e));
+
+    fetch('/api/transactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTransaction)
+    }).catch(e => console.warn('Backend create transaction error:', e));
+
+    fetch(`/api/leads/${leadId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Booked', lastUpdated: new Date().toISOString() })
+    }).catch(e => console.warn('Backend update booked lead error:', e));
 
     return newBooking;
   };
@@ -846,27 +953,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const saveListing = (listingData: Omit<ListingPackage, 'id'> & { id?: number }) => {
+    let targetListing: ListingPackage;
     if (listingData.id) {
+      targetListing = listingData as ListingPackage;
       setListings(prev =>
         prev.map(l => (l.id === listingData.id ? ({ ...l, ...listingData } as ListingPackage) : l))
       );
     } else {
-      const newListing: ListingPackage = {
+      targetListing = {
         ...(listingData as Omit<ListingPackage, 'id'>),
         id: Date.now()
       };
-      setListings(prev => [newListing, ...prev]);
+      setListings(prev => [targetListing, ...prev]);
     }
+
+    // Backend sync
+    fetch('/api/listings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(targetListing)
+    }).catch(e => console.warn('Backend save listing error:', e));
   };
 
   const deleteListing = (listingId: number) => {
     setListings(prev => prev.filter(l => l.id !== listingId));
+
+    // Backend sync
+    fetch(`/api/listings/${listingId}`, {
+      method: 'DELETE'
+    }).catch(e => console.warn('Backend delete listing error:', e));
   };
 
   const addReviewResponse = (reviewId: number, response: string) => {
     setReviews(prev =>
       prev.map(r => (r.id === reviewId ? { ...r, providerResponse: response } : r))
     );
+
+    // Backend sync
+    fetch(`/api/reviews/${reviewId}/response`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ responseText: response })
+    }).catch(e => console.warn('Backend add review response error:', e));
   };
 
   const addReview = (reviewData: Omit<Review, 'id' | 'date'>) => {
@@ -897,6 +1025,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         prev.map(b => (b.referenceCode === reviewData.bookingRef ? { ...b, hasReview: true } : b))
       );
     }
+
+    // Backend sync
+    fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newRev)
+    }).catch(e => console.warn('Backend add review error:', e));
   };
 
   const updateBookingStatus = (
@@ -916,29 +1051,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       })
     );
+
+    // Backend sync
+    fetch(`/api/bookings/${bookingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status,
+        ...(driver ? { assignedDriver: driver } : {}),
+        ...(vehicle ? { vehicleReg: vehicle } : {})
+      })
+    }).catch(e => console.warn('Backend update booking status error:', e));
   };
 
   const updateProviderProfile = (updated: Provider) => {
     setProviders(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+
+    // Backend sync
+    fetch(`/api/providers/${updated.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    }).catch(e => console.warn('Backend update provider profile error:', e));
   };
 
   const toggleSaveProvider = (providerId: number) => {
     setSavedProviderIds(prev =>
       prev.includes(providerId) ? prev.filter(id => id !== providerId) : [...prev, providerId]
     );
+
+    // Backend sync
+    fetch('/api/saved', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ providerId })
+    }).catch(e => console.warn('Backend toggle save error:', e));
   };
 
   const resetAllData = () => {
-    localStorage.removeItem(STORAGE_KEYS.PROVIDERS);
-    localStorage.removeItem(STORAGE_KEYS.LISTINGS);
-    localStorage.removeItem(STORAGE_KEYS.LEADS);
-    localStorage.removeItem(STORAGE_KEYS.BOOKINGS);
-    localStorage.removeItem(STORAGE_KEYS.REVIEWS);
-    localStorage.removeItem(STORAGE_KEYS.TRANSACTIONS);
-    localStorage.removeItem(STORAGE_KEYS.SAVED);
     localStorage.removeItem(STORAGE_KEYS.LANGUAGE);
     localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
     localStorage.removeItem(STORAGE_KEYS.INTRO_SEEN);
+    localStorage.removeItem('tanexpo_auth_token');
+
+    // Trigger backend reset
+    fetch('/api/reset', { method: 'POST' })
+      .then(res => res.json())
+      .then(() => {
+        return fetch('/api/state').then(r => r.json());
+      })
+      .then(data => {
+        if (data.providers) setProviders(data.providers);
+        if (data.listings) setListings(data.listings);
+        if (data.leads) setLeads(data.leads);
+        if (data.bookings) setBookings(data.bookings);
+        if (data.reviews) setReviews(data.reviews);
+        if (data.transactions) setTransactions(data.transactions);
+        if (data.savedProviderIds) setSavedProviderIds(data.savedProviderIds);
+      })
+      .catch(e => console.warn('Backend reset error:', e));
 
     setLanguageState('en');
     setCurrentUser(null);

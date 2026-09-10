@@ -37,77 +37,77 @@ export const FinancialsTab: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-[#E8DFC9] shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-[#152019] p-6 rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs transition-colors">
         <div>
           <span className="text-[10px] uppercase font-bold tracking-wider text-[#D97843] block">
             Tanzanian Shilling (TZS) Settlement Engine
           </span>
-          <h2 className="font-serif text-2xl font-bold text-[#284435]">
-            Financials, Escrow & Payouts
+          <h2 className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF]">
+            Financials, Settlements & Payouts
           </h2>
-          <p className="text-xs text-[#6B7A72] mt-0.5">
+          <p className="text-xs text-[#6B7A72] dark:text-[#8DA195] mt-0.5">
             Transparent revenue splits, platform commission tracking, and direct mobile money disbursements.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-[#EAF3EC] px-3.5 py-1.5 rounded-xl border border-[#CDE3D4] text-xs font-semibold text-[#284435]">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+        <div className="flex items-center gap-2 bg-[#EAF3EC] dark:bg-emerald-950/40 px-3.5 py-1.5 rounded-xl border border-[#CDE3D4] dark:border-emerald-800 text-xs font-semibold text-[#284435] dark:text-emerald-300">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span>BOT 100% TZS Mandate Compliant</span>
         </div>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-[#E8DFC9] shadow-xs space-y-1">
-          <span className="text-xs text-[#6B7A72] font-semibold uppercase tracking-wider block">
+        <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-1 transition-colors">
+          <span className="text-xs text-[#6B7A72] dark:text-[#8DA195] font-semibold uppercase tracking-wider block">
             Total Gross Bookings
           </span>
-          <span className="font-serif text-2xl font-bold text-[#284435] block truncate">
+          <span className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF] block truncate">
             {formatPrice(grossRevenue, false)}
           </span>
-          <span className="text-[11px] text-[#6B7A72]">
+          <span className="text-[11px] text-[#6B7A72] dark:text-[#8DA195]">
             Total value of client trips
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-[#E8DFC9] shadow-xs space-y-1">
-          <span className="text-xs text-[#6B7A72] font-semibold uppercase tracking-wider block">
+        <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-1 transition-colors">
+          <span className="text-xs text-[#6B7A72] dark:text-[#8DA195] font-semibold uppercase tracking-wider block">
             TANEXPO Fee (15%)
           </span>
           <span className="font-serif text-2xl font-bold text-[#D97843] block truncate">
             {formatPrice(totalCommission, false)}
           </span>
-          <span className="text-[11px] text-[#6B7A72]">
-            Escrow, platform & marketing support
+          <span className="text-[11px] text-[#6B7A72] dark:text-[#8DA195]">
+            Licensed partner, platform & marketing support
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-[#E8DFC9] shadow-xs space-y-1">
-          <span className="text-xs text-[#6B7A72] font-semibold uppercase tracking-wider block">
+        <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-1 transition-colors">
+          <span className="text-xs text-[#6B7A72] dark:text-[#8DA195] font-semibold uppercase tracking-wider block">
             Total Net Operator Payouts (85%)
           </span>
-          <span className="font-serif text-2xl font-bold text-emerald-800 block truncate">
+          <span className="font-serif text-2xl font-bold text-emerald-800 dark:text-emerald-400 block truncate">
             {formatPrice(totalNet, false)}
           </span>
-          <span className="text-[11px] text-emerald-700 font-medium">
+          <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
             Disbursed upon trip departure
           </span>
         </div>
       </div>
 
       {/* Payout Rail Setup */}
-      <div className="bg-white p-6 rounded-3xl border border-[#E8DFC9] shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-[#F0EBE0] pb-3">
+      <div className="bg-white dark:bg-[#152019] p-6 rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-4 transition-colors">
+        <div className="flex items-center justify-between border-b border-[#F0EBE0] dark:border-[#23352A] pb-3">
           <div>
-            <h3 className="font-serif text-lg font-bold text-[#284435]">
+            <h3 className="font-serif text-lg font-bold text-[#284435] dark:text-[#EDF3EF]">
               Disbursement Settlement Channel
             </h3>
-            <p className="text-xs text-[#6B7A72]">
+            <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">
               Choose how you want your funds disbursed once traveler departure is confirmed.
             </p>
           </div>
           {isSavedNotice && (
-            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
               ✓ Saved!
             </span>
           )}
@@ -115,11 +115,11 @@ export const FinancialsTab: React.FC = () => {
 
         <form onSubmit={handleSavePayoutSettings} className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#284435]">Payment Rail</label>
+            <label className="text-xs font-bold text-[#284435] dark:text-[#EDF3EF]">Payment Rail</label>
             <select
               value={selectedDisbursementRail}
               onChange={(e) => setSelectedDisbursementRail(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] bg-white focus:outline-hidden"
+              className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] bg-white dark:bg-[#101914] text-[#1F2A24] dark:text-[#EDF3EF] focus:outline-hidden"
             >
               <option value="M-Pesa">Vodacom M-Pesa (Instant Mobile Money)</option>
               <option value="Tigo Pesa">Tigo Pesa (Instant Mobile Money)</option>
@@ -130,21 +130,21 @@ export const FinancialsTab: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-[#284435]">Account / Phone Number</label>
+            <label className="text-xs font-bold text-[#284435] dark:text-[#EDF3EF]">Account / Phone Number</label>
             <input
               type="text"
               required
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+255 7XX XXX XXX or Account Number"
-              className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] bg-white focus:outline-hidden"
+              className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] bg-white dark:bg-[#101914] text-[#1F2A24] dark:text-[#EDF3EF] focus:outline-hidden"
             />
           </div>
 
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full py-2 px-4 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
+              className="w-full py-2 px-4 rounded-xl bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
             >
               Update Settlement Rails
             </button>
@@ -153,30 +153,30 @@ export const FinancialsTab: React.FC = () => {
       </div>
 
       {/* Transaction Ledger Table */}
-      <div className="bg-white rounded-3xl border border-[#E8DFC9] shadow-xs overflow-hidden">
-        <div className="p-6 border-b border-[#F0EBE0] flex items-center justify-between">
+      <div className="bg-white dark:bg-[#152019] rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs overflow-hidden transition-colors">
+        <div className="p-6 border-b border-[#F0EBE0] dark:border-[#23352A] flex items-center justify-between">
           <div>
-            <h3 className="font-serif text-lg font-bold text-[#284435]">
-              Disbursement & Escrow Ledger
+            <h3 className="font-serif text-lg font-bold text-[#284435] dark:text-[#EDF3EF]">
+              Disbursement & Settlement Ledger
             </h3>
-            <p className="text-xs text-[#6B7A72]">
+            <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">
               Itemized record of client bookings, 15% platform commissions, and net payouts
             </p>
           </div>
-          <span className="text-xs text-[#6B7A72] font-semibold">
+          <span className="text-xs text-[#6B7A72] dark:text-[#8DA195] font-semibold">
             {pTransactions.length} Transactions
           </span>
         </div>
 
         {pTransactions.length === 0 ? (
-          <div className="p-8 text-center text-xs text-[#6B7A72]">
+          <div className="p-8 text-center text-xs text-[#6B7A72] dark:text-[#8DA195]">
             No settled transactions recorded yet.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-[#FAF7F2] text-[#6B7A72] uppercase font-bold text-[10px] tracking-wider border-b border-[#E8DFC9]">
+                <tr className="bg-[#FAF7F2] dark:bg-[#101914] text-[#6B7A72] dark:text-[#8DA195] uppercase font-bold text-[10px] tracking-wider border-b border-[#E8DFC9] dark:border-[#23352A]">
                   <th className="py-3 px-4">Ref / Tx ID</th>
                   <th className="py-3 px-4">Traveler</th>
                   <th className="py-3 px-4">Gross Amount</th>
@@ -187,45 +187,45 @@ export const FinancialsTab: React.FC = () => {
                   <th className="py-3 px-4">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F0EBE0] text-[#1F2A24]">
+              <tbody className="divide-y divide-[#F0EBE0] dark:divide-[#23352A] text-[#1F2A24] dark:text-[#EDF3EF]">
                 {pTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-[#FAF7F2]/50 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-[#284435]">
+                  <tr key={tx.id} className="hover:bg-[#FAF7F2]/50 dark:hover:bg-[#1A2820]/50 transition-colors">
+                    <td className="py-3 px-4 font-mono font-bold text-[#284435] dark:text-emerald-400">
                       {tx.id}
-                      <span className="block text-[10px] text-[#8A9790] font-normal">{tx.payoutRef}</span>
+                      <span className="block text-[10px] text-[#8A9790] dark:text-[#6B7A72] font-normal">{tx.payoutRef}</span>
                     </td>
                     <td className="py-3 px-4 font-medium">
                       {tx.touristName}
                     </td>
-                    <td className="py-3 px-4 font-bold text-[#284435]">
+                    <td className="py-3 px-4 font-bold text-[#284435] dark:text-[#EDF3EF]">
                       {formatPrice(tx.grossTZS, false)}
                     </td>
                     <td className="py-3 px-4 text-[#D97843] font-semibold">
                       -{formatPrice(tx.platformFeeTZS, false)}
                     </td>
-                    <td className="py-3 px-4 text-emerald-800 font-bold">
+                    <td className="py-3 px-4 text-emerald-800 dark:text-emerald-400 font-bold">
                       {formatPrice(tx.netTZS, false)}
                     </td>
-                    <td className="py-3 px-4 text-[#4D5E55]">
+                    <td className="py-3 px-4 text-[#4D5E55] dark:text-[#A7B9B0]">
                       {tx.paymentRail}
                     </td>
                     <td className="py-3 px-4">
                       <span
                         className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                           tx.status === 'Paid'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-200'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                            : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-800'
                         }`}
                       >
                         {tx.status === 'Paid' ? (
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         ) : (
-                          <Clock className="w-3 h-3 text-amber-600" />
+                          <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                         )}
                         <span>{tx.status}</span>
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-[#6B7A72]">
+                    <td className="py-3 px-4 text-[#6B7A72] dark:text-[#8DA195]">
                       {tx.date}
                     </td>
                   </tr>

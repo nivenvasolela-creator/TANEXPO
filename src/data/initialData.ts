@@ -610,7 +610,7 @@ export const initialTransactions: Transaction[] = [
     netTZS: 3145000,
     paymentRail: 'M-Pesa',
     status: 'Processing',
-    payoutRef: 'ESCROW-PENDING-START',
+    payoutRef: 'PAYMENT-PENDING-START',
     date: '2026-09-02'
   }
 ];

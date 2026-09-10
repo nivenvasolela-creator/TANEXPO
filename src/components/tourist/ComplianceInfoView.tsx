@@ -47,42 +47,42 @@ export const ComplianceInfoView: React.FC = () => {
             <Scale className="w-5 h-5" />
           </div>
           <h3 className="font-serif text-xl font-bold text-[#284435] dark:text-[#EDF3EF]">
-            Tourism Act 2008 & TALA Licensing
+            Tourism Act 2008 & TALA Framework
           </h3>
           <p className="text-xs text-[#4D5E55] dark:text-[#B5C5BC] leading-relaxed">
-            Under Tanzania Tourism Act (No. 29 of 2008), operating tourism services (safaris, mountain climbs, guided day tours) requires valid TALA (Tourism Agency Licensing Act) registration from the Ministry of Natural Resources and Tourism (MNRT).
+            Under the Tanzania Tourism Act (No. 29 of 2008), operating commercial tourism services (safaris, mountain trekking, guided cultural excursions) requires valid licensing under the Tourist Agents Licensing Authority (TALA) framework administered by the Ministry of Natural Resources and Tourism (MNRT).
           </p>
           <div className="bg-[#FAF7F2] dark:bg-[#0D1511] p-4 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] text-xs space-y-2">
             <div className="flex items-start gap-2 text-[#284435] dark:text-[#EDF3EF]">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <span>Every operator listed on TANEXPO undergoes manual license verification with MNRT records.</span>
+              <span>Every operator listed on TANEXPO undergoes manual license verification against MNRT registration records.</span>
             </div>
             <div className="flex items-start gap-2 text-[#284435] dark:text-[#EDF3EF]">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <span>Empowers local Tanzanian tour operators directly, preventing foreign shell middlemen.</span>
+              <span>Empowers registered Tanzanian tour operators directly, preventing unlicensed shell intermediaries.</span>
             </div>
           </div>
         </div>
 
-        {/* Escrow Protection */}
+        {/* Licensed Payment & Payout Protection */}
         <div className="bg-white dark:bg-[#152019] rounded-3xl p-6 border border-[#E8DFC9] dark:border-[#23352A] space-y-4 shadow-xs">
           <div className="w-10 h-10 rounded-2xl bg-[#FAF7F2] dark:bg-[#0D1511] text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-[#E8DFC9] dark:border-[#23352A]">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <h3 className="font-serif text-xl font-bold text-[#284435] dark:text-[#EDF3EF]">
-            Escrow & Digital Payout Guarantee
+            Licensed Payment & Digital Payout Guarantee
           </h3>
           <p className="text-xs text-[#4D5E55] dark:text-[#B5C5BC] leading-relaxed">
-            Payment disputes frequently harm travelers and local operators in traditional phone/WhatsApp bookings. TANEXPO holds booking balances in secure escrow until departure conditions are confirmed.
+            Payment disputes frequently harm travelers and local operators in informal phone or cash bookings. Payments on TANEXPO are processed via licensed mobile money and payment partners and released to the verified operator once the booking is confirmed.
           </p>
           <div className="bg-[#FAF7F2] dark:bg-[#0D1511] p-4 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] text-xs space-y-2">
             <div className="flex items-start gap-2 text-[#284435] dark:text-[#EDF3EF]">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <span>Operators receive fast mobile money payouts (M-Pesa, Tigo Pesa, Airtel) or direct bank transfers.</span>
+              <span>Operators receive direct mobile money payouts (M-Pesa, Tigo Pesa, Airtel) or domestic bank transfers.</span>
             </div>
             <div className="flex items-start gap-2 text-[#284435] dark:text-[#EDF3EF]">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <span>Transparent 15% platform commission covers escrow guarantees, customer support, and system infrastructure.</span>
+              <span>Transparent 15% platform fee covers booking verification, customer dispute mediation, and system infrastructure.</span>
             </div>
           </div>
         </div>

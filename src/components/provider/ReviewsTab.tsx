@@ -19,25 +19,25 @@ export const ReviewsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-[#E8DFC9] shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-[#152019] p-6 rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs transition-colors">
         <div>
           <span className="text-[10px] uppercase font-bold tracking-wider text-[#D97843] block">
             Reputation & Feedback
           </span>
-          <h2 className="font-serif text-2xl font-bold text-[#284435]">
+          <h2 className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF]">
             Traveler Reviews ({providerReviews.length})
           </h2>
-          <p className="text-xs text-[#6B7A72] mt-0.5">
+          <p className="text-xs text-[#6B7A72] dark:text-[#8DA195] mt-0.5">
             Verified traveler feedback from completed safari, mountain, and ocean expeditions.
           </p>
         </div>
       </div>
 
       {providerReviews.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-[#E8DFC9] p-12 text-center max-w-md mx-auto space-y-3">
-          <Star className="w-12 h-12 text-[#DED5C6] mx-auto" />
-          <h3 className="font-serif text-lg font-bold text-[#284435]">No Reviews Yet</h3>
-          <p className="text-xs text-[#6B7A72]">
+        <div className="bg-white dark:bg-[#152019] rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] p-12 text-center max-w-md mx-auto space-y-3 transition-colors">
+          <Star className="w-12 h-12 text-[#DED5C6] dark:text-[#23352A] mx-auto" />
+          <h3 className="font-serif text-lg font-bold text-[#284435] dark:text-[#EDF3EF]">No Reviews Yet</h3>
+          <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">
             Reviews from travelers who complete trips with your guides will appear here.
           </p>
         </div>
@@ -46,14 +46,14 @@ export const ReviewsTab: React.FC = () => {
           {providerReviews.map((rev) => (
             <div
               key={rev.id}
-              className="bg-white rounded-2xl border border-[#E8DFC9] p-6 shadow-xs space-y-3"
+              className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] p-6 shadow-xs space-y-3 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-serif font-bold text-base text-[#284435]">
+                  <h3 className="font-serif font-bold text-base text-[#284435] dark:text-[#EDF3EF]">
                     {rev.touristName}
                   </h3>
-                  <span className="text-xs text-[#8A9790] block">
+                  <span className="text-xs text-[#8A9790] dark:text-[#6B7A72] block">
                     Itinerary: {rev.tripPackage} • {rev.date}
                   </span>
                 </div>
@@ -62,18 +62,18 @@ export const ReviewsTab: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-xs text-[#4D5E55] italic leading-relaxed bg-[#FAF7F2] p-3 rounded-xl border border-[#E8DFC9]">
+              <p className="text-xs text-[#4D5E55] dark:text-[#B5C5BC] italic leading-relaxed bg-[#FAF7F2] dark:bg-[#101914] p-3 rounded-xl border border-[#E8DFC9] dark:border-[#23352A]">
                 "{rev.comment}"
               </p>
 
               {/* Existing Response */}
               {rev.providerResponse && (
-                <div className="ml-4 pl-4 border-l-2 border-[#D97843] text-xs text-[#284435] space-y-1">
+                <div className="ml-4 pl-4 border-l-2 border-[#D97843] text-xs text-[#284435] dark:text-[#EDF3EF] space-y-1">
                   <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#D97843]">
                     <CornerDownRight className="w-3.5 h-3.5" />
                     <span>Your Official Operator Response:</span>
                   </div>
-                  <p className="text-[#4D5E55]">{rev.providerResponse}</p>
+                  <p className="text-[#4D5E55] dark:text-[#A7B9B0]">{rev.providerResponse}</p>
                 </div>
               )}
 
@@ -81,24 +81,24 @@ export const ReviewsTab: React.FC = () => {
               {!rev.providerResponse && (
                 <div className="pt-2">
                   {activeReplyId === rev.id ? (
-                    <div className="space-y-2 pt-2 border-t border-[#F0EBE0]">
+                    <div className="space-y-2 pt-2 border-t border-[#F0EBE0] dark:border-[#23352A]">
                       <textarea
                         rows={2}
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder="Write a professional response to thank the traveler or provide context..."
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] bg-[#FAF7F2] focus:outline-hidden"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] bg-[#FAF7F2] dark:bg-[#101914] text-[#1F2A24] dark:text-[#EDF3EF] focus:outline-hidden"
                       />
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => { setActiveReplyId(null); setReplyText(''); }}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#6B7A72] hover:bg-zinc-100"
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#6B7A72] dark:text-[#8DA195] hover:bg-zinc-100 dark:hover:bg-[#1C2C24] cursor-pointer"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={() => handleSendReply(rev.id)}
-                          className="px-3 py-1.5 rounded-lg bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs"
+                          className="px-3 py-1.5 rounded-lg bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer"
                         >
                           <Send className="w-3 h-3" />
                           <span>Publish Response</span>
@@ -108,7 +108,7 @@ export const ReviewsTab: React.FC = () => {
                   ) : (
                     <button
                       onClick={() => { setActiveReplyId(rev.id); setReplyText(''); }}
-                      className="text-xs font-semibold text-[#284435] hover:text-[#D97843] flex items-center gap-1.5 cursor-pointer"
+                      className="text-xs font-semibold text-[#284435] dark:text-emerald-400 hover:text-[#D97843] flex items-center gap-1.5 cursor-pointer"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Respond to review</span>

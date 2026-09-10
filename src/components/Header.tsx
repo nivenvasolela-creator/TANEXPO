@@ -14,7 +14,9 @@ import {
   Coins,
   RotateCcw,
   ShieldCheck,
-  Check
+  Check,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -36,6 +38,8 @@ export const Header: React.FC = () => {
     logout,
     isDomesticTourist,
     isGuest,
+    theme,
+    toggleTheme,
     t
   } = useApp();
 
@@ -139,6 +143,21 @@ export const Header: React.FC = () => {
             </button>
           )}
 
+          {/* Direct Dark Mode Toggle Button (Icon only, no words) */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+            title={theme === 'dark' ? 'Light Theme' : 'Dark Theme'}
+            className="w-8.5 h-8.5 rounded-xl flex items-center justify-center border border-[#DED5C6] dark:border-[#23352A] bg-white dark:bg-[#152019] text-[#52645A] dark:text-[#E8B94A] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-zinc-50 dark:hover:bg-[#1A2820] transition-all cursor-pointer"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-[#E8B94A] transition-transform duration-300 hover:rotate-45" />
+            ) : (
+              <Moon className="w-4 h-4 text-[#284435] transition-transform duration-300 hover:-rotate-12" />
+            )}
+          </button>
+
           {/* Preferences / System Settings Popover (Stores Currency, Language, Reset, Compliance cleanly inside) */}
           <div className="relative" ref={preferencesRef}>
             <button
@@ -233,7 +252,7 @@ export const Header: React.FC = () => {
                     <span>Bank of Tanzania (BOT) Compliant</span>
                   </div>
                   <p className="text-[10px] text-[#4D5E55] dark:text-[#B5C5BC] leading-relaxed">
-                    Tourism Act (No. 29 of 2008). All contracts and payments are legally escrowed in Tanzanian Shillings (TZS).
+                    Tourism Act (No. 29 of 2008). All contracts and payments are legally invoiced and settled in Tanzanian Shillings (TZS).
                   </p>
                 </div>
 

@@ -90,71 +90,71 @@ export const OverviewTab: React.FC = () => {
       {/* Primary KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Pipeline Leads */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E8DFC9] shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-[#6B7A72]">
+        <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-2 transition-colors">
+          <div className="flex items-center justify-between text-[#6B7A72] dark:text-[#8DA195]">
             <span className="text-xs font-bold uppercase tracking-wider">Active Leads</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 flex items-center justify-center">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="font-serif text-2xl font-bold text-[#284435]">{pLeads.length}</span>
+            <span className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF]">{pLeads.length}</span>
             {newLeadsCount > 0 && (
-              <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 animate-pulse">
+              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 animate-pulse">
                 {newLeadsCount} New!
               </span>
             )}
           </div>
-          <p className="text-[11px] text-[#6B7A72]">
-            Conversion rate: <strong className="text-[#284435]">{conversionRate}%</strong>
+          <p className="text-[11px] text-[#6B7A72] dark:text-[#8DA195]">
+            Conversion rate: <strong className="text-[#284435] dark:text-[#EDF3EF]">{conversionRate}%</strong>
           </p>
         </div>
 
         {/* Metric 2: Gross Bookings */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E8DFC9] shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-[#6B7A72]">
+        <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-2 transition-colors">
+          <div className="flex items-center justify-between text-[#6B7A72] dark:text-[#8DA195]">
             <span className="text-xs font-bold uppercase tracking-wider">Gross Volume (TZS)</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <span className="font-serif text-2xl font-bold text-[#284435] block truncate">
+          <span className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF] block truncate">
             {formatPrice(grossRevenue, false)}
           </span>
-          <p className="text-[11px] text-[#6B7A72]">
+          <p className="text-[11px] text-[#6B7A72] dark:text-[#8DA195]">
             Total across {pBookings.length} confirmed trip{pBookings.length !== 1 ? 's' : ''}
           </p>
         </div>
 
         {/* Metric 3: Net Operator Payout */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E8DFC9] shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-[#6B7A72]">
+        <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-2 transition-colors">
+          <div className="flex items-center justify-between text-[#6B7A72] dark:text-[#8DA195]">
             <span className="text-xs font-bold uppercase tracking-wider">Net Payouts (85%)</span>
-            <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] text-[#284435] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] dark:bg-emerald-950/40 text-[#284435] dark:text-emerald-400 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <span className="font-serif text-2xl font-bold text-emerald-800 block truncate">
+          <span className="font-serif text-2xl font-bold text-emerald-800 dark:text-emerald-400 block truncate">
             {formatPrice(netEarnings, false)}
           </span>
-          <p className="text-[11px] text-[#6B7A72]">
-            After 15% TANEXPO escrow & marketing
+          <p className="text-[11px] text-[#6B7A72] dark:text-[#8DA195]">
+            After 15% TANEXPO partner fee & marketing
           </p>
         </div>
 
         {/* Metric 4: Traveler Rating */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E8DFC9] shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-[#6B7A72]">
+        <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-2 transition-colors">
+          <div className="flex items-center justify-between text-[#6B7A72] dark:text-[#8DA195]">
             <span className="text-xs font-bold uppercase tracking-wider">Traveler Rating</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 flex items-center justify-center">
               <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="font-serif text-2xl font-bold text-[#284435]">{avgRating}</span>
-            <span className="text-xs text-[#8A9790]">/ 5.0</span>
+            <span className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF]">{avgRating}</span>
+            <span className="text-xs text-[#8A9790] dark:text-[#6B7A72]">/ 5.0</span>
           </div>
-          <p className="text-[11px] text-[#6B7A72]">
+          <p className="text-[11px] text-[#6B7A72] dark:text-[#8DA195]">
             From {pReviews.length} verified traveler review{pReviews.length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -163,13 +163,13 @@ export const OverviewTab: React.FC = () => {
       {/* Two Column Layout: Revenue by Package + Regulatory Health */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Revenue by Tour Package */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-[#E8DFC9] shadow-xs space-y-5">
+        <div className="lg:col-span-2 bg-white dark:bg-[#152019] p-6 rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-5 transition-colors">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-serif text-lg font-bold text-[#284435]">
+              <h3 className="font-serif text-lg font-bold text-[#284435] dark:text-[#EDF3EF]">
                 Revenue by Tour Package
               </h3>
-              <p className="text-xs text-[#6B7A72]">
+              <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">
                 Booking performance across your active itinerary offerings
               </p>
             </div>
@@ -182,7 +182,7 @@ export const OverviewTab: React.FC = () => {
           </div>
 
           {Object.keys(packageRevenueMap).length === 0 ? (
-            <div className="p-8 text-center bg-[#FAF7F2] rounded-2xl border border-[#E8DFC9] text-xs text-[#6B7A72]">
+            <div className="p-8 text-center bg-[#FAF7F2] dark:bg-[#101914] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] text-xs text-[#6B7A72] dark:text-[#8DA195]">
               No booking transactions recorded yet. Leads moving through your CRM will populate here.
             </div>
           ) : (
@@ -192,10 +192,10 @@ export const OverviewTab: React.FC = () => {
                 return (
                   <div key={title} className="space-y-1.5">
                     <div className="flex justify-between text-xs">
-                      <span className="font-semibold text-[#284435] truncate max-w-sm">{title}</span>
+                      <span className="font-semibold text-[#284435] dark:text-[#EDF3EF] truncate max-w-sm">{title}</span>
                       <span className="font-bold text-[#D97843]">{formatPrice(rev, false)}</span>
                     </div>
-                    <div className="h-2.5 w-full bg-[#FAF7F2] rounded-full overflow-hidden border border-[#E8DFC9]">
+                    <div className="h-2.5 w-full bg-[#FAF7F2] dark:bg-[#101914] rounded-full overflow-hidden border border-[#E8DFC9] dark:border-[#23352A]">
                       <div
                         className="h-full bg-linear-to-r from-[#284435] to-[#D97843] rounded-full transition-all duration-500"
                         style={{ width: `${percentage}%` }}
@@ -209,48 +209,48 @@ export const OverviewTab: React.FC = () => {
         </div>
 
         {/* Right 1 Col: Tanzania Regulatory & Financial Compliance Card */}
-        <div className="bg-white p-6 rounded-3xl border border-[#E8DFC9] shadow-xs space-y-5 flex flex-col justify-between">
+        <div className="bg-white dark:bg-[#152019] p-6 rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs space-y-5 flex flex-col justify-between transition-colors">
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-xs font-semibold">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>100% BOT Currency Compliant</span>
             </div>
 
-            <h3 className="font-serif text-lg font-bold text-[#284435]">
+            <h3 className="font-serif text-lg font-bold text-[#284435] dark:text-[#EDF3EF]">
               Tanzania Operating Health
             </h3>
 
-            <div className="space-y-3 text-xs text-[#4D5E55]">
+            <div className="space-y-3 text-xs text-[#4D5E55] dark:text-[#A7B9B0]">
               <div className="flex items-start gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-[#284435] shrink-0 mt-0.5" />
+                <ShieldCheck className="w-4 h-4 text-[#284435] dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-[#284435] block">TALA Registration:</span>
-                  <span className="text-[#6B7A72]">{provider.talaLicense} (Verified Active)</span>
+                  <span className="font-bold text-[#284435] dark:text-[#EDF3EF] block">TALA Registration:</span>
+                  <span className="text-[#6B7A72] dark:text-[#8DA195]">{provider.talaLicense} (Verified Active)</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-[#284435] shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-[#284435] dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-[#284435] block">Currency Law (2025):</span>
-                  <span className="text-[#6B7A72]">All client invoices locked to TZS by law.</span>
+                  <span className="font-bold text-[#284435] dark:text-[#EDF3EF] block">Currency Law (2025):</span>
+                  <span className="text-[#6B7A72] dark:text-[#8DA195]">All client invoices locked to TZS by law.</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5">
-                <Calendar className="w-4 h-4 text-[#284435] shrink-0 mt-0.5" />
+                <Calendar className="w-4 h-4 text-[#284435] dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-[#284435] block">Escrow Settlement:</span>
-                  <span className="text-[#6B7A72]">M-Pesa / CRDB disbursement on departure.</span>
+                  <span className="font-bold text-[#284435] dark:text-[#EDF3EF] block">Payment Settlement:</span>
+                  <span className="text-[#6B7A72] dark:text-[#8DA195]">M-Pesa / CRDB disbursement on departure.</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[#F0EBE0]">
+          <div className="pt-4 border-t border-[#F0EBE0] dark:border-[#23352A]">
             <button
               onClick={() => setProviderTab('financials')}
-              className="w-full py-2.5 px-4 rounded-xl bg-[#FAF7F2] hover:bg-[#EDE5D5] text-[#284435] text-xs font-bold border border-[#E8DFC9] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#FAF7F2] dark:bg-[#101914] hover:bg-[#EDE5D5] dark:hover:bg-[#1A2820] text-[#284435] dark:text-[#EDF3EF] text-xs font-bold border border-[#E8DFC9] dark:border-[#23352A] transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>View Financial Ledger</span>
               <ArrowRight className="w-3.5 h-3.5" />

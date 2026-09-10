@@ -54,7 +54,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'provider.profile': 'Profile & TALA',
 
     // Financials
-    'financials.title': 'Financials, Escrow & Payouts',
+    'financials.title': 'Financials, Settlements & Payouts',
     'gross.volume': 'Gross Volume (TZS)',
     'platform.fee': 'TANEXPO Fee (15%)',
     'net.payout': 'Net Operator Payout (85%)',
@@ -113,7 +113,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'provider.profile': 'Wasifu & Leseni ya TALA',
 
     // Financials
-    'financials.title': 'Fedha, Mfumo wa Escrow & Malipo',
+    'financials.title': 'Fedha, Makazi & Malipo',
     'gross.volume': 'Jumla ya Mauzo (TZS)',
     'platform.fee': 'Ada ya TANEXPO (15%)',
     'net.payout': 'Malipo Halisi ya Mwendeshaji (85%)',
