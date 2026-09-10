@@ -311,6 +311,235 @@ apiRouter.get('/state', async (req: Request, res: Response) => {
   }
 });
 
+// --- USER ENTITY REST ENDPOINTS ---
+
+// GET /api/users
+apiRouter.get('/users', async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    const result = await db.query<any>(
+      'SELECT id, email, phone, name, role, tourist_profile, provider_profile, created_at FROM users ORDER BY created_at DESC'
+    );
+    const users = result.rows.map(row => ({
+      id: row.id,
+      email: row.email,
+      phone: row.phone,
+      name: row.name,
+      role: row.role,
+      touristProfile: row.tourist_profile,
+      providerProfile: row.provider_profile,
+      createdAt: row.created_at
+    }));
+    res.json({ users });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/users/:id
+apiRouter.get('/users/:id', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const db = await getDb();
+    const result = await db.query<any>(
+      'SELECT id, email, phone, name, role, tourist_profile, provider_profile, created_at FROM users WHERE id = $1',
+      [id]
+    );
+    if (!result.rows.length) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    const row = result.rows[0];
+    res.json({
+      user: {
+        id: row.id,
+        email: row.email,
+        phone: row.phone,
+        name: row.name,
+        role: row.role,
+        touristProfile: row.tourist_profile,
+        providerProfile: row.provider_profile,
+        createdAt: row.created_at
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/users/:id
+apiRouter.put('/users/:id', async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const { name, email, phone, touristProfile, providerProfile } = req.body;
+    const db = await getDb();
+
+    await db.query(
+      `UPDATE users 
+       SET name = COALESCE($1, name),
+           email = COALESCE($2, email),
+           phone = COALESCE($3, phone),
+           tourist_profile = COALESCE($4, tourist_profile),
+           provider_profile = COALESCE($5, provider_profile)
+       WHERE id = $6`,
+      [
+        name || null,
+        email ? email.toLowerCase() : null,
+        phone || null,
+        touristProfile ? JSON.stringify(touristProfile) : null,
+        providerProfile ? JSON.stringify(providerProfile) : null,
+        id
+      ]
+    );
+
+    const userRes = await db.query<any>(
+      'SELECT id, email, phone, name, role, tourist_profile, provider_profile, created_at FROM users WHERE id = $1',
+      [id]
+    );
+    if (!userRes.rows.length) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    const row = userRes.rows[0];
+    res.json({
+      success: true,
+      user: {
+        id: row.id,
+        email: row.email,
+        phone: row.phone,
+        name: row.name,
+        role: row.role,
+        touristProfile: row.tourist_profile,
+        providerProfile: row.provider_profile,
+        createdAt: row.created_at
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- PROVIDER ENTITY REST ENDPOINTS ---
+
+// GET /api/providers
+apiRouter.get('/providers', async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    const result = await db.query<any>('SELECT data FROM providers ORDER BY id ASC');
+    const providers = result.rows.map(r => r.data);
+    res.json({ providers });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/providers/:id
+apiRouter.get('/providers/:id', async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const db = await getDb();
+    const result = await db.query<any>('SELECT data FROM providers WHERE id = $1', [id]);
+    if (!result.rows.length) {
+      res.status(404).json({ error: 'Provider not found' });
+      return;
+    }
+    res.json({ provider: result.rows[0].data });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/providers
+apiRouter.post('/providers', async (req: Request, res: Response) => {
+  try {
+    const provider = req.body;
+    const id = provider.id || Date.now();
+    provider.id = id;
+    const db = await getDb();
+    await db.query(
+      'INSERT INTO providers (id, category, name, data) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET data = $4, name = $3, category = $2',
+      [id, provider.category || 'safari', provider.name, JSON.stringify(provider)]
+    );
+    res.json({ success: true, provider });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/providers/:id
+apiRouter.put('/providers/:id', async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const provider = req.body;
+    provider.id = id;
+    const db = await getDb();
+    await db.query(
+      'UPDATE providers SET data = $1, name = $2, category = $3 WHERE id = $4',
+      [JSON.stringify(provider), provider.name, provider.category || 'safari', id]
+    );
+    res.json({ success: true, provider });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/providers/:id
+apiRouter.delete('/providers/:id', async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const db = await getDb();
+    await db.query('DELETE FROM providers WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- BOOKING ENTITY REST ENDPOINTS ---
+
+// GET /api/bookings
+apiRouter.get('/bookings', async (req: Request, res: Response) => {
+  try {
+    const { providerId, touristContact } = req.query;
+    const db = await getDb();
+    let query = 'SELECT data FROM bookings';
+    const params: any[] = [];
+
+    if (providerId) {
+      params.push(Number(providerId));
+      query += ` WHERE provider_id = $${params.length}`;
+    }
+
+    query += ' ORDER BY id DESC';
+    const result = await db.query<any>(query, params);
+    let bookings = result.rows.map(r => r.data);
+
+    if (touristContact) {
+      bookings = bookings.filter(b => b.touristContact === touristContact);
+    }
+
+    res.json({ bookings });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/bookings/:id
+apiRouter.get('/bookings/:id', async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const db = await getDb();
+    const result = await db.query<any>('SELECT data FROM bookings WHERE id = $1', [id]);
+    if (!result.rows.length) {
+      res.status(404).json({ error: 'Booking not found' });
+      return;
+    }
+    res.json({ booking: result.rows[0].data });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Create Lead (Inquiry)
 apiRouter.post('/leads', async (req: Request, res: Response) => {
   try {
@@ -542,7 +771,7 @@ apiRouter.post('/reset', async (req: Request, res: Response) => {
     for (const tx of initialTransactions) {
       await db.query('INSERT INTO transactions (id, booking_id, provider_id, data) VALUES ($1, $2, $3, $4)', [tx.id, tx.bookingId, tx.providerId, JSON.stringify(tx)]);
     }
-    await db.query('INSERT INTO saved_providers (user_id, provider_id) VALUES ($1, 1), ($1, 2)', ['default-session']);
+    await db.query('INSERT INTO saved_providers (user_id, provider_id) VALUES ($1, 1), ($1, 2), ($1, 3)', ['default-session']);
 
     res.json({ success: true, message: 'Database reset to verified seed state' });
   } catch (err: any) {

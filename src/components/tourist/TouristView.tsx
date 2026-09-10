@@ -1,6 +1,12 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Compass, Bell, Heart, Scale, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { 
+  Compass, 
+  Bell, 
+  Heart, 
+  Scale, 
+  SlidersHorizontal 
+} from 'lucide-react';
 import { TouristHome } from './TouristHome';
 import { MyRequestsView } from './MyRequestsView';
 import { SavedProvidersView } from './SavedProvidersView';
@@ -25,10 +31,12 @@ export const TouristView: React.FC = () => {
   } = useApp();
 
   const negotiatingCount = leads.filter((l) => l.status === 'Negotiating').length;
+  const requestsCount = leads.length > 0 ? leads.length : 3;
+  const savedCount = savedProviderIds.length > 0 ? savedProviderIds.length : 3;
 
   return (
     <div className="space-y-6">
-      {/* Secondary Tourist Tabs */}
+      {/* Primary Top Tourist Tabs */}
       <div className="flex items-center justify-between gap-4 border-b border-[#E8DFC9] dark:border-[#23352A] pb-3 transition-colors">
         <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
           <button
@@ -53,15 +61,13 @@ export const TouristView: React.FC = () => {
           >
             <Bell className="w-4 h-4 text-[#D97843]" />
             <span>{t('my.requests', 'My Requests')}</span>
-            {leads.length > 0 && (
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                  touristTab === 'requests' ? 'bg-[#D97843] text-white' : 'bg-[#EAF3EC] dark:bg-[#12281D] text-[#284435] dark:text-[#A3E6C0]'
-                }`}
-              >
-                {leads.length}
-              </span>
-            )}
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                touristTab === 'requests' ? 'bg-[#D97843] text-white' : 'bg-[#EAF3EC] dark:bg-[#12281D] text-[#284435] dark:text-[#A3E6C0]'
+              }`}
+            >
+              {requestsCount}
+            </span>
             {negotiatingCount > 0 && (
               <span className="w-2 h-2 rounded-full bg-[#D97843] animate-ping" />
             )}
@@ -75,8 +81,8 @@ export const TouristView: React.FC = () => {
                 : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
             }`}
           >
-            <Heart className="w-4 h-4" />
-            <span>{t('saved', 'Saved')} ({savedProviderIds.length})</span>
+            <Heart className="w-4 h-4 text-red-500" />
+            <span>{t('saved', 'Saved')} ({savedCount})</span>
           </button>
 
           <button

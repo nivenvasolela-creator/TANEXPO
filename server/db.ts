@@ -228,7 +228,7 @@ async function initSchemaAndSeed(database: PGlite) {
   const savedCheck = await database.query<any>('SELECT COUNT(*) as count FROM saved_providers');
   if (Number(savedCheck.rows[0]?.count || 0) === 0) {
     await database.query(
-      'INSERT INTO saved_providers (user_id, provider_id) VALUES ($1, 1), ($1, 2)',
+      'INSERT INTO saved_providers (user_id, provider_id) VALUES ($1, 1), ($1, 2), ($1, 3)',
       ['default-session']
     );
   }

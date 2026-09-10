@@ -222,7 +222,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-  const [savedProviderIds, setSavedProviderIds] = useState<number[]>([1, 2]);
+  const [savedProviderIds, setSavedProviderIds] = useState<number[]>([1, 2, 3]);
   const [comparedProviderIds, setComparedProviderIds] = useState<number[]>([]);
 
   // Identity, User Session & Onboarding
@@ -247,8 +247,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro_1');
   const [guestPendingAction, setGuestPendingAction] = useState<GuestPendingAction | null>(null);
 
-  // Fetch persistent state from Backend API on mount
-  useEffect(() => {
+  // Fetch persistent state from Backend API on mount & on interval / window focus
+  const syncServerState = React.useCallback(() => {
     fetch('/api/state')
       .then(res => {
         if (res.ok) return res.json();
@@ -266,6 +266,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       .catch(err => {
         console.warn('Connecting to local backend /api/state:', err);
       });
+  }, []);
+
+  useEffect(() => {
+    syncServerState();
 
     const token = localStorage.getItem('tanexpo_auth_token');
     if (token) {
@@ -283,7 +287,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         })
         .catch(() => {});
     }
-  }, []);
+
+    // Periodic synchronization for multi-device data consistency (every 10 seconds)
+    const intervalId = setInterval(() => {
+      syncServerState();
+    }, 10000);
+
+    const handleFocus = () => {
+      syncServerState();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [syncServerState]);
 
   // UI state
   const [currentView, setCurrentView] = useState<'tourist' | 'provider'>(() => {
@@ -481,7 +500,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setProviders(prev => [catalogProvider, ...prev]);
 
-    // Create first package if provided
+    // Persist to backend
+    fetch('/api/providers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(catalogProvider)
+    }).catch(err => console.warn('Backend create provider error:', err));
+
     if (data.firstPackage) {
       const newPkg: ListingPackage = {
         id: Date.now() + 1,
@@ -496,6 +521,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         active: true
       };
       setListings(prev => [newPkg, ...prev]);
+
+      fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPkg)
+      }).catch(err => console.warn('Backend create listing error:', err));
     }
 
     const newUser: User = {
@@ -657,6 +688,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
     setCurrentUser(updated);
+
+    const token = localStorage.getItem('tanexpo_auth_token');
+    fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ touristProfile: updated.touristProfile })
+    }).catch(e => console.warn('Backend update profile error:', e));
+
+    if (currentUser.id) {
+      fetch(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ touristProfile: updated.touristProfile })
+      }).catch(() => {});
+    }
   };
 
   const updateProviderBusinessProfile = (profileUpdate: Partial<ProviderProfile>) => {
@@ -672,11 +721,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setCurrentUser(updatedUser);
 
+    const token = localStorage.getItem('tanexpo_auth_token');
+    fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ providerProfile: updatedProfile })
+    }).catch(e => console.warn('Backend update profile error:', e));
+
+    if (currentUser.id) {
+      fetch(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: updatedProfile.businessName, providerProfile: updatedProfile })
+      }).catch(() => {});
+    }
+
     // Also sync catalog provider
     setProviders(prev =>
       prev.map(p => {
         if (p.id === updatedProfile.providerId) {
-          return {
+          const updatedP = {
             ...p,
             name: updatedProfile.businessName,
             location: updatedProfile.location,
@@ -686,6 +753,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             about: updatedProfile.about,
             talaLicense: updatedProfile.talaLicense || p.talaLicense
           };
+          fetch(`/api/providers/${p.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedP)
+          }).catch(() => {});
+          return updatedP;
         }
         return p;
       })
