@@ -9,14 +9,16 @@ export const WriteReviewModal: React.FC = () => {
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [comment, setComment] = useState('');
   const [reviewerName, setReviewerName] = useState(reviewingBooking?.touristName || '');
+  const [submitError, setSubmitError] = useState('');
 
   if (!reviewingBooking) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
     if (!comment.trim()) return;
 
-    addReview({
+    const res = await addReview({
       providerId: reviewingBooking.providerId,
       touristName: reviewerName || reviewingBooking.touristName,
       rating,
@@ -24,6 +26,11 @@ export const WriteReviewModal: React.FC = () => {
       tripPackage: reviewingBooking.listingTitle,
       bookingRef: reviewingBooking.referenceCode
     });
+
+    if (!res.ok) {
+      setSubmitError(res.error || 'Could not submit review');
+      return;
+    }
 
     setReviewingBooking(null);
   };
@@ -116,6 +123,12 @@ export const WriteReviewModal: React.FC = () => {
               className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] bg-white dark:bg-[#101914] text-[#1F2A24] dark:text-[#EDF3EF] focus:outline-hidden focus:border-[#284435] dark:focus:border-emerald-500 leading-relaxed resize-none"
             />
           </div>
+
+          {submitError && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
+              {submitError}
+            </div>
+          )}
 
           {/* Submit CTA */}
           <button

@@ -256,20 +256,22 @@ export const Header: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Reset State Action */}
-                <div className="pt-1 border-t border-[#E8DFC9] dark:border-[#23352A]">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsPreferencesOpen(false);
-                      resetAllData();
-                    }}
-                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold text-[#8C3A27] dark:text-[#F08C75] hover:bg-[#FAF0E9] dark:hover:bg-[#2A1D17] transition-colors cursor-pointer border border-transparent hover:border-[#EBD0BC] dark:hover:border-[#4A2D22]"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset Demo State</span>
-                  </button>
-                </div>
+                {/* Reset State Action (Admin only) */}
+                {currentUser?.role === 'admin' && (
+                  <div className="pt-1 border-t border-[#E8DFC9] dark:border-[#23352A]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPreferencesOpen(false);
+                        resetAllData();
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-semibold text-[#8C3A27] dark:text-[#F08C75] hover:bg-[#FAF0E9] dark:hover:bg-[#2A1D17] transition-colors cursor-pointer border border-transparent hover:border-[#EBD0BC] dark:hover:border-[#4A2D22]"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset Demo State</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

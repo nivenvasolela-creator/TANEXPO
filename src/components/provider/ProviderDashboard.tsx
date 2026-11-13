@@ -39,7 +39,8 @@ export const ProviderDashboard: React.FC = () => {
     leads,
     bookings,
     listings,
-    setIsNewListingModalOpen
+    setIsNewListingModalOpen,
+    currentUser
   } = useApp();
 
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -131,22 +132,28 @@ export const ProviderDashboard: React.FC = () => {
                     </div>
                     <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 uppercase tracking-wider flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3" />
-                      TALA Verified
+                      {provider.verified ? 'TALA Verified' : 'Pending Verification'}
                     </span>
                   </div>
 
-                  <select
-                    value={activeProviderId}
-                    onChange={(e) => setActiveProviderId(Number(e.target.value))}
-                    className="w-full text-xs font-serif font-bold text-[#1F2A24] dark:text-[#EDF3EF] bg-transparent border border-[#E8DFC9] dark:border-[#2A3E31] rounded-lg px-2 py-1 focus:outline-hidden cursor-pointer truncate"
-                    title="Switch operator workspace"
-                  >
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id} className="dark:bg-[#152019] dark:text-[#EDF3EF]">
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                  {currentUser?.role === 'admin' ? (
+                    <select
+                      value={activeProviderId}
+                      onChange={(e) => setActiveProviderId(Number(e.target.value))}
+                      className="w-full text-xs font-serif font-bold text-[#1F2A24] dark:text-[#EDF3EF] bg-transparent border border-[#E8DFC9] dark:border-[#2A3E31] rounded-lg px-2 py-1 focus:outline-hidden cursor-pointer truncate"
+                      title="Switch operator workspace"
+                    >
+                      {providers.map((p) => (
+                        <option key={p.id} value={p.id} className="dark:bg-[#152019] dark:text-[#EDF3EF]">
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="w-full text-xs font-serif font-bold text-[#1F2A24] dark:text-[#EDF3EF] bg-transparent border border-[#E8DFC9] dark:border-[#2A3E31] rounded-lg px-2 py-1 truncate">
+                      {provider.name}
+                    </div>
+                  )}
                   <span className="text-[10px] text-[#6B7A72] dark:text-[#8DA195] block mt-0.5 truncate">{provider.location}</span>
                 </div>
               ) : (

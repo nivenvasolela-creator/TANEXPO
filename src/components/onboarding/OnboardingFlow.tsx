@@ -61,6 +61,7 @@ export const OnboardingFlow: React.FC = () => {
   const [businessRegion, setBusinessRegion] = useState('Northern Circuit');
   const [businessEmail, setBusinessEmail] = useState('');
   const [businessPhone, setBusinessPhone] = useState('+255 7');
+  const [providerPassword, setProviderPassword] = useState('');
   const [talaLicense, setTalaLicense] = useState('TALA/2025/0842');
   const [aboutBusiness, setAboutBusiness] = useState('');
 
@@ -71,20 +72,26 @@ export const OnboardingFlow: React.FC = () => {
   const [serviceInclusions, setServiceInclusions] = useState('4x4 Safari Land Cruiser, Licensed TANAPA guide, All National Park fees, Full board tented camp');
 
   const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOnboardingOpen) return null;
 
   // Handle Tourist Submit
-  const handleTouristSubmit = (e: React.FormEvent) => {
+  const handleTouristSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
     if (touristAuthMode === 'signin') {
-      if (!touristEmailOrPhone) {
-        setFormError('Please enter your email or phone number.');
+      if (!touristEmailOrPhone.trim() || !touristPassword) {
+        setFormError('Please enter both your email/phone and password.');
         return;
       }
-      login(touristEmailOrPhone, 'tourist');
+      setIsSubmitting(true);
+      const res = await login(touristEmailOrPhone.trim(), 'tourist', touristPassword);
+      setIsSubmitting(false);
+      if (!res.ok) {
+        setFormError(res.error || 'Invalid credentials');
+      }
       return;
     }
 
@@ -96,10 +103,16 @@ export const OnboardingFlow: React.FC = () => {
       setFormError('Please enter your email or phone number.');
       return;
     }
+    if (touristPassword.length < 8) {
+      setFormError('Password must be at least 8 characters.');
+      return;
+    }
 
-    registerTourist({
+    setIsSubmitting(true);
+    const res = await registerTourist({
       name: touristName.trim(),
       email: touristEmailOrPhone.trim(),
+      password: touristPassword,
       touristType,
       homeCountry: touristType === 'domestic' ? 'Tanzania' : touristCountry,
       currency: touristCurrency,
@@ -107,10 +120,14 @@ export const OnboardingFlow: React.FC = () => {
       travelParty: touristParty,
       interests: touristInterests
     });
+    setIsSubmitting(false);
+    if (!res.ok) {
+      setFormError(res.error || 'Registration failed');
+    }
   };
 
   // Handle Provider Submit
-  const handleProviderSubmit = (e: React.FormEvent) => {
+  const handleProviderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
@@ -122,8 +139,13 @@ export const OnboardingFlow: React.FC = () => {
       setFormError('Please provide both business email and official phone.');
       return;
     }
+    if (providerPassword.length < 8) {
+      setFormError('Please enter an account password of at least 8 characters.');
+      return;
+    }
 
-    registerProvider({
+    setIsSubmitting(true);
+    const res = await registerProvider({
       businessName: businessName.trim(),
       legalName: legalName.trim() || `${businessName.trim()} Limited`,
       providerTypes: selectedProviderTypes,
@@ -132,6 +154,7 @@ export const OnboardingFlow: React.FC = () => {
       region: businessRegion,
       phone: businessPhone.trim(),
       email: businessEmail.trim(),
+      password: providerPassword,
       talaLicense: talaLicense.trim() || undefined,
       about: aboutBusiness.trim(),
       firstPackage: {
@@ -141,6 +164,10 @@ export const OnboardingFlow: React.FC = () => {
         inclusions: serviceInclusions.split(',').map(s => s.trim()).filter(Boolean)
       }
     });
+    setIsSubmitting(false);
+    if (!res.ok) {
+      setFormError(res.error || 'Provider registration failed');
+    }
   };
 
   return (
@@ -607,12 +634,14 @@ export const OnboardingFlow: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold text-[#1C2C24] mb-1">Password</label>
+                      <label className="block font-semibold text-[#1C2C24] mb-1">Password (min 8 chars) *</label>
                       <input
                         type="password"
                         value={touristPassword}
                         onChange={e => setTouristPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder="Min 8 characters"
+                        minLength={8}
+                        required
                         className="w-full px-3 py-2 bg-white border border-[#D9CEBF] rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#284435]"
                       />
                     </div>
@@ -685,12 +714,13 @@ export const OnboardingFlow: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-[#1C2C24] mb-1">Password</label>
+                    <label className="block font-semibold text-[#1C2C24] mb-1">Password *</label>
                     <input
                       type="password"
                       value={touristPassword}
                       onChange={e => setTouristPassword(e.target.value)}
                       placeholder="••••••••"
+                      required
                       className="w-full px-3 py-2 bg-white border border-[#D9CEBF] rounded-lg"
                     />
                   </div>
@@ -707,9 +737,10 @@ export const OnboardingFlow: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#284435] hover:bg-[#1E332A] text-white px-6 py-2.5 rounded-xl font-medium text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-all"
+                  disabled={isSubmitting}
+                  className="bg-[#284435] hover:bg-[#1E332A] disabled:opacity-60 text-white px-6 py-2.5 rounded-xl font-medium text-xs flex items-center gap-2 shadow-sm cursor-pointer transition-all"
                 >
-                  <span>{touristAuthMode === 'signup' ? 'Complete Registration' : 'Sign In'}</span>
+                  <span>{isSubmitting ? 'Please wait...' : touristAuthMode === 'signup' ? 'Complete Registration' : 'Sign In'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -864,6 +895,19 @@ export const OnboardingFlow: React.FC = () => {
                       required
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-[#1C2C24] mb-1">Account Password (min 8 characters) *</label>
+                  <input
+                    type="password"
+                    value={providerPassword}
+                    onChange={e => setProviderPassword(e.target.value)}
+                    placeholder="Min 8 characters"
+                    minLength={8}
+                    className="w-full px-3 py-2 bg-white border border-[#D9CEBF] rounded-lg"
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

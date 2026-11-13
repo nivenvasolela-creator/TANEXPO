@@ -65,11 +65,13 @@ export const CheckoutModal: React.FC = () => {
     if (paymentRail === 'CRDB Bank') {
       // Bank card processing
       setIsVerifying(true);
-      setTimeout(() => {
+      setTimeout(async () => {
+        const booking = await processPaymentConfirmation(checkoutLead.id, paymentRail, cardNumber);
         setIsVerifying(false);
-        const booking = processPaymentConfirmation(checkoutLead.id, paymentRail, cardNumber);
-        setConfirmedBooking(booking);
-        setPaymentStep('success');
+        if (booking) {
+          setConfirmedBooking(booking);
+          setPaymentStep('success');
+        }
       }, 1200);
     } else {
       // Mobile money dispatch: Go to official Control Number screen
@@ -86,11 +88,13 @@ export const CheckoutModal: React.FC = () => {
 
   const handleVerifyHandsetPayment = () => {
     setIsVerifying(true);
-    setTimeout(() => {
+    setTimeout(async () => {
+      const booking = await processPaymentConfirmation(checkoutLead.id, paymentRail, phoneNumber);
       setIsVerifying(false);
-      const booking = processPaymentConfirmation(checkoutLead.id, paymentRail, phoneNumber);
-      setConfirmedBooking(booking);
-      setPaymentStep('success');
+      if (booking) {
+        setConfirmedBooking(booking);
+        setPaymentStep('success');
+      }
     }, 1500);
   };
 
@@ -457,7 +461,7 @@ export const CheckoutModal: React.FC = () => {
             <div className="bg-white dark:bg-[#152019] p-4 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] text-left text-xs space-y-2">
               <div className="flex justify-between">
                 <span className="text-[#6B7A72] dark:text-[#8DA195]">Expedition:</span>
-                <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{confirmedBooking.tripTitle}</span>
+                <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{confirmedBooking.listingTitle}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#6B7A72] dark:text-[#8DA195]">Operator:</span>
@@ -465,11 +469,11 @@ export const CheckoutModal: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-[#6B7A72] dark:text-[#8DA195]">Amount Paid:</span>
-                <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{formatPrice(confirmedBooking.totalAmountTZS, false)}</span>
+                <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{formatPrice(confirmedBooking.amountTZS, false)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#6B7A72] dark:text-[#8DA195]">Payment Rail:</span>
-                <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{confirmedBooking.paymentRail}</span>
+                <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{confirmedBooking.paymentMethod}</span>
               </div>
             </div>
 

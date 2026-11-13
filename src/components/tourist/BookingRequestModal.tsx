@@ -48,7 +48,7 @@ export const BookingRequestModal: React.FC = () => {
 
   const { provider, listing } = inquiryPackage;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!date) return;
 
@@ -69,7 +69,7 @@ export const BookingRequestModal: React.FC = () => {
 
     if (!name || !contact) return;
 
-    const newLead = submitInquiry({
+    const newLead = await submitInquiry({
       providerId: provider.id,
       providerName: provider.name,
       listingId: listing.id,
@@ -82,7 +82,9 @@ export const BookingRequestModal: React.FC = () => {
       message: message || undefined
     });
 
-    setSubmittedLeadId(newLead.id);
+    if (newLead) {
+      setSubmittedLeadId(newLead.id);
+    }
   };
 
   const handleFinishAndTrack = () => {
