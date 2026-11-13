@@ -9,7 +9,8 @@ import {
   getAuthUser,
   requireAuth,
   requireRole,
-  authRateLimiter
+  loginRateLimiter,
+  registerRateLimiter
 } from './auth.js';
 import {
   initialProviders,
@@ -76,7 +77,7 @@ function getUserProviderId(user: NonNullable<Request['authUser']>): number | nul
 // --- AUTHENTICATION ROUTES ---
 
 // Register Tourist or Provider (never Admin)
-apiRouter.post('/auth/register', authRateLimiter, async (req: Request, res: Response) => {
+apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: Response) => {
   try {
     const { email, phone, password, name, role, touristProfile, providerProfile } = req.body ?? {};
 
@@ -293,7 +294,7 @@ apiRouter.post('/auth/register', authRateLimiter, async (req: Request, res: Resp
 });
 
 // Login with email/phone + required password
-apiRouter.post('/auth/login', authRateLimiter, async (req: Request, res: Response) => {
+apiRouter.post('/auth/login', loginRateLimiter, async (req: Request, res: Response) => {
   try {
     const { emailOrPhone, password } = req.body ?? {};
 

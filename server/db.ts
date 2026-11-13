@@ -12,21 +12,56 @@ import {
 import { hashPassword } from './auth.js';
 
 let db: PGlite | null = null;
+let dbPromise: Promise<PGlite> | null = null;
 
 export async function getDb(): Promise<PGlite> {
   if (db) return db;
+  if (dbPromise) return dbPromise;
 
-  const dataDir = process.env.PG_DATA_DIR || path.join(process.cwd(), '.data', 'pg');
-  try {
-    fs.mkdirSync(path.dirname(dataDir), { recursive: true });
-    db = new PGlite(dataDir);
-  } catch (err) {
-    console.warn('Fallback to in-memory PGlite due to directory error:', err);
-    db = new PGlite();
-  }
+  dbPromise = (async () => {
+    const dataDir = process.env.PG_DATA_DIR || path.join(process.cwd(), '.data', 'pg');
+    let instance: PGlite | undefined;
+    try {
+      fs.mkdirSync(path.dirname(dataDir), { recursive: true });
+      instance = new PGlite(dataDir);
+      await initSchemaAndSeed(instance);
+    } catch (err: any) {
+      const msg = String(err?.message || err || '');
+      const isCatalogOrDirErr =
+        err?.code === '23505' ||
+        msg.includes('pg_type_typname_nsp_index') ||
+        msg.includes('postmaster.pid');
 
-  await initSchemaAndSeed(db);
-  return db;
+      await instance?.close().catch(() => {});
+
+      if (isCatalogOrDirErr && dataDir) {
+        console.warn('Recovering damaged PGlite catalog in', dataDir, msg);
+        try {
+          fs.rmSync(dataDir, { recursive: true, force: true });
+          fs.mkdirSync(path.dirname(dataDir), { recursive: true });
+          instance = new PGlite(dataDir);
+          await initSchemaAndSeed(instance);
+        } catch (retryErr) {
+          console.warn('Fallback to in-memory PGlite due to persistent error:', retryErr);
+          await instance?.close().catch(() => {});
+          instance = new PGlite();
+          await initSchemaAndSeed(instance);
+        }
+      } else {
+        console.warn('Fallback to in-memory PGlite due to directory/init error:', err);
+        instance = new PGlite();
+        await initSchemaAndSeed(instance);
+      }
+    }
+
+    db = instance;
+    return instance;
+  })().catch((err) => {
+    dbPromise = null;
+    throw err;
+  });
+
+  return dbPromise;
 }
 
 async function initSchemaAndSeed(database: PGlite) {

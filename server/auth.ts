@@ -171,10 +171,23 @@ export function requireRole(...roles: Array<'tourist' | 'provider' | 'admin'>) {
   };
 }
 
-export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many authentication attempts. Please try again in 15 minutes.' }
-});
+function createAuthRateLimiter(message: string) {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: message }
+  });
+}
+
+export const loginRateLimiter = createAuthRateLimiter(
+  'Too many login attempts. Please try again in 15 minutes.'
+);
+
+export const registerRateLimiter = createAuthRateLimiter(
+  'Too many registration attempts. Please try again in 15 minutes.'
+);
+
+export const authRateLimiter = loginRateLimiter;
+
