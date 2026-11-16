@@ -12,7 +12,8 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "bash scripts/test-all.sh"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

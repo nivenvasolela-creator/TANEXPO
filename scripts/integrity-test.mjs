@@ -339,6 +339,11 @@ async function main() {
     paymentMethod: 'M-Pesa'
   });
   assert.equal(pastBookRes.status, 201);
+  const completeUnpaid = await req('PUT', `/bookings/${pastBookRes.json.booking.id}`, provToken, { status: 'Completed' });
+  assert.equal(completeUnpaid.status, 409, `Expected 409 completing unpaid booking, got ${completeUnpaid.status}`);
+  const payPast = await req('POST', '/transactions', t2Token, { bookingId: pastBookRes.json.booking.id, paymentRail: 'M-Pesa' });
+  assert.equal(payPast.status, 201, `Expected 201 recording payment, got ${payPast.status}: ${payPast.text}`);
+  pass('Unpaid booking cannot be marked Completed until the traveler pays');
   const completePast = await req('PUT', `/bookings/${pastBookRes.json.booking.id}`, provToken, { status: 'Completed' });
   assert.equal(completePast.status, 200, `Expected 200 completing past booking, got ${completePast.status}: ${completePast.text}`);
   pass('PUT /bookings/:id allows marking past-dated booking Completed');

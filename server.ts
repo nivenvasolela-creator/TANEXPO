@@ -6,6 +6,7 @@ import { apiRouter } from './server/api.js';
 import { getDb } from './server/db.js';
 import { getPaymentsMode } from './server/config.js';
 import { bookingIntegrityGuard } from './server/guards.js';
+import { startScheduler } from './server/scheduler.js';
 
 function getFrameAncestors(): string[] {
   if (process.env.NODE_ENV === 'production') {
@@ -160,6 +161,7 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`TANEXPO server running on http://0.0.0.0:${PORT}`);
+    startScheduler();
   });
 }
 

@@ -23,6 +23,7 @@ import {
 } from './config.js';
 import { normalizePhone } from './phone.js';
 import { whatsappRouter, notifyOperatorNewLead } from './whatsapp.js';
+import { runScheduledJobs } from './scheduler.js';
 import {
   initialProviders,
   initialListings,
@@ -2071,6 +2072,17 @@ apiRouter.put('/bookings/:id', requireAuth, async (req: Request, res: Response) 
       return;
     }
 
+    // Completing a trip unlocks a verified review for the traveler's account, so it needs a
+    // recorded payment as well. Bookings an operator logged for an offline customer have no
+    // traveler account (and so can never be reviewed) and are exempt.
+    if (body.status === 'Completed' && row.status !== 'Completed' && !isAdmin && row.tourist_user_id) {
+      const paidRes = await db.query<any>('SELECT id FROM transactions WHERE booking_id = $1 LIMIT 1', [id]);
+      if (!paidRes.rows.length) {
+        res.status(409).json({ error: 'This booking has no recorded payment yet, so it cannot be completed' });
+        return;
+      }
+    }
+
     const updatedBooking = {
       ...row.data,
       ...(body.status !== undefined ? { status: body.status } : {}),
@@ -2169,13 +2181,14 @@ apiRouter.post('/transactions', requireAuth, async (req: Request, res: Response)
     }
     const bookingRow = bookingRes.rows[0];
 
+    // An operator must not be able to mark their own booking as paid: a recorded payment is
+    // what later allows the trip to be completed and reviewed.
     const isAllowed =
       authUser.role === 'admin' ||
-      (authUser.role === 'provider' && bookingRow.provider_id === getUserProviderId(authUser)) ||
       (authUser.role === 'tourist' && bookingRow.tourist_user_id === authUser.id);
 
     if (!isAllowed) {
-      res.status(403).json({ error: 'Forbidden: cannot record transaction for another user booking' });
+      res.status(403).json({ error: 'Forbidden: only the traveler can pay for this booking' });
       return;
     }
 
@@ -2619,6 +2632,21 @@ apiRouter.get(
     } catch (err: any) {
       console.error('Admin backup export failed:', err?.message || 'unknown error');
       res.status(500).json({ error: 'Backup export failed' });
+    }
+  }
+);
+
+// Admin: run the WhatsApp reminder/digest jobs now (support, demos, tests)
+apiRouter.post(
+  '/admin/whatsapp/run-jobs',
+  requireAuth,
+  requireRole('admin'),
+  async (req: Request, res: Response) => {
+    try {
+      const summary = await runScheduledJobs({ forceDigest: req.body?.forceDigest === true });
+      res.json({ success: true, summary });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to run scheduled jobs' });
     }
   }
 );
