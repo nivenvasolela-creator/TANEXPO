@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { CategoryId, ListingPackage } from '../../types';
-import { X, Save, Plus, Trash2, Check, PackagePlus, Clock, DollarSign } from 'lucide-react';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
+import { CategoryId } from '../../types';
+import { X, Save, Plus, Trash2, PackagePlus } from 'lucide-react';
 
 export const ListingEditorModal: React.FC = () => {
   const { 
@@ -56,12 +57,14 @@ export const ListingEditorModal: React.FC = () => {
     }
   }, [editingListing, isNewListingModalOpen]);
 
-  if (!isOpen) return null;
-
   const handleClose = () => {
     setEditingListing(null);
     setIsNewListingModalOpen(false);
   };
+
+  const dialogRef = useModalAccessibility(isOpen, handleClose);
+
+  if (!isOpen) return null;
 
   const handleAddInclusion = () => {
     if (!newInclusionText.trim()) return;
@@ -95,34 +98,45 @@ export const ListingEditorModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
-      <div className="relative bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-[#E8DFC9]">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={editingListing ? 'Edit Tour Package' : 'Create New Tour Package'}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-white dark:bg-[#0D1511] rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] focus:outline-hidden"
+      >
         {/* Header */}
-        <div className="bg-[#FAF7F2] p-5 sm:p-6 border-b border-[#E8DFC9] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#284435] text-[#E8B94A] flex items-center justify-center">
+        <div className="bg-[#FAF7F2] dark:bg-[#152019] p-5 sm:p-6 border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#284435] text-[#E8B94A] flex items-center justify-center shrink-0">
               <PackagePlus className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-serif text-xl font-bold text-[#284435]">
+            <div className="min-w-0">
+              <h3 className="font-serif text-lg sm:text-xl font-bold text-[#284435] dark:text-[#EDF3EF] truncate">
                 {editingListing ? 'Edit Tour Package' : 'Create New Tour Package'}
               </h3>
-              <p className="text-xs text-[#6B7A72]">
+              <p className="text-xs text-[#6B7A72] dark:text-[#8DA195] truncate">
                 Publish transparent packages denominated in legal Tanzanian Shillings (TZS)
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={handleClose}
-            className="w-8 h-8 rounded-full bg-white hover:bg-[#EDE5D5] text-[#6B7A72] flex items-center justify-center border border-[#E8DFC9] cursor-pointer"
+            aria-label="Close package editor"
+            className="min-h-[40px] min-w-[40px] rounded-full bg-white dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#6B7A72] dark:text-[#8DA195] flex items-center justify-center border border-[#E8DFC9] dark:border-[#2A3E31] cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 space-y-4 flex-1 overflow-y-auto">
           {/* Title */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-[#284435]">Package Title *</label>
@@ -234,7 +248,8 @@ export const ListingEditorModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleRemoveInclusion(i)}
-                    className="text-zinc-400 hover:text-red-500 ml-2"
+                    aria-label={`Remove inclusion ${inc}`}
+                    className="min-h-[32px] min-w-[32px] flex items-center justify-center text-zinc-400 hover:text-red-500 ml-2 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -248,12 +263,12 @@ export const ListingEditorModal: React.FC = () => {
                 value={newInclusionText}
                 onChange={(e) => setNewInclusionText(e.target.value)}
                 placeholder="Add another inclusion (e.g. All TANAPA park fees included)"
-                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-[#DED5C6] bg-white focus:outline-hidden"
+                className="flex-1 min-h-[40px] px-3 py-1.5 text-xs rounded-xl border border-[#DED5C6] bg-white focus:outline-hidden"
               />
               <button
                 type="button"
                 onClick={handleAddInclusion}
-                className="px-3 py-1.5 bg-[#284435] text-white rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                className="min-h-[40px] px-3 py-1.5 bg-[#284435] text-white rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add</span>
@@ -266,13 +281,13 @@ export const ListingEditorModal: React.FC = () => {
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-[#FAF7F2] text-[#6B7A72] text-xs font-semibold border border-[#DED5C6] cursor-pointer"
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-white hover:bg-[#FAF7F2] text-[#6B7A72] text-xs font-semibold border border-[#DED5C6] cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+              className="min-h-[44px] px-5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <Save className="w-4 h-4" />
               <span>Save Package</span>

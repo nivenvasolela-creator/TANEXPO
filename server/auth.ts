@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getDb } from './db.js';
+import { normalizePhone } from './phone.js';
 
 export interface AuthUser {
   id: string;
@@ -48,7 +49,6 @@ export async function verifyPassword(
   storedHash: string | null | undefined
 ): Promise<{ valid: boolean; needsRehash: boolean }> {
   if (!storedHash || typeof storedHash !== 'string') {
-    // Perform dummy scrypt to normalize timing
     await scryptAsync(password, '00000000000000000000000000000000');
     return { valid: false, needsRehash: false };
   }
@@ -92,6 +92,10 @@ export function generateToken(): string {
   return 'tanexpo_' + crypto.randomBytes(32).toString('hex');
 }
 
+export function hashSessionToken(rawToken: string): string {
+  return crypto.createHash('sha256').update(rawToken).digest('hex');
+}
+
 export function getSessionExpiryIso(): string {
   return new Date(Date.now() + SESSION_TTL_MS).toISOString();
 }
@@ -104,17 +108,18 @@ export async function getAuthUser(req: Request): Promise<AuthUser | null> {
   const token = authHeader.slice('Bearer '.length).trim();
   if (!token) return null;
 
+  const tokenHash = hashSessionToken(token);
   const db = await getDb();
   const sessionRes = await db.query<any>(
     'SELECT user_id, expires_at FROM app_sessions WHERE token = $1',
-    [token]
+    [tokenHash]
   );
   if (!sessionRes.rows.length) return null;
 
   const sessionRow = sessionRes.rows[0];
   const expiresAtMs = sessionRow.expires_at ? Date.parse(sessionRow.expires_at) : NaN;
   if (!sessionRow.expires_at || Number.isNaN(expiresAtMs) || expiresAtMs <= Date.now()) {
-    await db.query('DELETE FROM app_sessions WHERE token = $1', [token]);
+    await db.query('DELETE FROM app_sessions WHERE token = $1', [tokenHash]);
     return null;
   }
 
@@ -171,23 +176,47 @@ export function requireRole(...roles: Array<'tourist' | 'provider' | 'admin'>) {
   };
 }
 
-function createAuthRateLimiter(message: string) {
-  return rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: message }
-  });
-}
+export const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts from this IP. Please try again in 15 minutes.' }
+});
 
-export const loginRateLimiter = createAuthRateLimiter(
-  'Too many login attempts. Please try again in 15 minutes.'
-);
+export const loginAccountRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { keyGeneratorIpFallback: false },
+  keyGenerator: (req: Request): string => {
+    const raw = req.body?.emailOrPhone;
+    if (typeof raw === 'string' && raw.trim()) {
+      const trimmed = raw.trim();
+      if (trimmed.includes('@')) {
+        return `acct:email:${trimmed.toLowerCase()}`;
+      }
+      const normPhone = normalizePhone(trimmed);
+      if (normPhone) {
+        return `acct:phone:${normPhone}`;
+      }
+      return `acct:raw:${trimmed.toLowerCase()}`;
+    }
+    return `ip:${ipKeyGenerator(req.ip || '127.0.0.1')}`;
+  },
+  message: { error: 'Too many failed login attempts for this account. Please try again in 15 minutes.' }
+});
 
-export const registerRateLimiter = createAuthRateLimiter(
-  'Too many registration attempts. Please try again in 15 minutes.'
-);
+export const registerRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts. Please try again in 15 minutes.' }
+});
 
 export const authRateLimiter = loginRateLimiter;
 

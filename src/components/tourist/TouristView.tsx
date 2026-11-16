@@ -1,47 +1,83 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useApp } from '../../context/AppContext';
-import { 
-  Compass, 
-  Bell, 
-  Heart, 
-  Scale, 
-  SlidersHorizontal 
+import {
+  Compass,
+  Bell,
+  Heart,
+  Scale,
+  SlidersHorizontal
 } from 'lucide-react';
 import { TouristHome } from './TouristHome';
-import { MyRequestsView } from './MyRequestsView';
-import { SavedProvidersView } from './SavedProvidersView';
-import { ComplianceInfoView } from './ComplianceInfoView';
-import { ProviderDetailModal } from './ProviderDetailModal';
-import { BookingRequestModal } from './BookingRequestModal';
-import { BookingVoucherModal } from './BookingVoucherModal';
-import { PlaceDetailModal } from './PlaceDetailModal';
-import { CompareModal } from './CompareModal';
-import { CheckoutModal } from './CheckoutModal';
-import { WriteReviewModal } from './WriteReviewModal';
+import { ErrorBoundary } from '../ErrorBoundary';
+
+const MyRequestsView = lazy(() =>
+  import('./MyRequestsView').then((m) => ({ default: m.MyRequestsView }))
+);
+const SavedProvidersView = lazy(() =>
+  import('./SavedProvidersView').then((m) => ({ default: m.SavedProvidersView }))
+);
+const ComplianceInfoView = lazy(() =>
+  import('./ComplianceInfoView').then((m) => ({ default: m.ComplianceInfoView }))
+);
+const ProviderDetailModal = lazy(() =>
+  import('./ProviderDetailModal').then((m) => ({ default: m.ProviderDetailModal }))
+);
+const BookingRequestModal = lazy(() =>
+  import('./BookingRequestModal').then((m) => ({ default: m.BookingRequestModal }))
+);
+const BookingVoucherModal = lazy(() =>
+  import('./BookingVoucherModal').then((m) => ({ default: m.BookingVoucherModal }))
+);
+const PlaceDetailModal = lazy(() =>
+  import('./PlaceDetailModal').then((m) => ({ default: m.PlaceDetailModal }))
+);
+const CompareModal = lazy(() =>
+  import('./CompareModal').then((m) => ({ default: m.CompareModal }))
+);
+const CheckoutModal = lazy(() =>
+  import('./CheckoutModal').then((m) => ({ default: m.CheckoutModal }))
+);
+const WriteReviewModal = lazy(() =>
+  import('./WriteReviewModal').then((m) => ({ default: m.WriteReviewModal }))
+);
+
+const TabFallback: React.FC = () => (
+  <div className="rounded-3xl bg-white dark:bg-[#152019] border border-[#E8DFC9] dark:border-[#23352A] p-8 text-center text-xs text-[#6B7A72] dark:text-[#8DA195]">
+    Loading section...
+  </div>
+);
 
 export const TouristView: React.FC = () => {
-  const { 
-    touristTab, 
-    setTouristTab, 
-    leads, 
+  const {
+    touristTab,
+    setTouristTab,
+    leads,
     savedProviderIds,
     comparedProviderIds,
+    isCompareModalOpen,
     setIsCompareModalOpen,
-    t 
+    selectedProvider,
+    inquiryPackage,
+    activeVoucher,
+    selectedDestination,
+    checkoutLead,
+    reviewingBooking,
+    t
   } = useApp();
 
   const negotiatingCount = leads.filter((l) => l.status === 'Negotiating').length;
-  const requestsCount = leads.length > 0 ? leads.length : 3;
-  const savedCount = savedProviderIds.length > 0 ? savedProviderIds.length : 3;
+  const requestsCount = leads.length;
+  const savedCount = savedProviderIds.length;
 
   return (
     <div className="space-y-6">
-      {/* Primary Top Tourist Tabs */}
-      <div className="flex items-center justify-between gap-4 border-b border-[#E8DFC9] dark:border-[#23352A] pb-3 transition-colors">
-        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
+      {/* Desktop Top Tourist Tabs */}
+      <div className="hidden md:flex items-center justify-between gap-4 border-b border-[#E8DFC9] dark:border-[#23352A] pb-3 transition-colors">
+        <div className="flex items-center gap-2 overflow-x-auto">
           <button
+            type="button"
             onClick={() => setTouristTab('explore')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               touristTab === 'explore'
                 ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
                 : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
@@ -52,8 +88,9 @@ export const TouristView: React.FC = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => setTouristTab('requests')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               touristTab === 'requests'
                 ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
                 : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
@@ -62,20 +99,23 @@ export const TouristView: React.FC = () => {
             <Bell className="w-4 h-4 text-[#D97843]" />
             <span>{t('my.requests', 'My Requests')}</span>
             <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                touristTab === 'requests' ? 'bg-[#D97843] text-white' : 'bg-[#EAF3EC] dark:bg-[#12281D] text-[#284435] dark:text-[#A3E6C0]'
+              className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                touristTab === 'requests'
+                  ? 'bg-[#D97843] text-white'
+                  : 'bg-[#EAF3EC] dark:bg-[#12281D] text-[#284435] dark:text-[#A3E6C0]'
               }`}
             >
               {requestsCount}
             </span>
             {negotiatingCount > 0 && (
-              <span className="w-2 h-2 rounded-full bg-[#D97843] animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-[#D97843]" title="Quote ready" />
             )}
           </button>
 
           <button
+            type="button"
             onClick={() => setTouristTab('saved')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               touristTab === 'saved'
                 ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
                 : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
@@ -86,46 +126,127 @@ export const TouristView: React.FC = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => setTouristTab('compliance')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               touristTab === 'compliance'
                 ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
                 : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
             }`}
           >
             <Scale className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('laws', 'TZS & Licensing Laws')}</span>
-            <span className="sm:hidden">Laws</span>
+            <span>{t('laws', 'TZS & Licensing Laws')}</span>
           </button>
         </div>
 
         {comparedProviderIds.length > 0 && (
           <button
+            type="button"
             onClick={() => setIsCompareModalOpen(true)}
-            className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#284435] dark:text-[#EDF3EF] bg-white dark:bg-[#152019] hover:bg-[#FAF7F2] dark:hover:bg-[#1A2820] px-3 py-1.5 rounded-xl border border-[#DED5C6] dark:border-[#23352A] cursor-pointer shadow-2xs"
+            className="min-h-[40px] flex items-center gap-1.5 text-xs font-bold text-[#284435] dark:text-[#EDF3EF] bg-white dark:bg-[#152019] hover:bg-[#FAF7F2] dark:hover:bg-[#1A2820] px-3 py-1.5 rounded-xl border border-[#DED5C6] dark:border-[#23352A] cursor-pointer shadow-2xs"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-[#D97843]" />
-            <span>Compare ({comparedProviderIds.length})</span>
+            <span>{t('compare', 'Compare')} ({comparedProviderIds.length})</span>
           </button>
         )}
       </div>
 
       {/* Main Content */}
-      <div>
-        {touristTab === 'explore' && <TouristHome />}
-        {touristTab === 'requests' && <MyRequestsView />}
-        {touristTab === 'saved' && <SavedProvidersView />}
-        {touristTab === 'compliance' && <ComplianceInfoView />}
-      </div>
+      <ErrorBoundary fallbackTitle="View failed to load">
+        <Suspense fallback={<TabFallback />}>
+          {touristTab === 'explore' && <TouristHome />}
+          {touristTab === 'requests' && <MyRequestsView />}
+          {touristTab === 'saved' && <SavedProvidersView />}
+          {touristTab === 'compliance' && <ComplianceInfoView />}
+        </Suspense>
+      </ErrorBoundary>
 
-      {/* All Modal Overlays */}
-      <ProviderDetailModal />
-      <BookingRequestModal />
-      <BookingVoucherModal />
-      <PlaceDetailModal />
-      <CompareModal />
-      <CheckoutModal />
-      <WriteReviewModal />
+      {/* Mobile Bottom Navigation Bar */}
+      <nav
+        aria-label="Tourist mobile navigation"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 glass border-t border-[#E7DFD3] dark:border-[#23352A] safe-bottom"
+      >
+        <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
+          <button
+            type="button"
+            onClick={() => setTouristTab('explore')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+              touristTab === 'explore'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            <span>{t('nav.explore', 'Explore')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('requests')}
+            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+              touristTab === 'requests'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <div className="relative">
+              <Bell className="w-4 h-4" />
+              {requestsCount > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#D97843] text-white text-[9px] font-bold flex items-center justify-center">
+                  {requestsCount}
+                </span>
+              )}
+            </div>
+            <span>{t('nav.requests', 'Requests')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('saved')}
+            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+              touristTab === 'saved'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <div className="relative">
+              <Heart className="w-4 h-4" />
+              {savedCount > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#284435] dark:bg-[#E8B94A] text-white dark:text-[#1C2C24] text-[9px] font-bold flex items-center justify-center">
+                  {savedCount}
+                </span>
+              )}
+            </div>
+            <span>{t('saved', 'Saved')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('compliance')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+              touristTab === 'compliance'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <Scale className="w-4 h-4" />
+            <span>{t('nav.laws', 'Laws')}</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Conditionally Mounted Lazy Modal Overlays */}
+      <ErrorBoundary fallbackTitle="Dialog failed to load">
+        <Suspense fallback={null}>
+          {selectedProvider && <ProviderDetailModal />}
+          {inquiryPackage && <BookingRequestModal />}
+          {activeVoucher && <BookingVoucherModal />}
+          {selectedDestination && <PlaceDetailModal />}
+          {isCompareModalOpen && comparedProviderIds.length > 0 && <CompareModal />}
+          {checkoutLead && <CheckoutModal />}
+          {reviewingBooking && <WriteReviewModal />}
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 };

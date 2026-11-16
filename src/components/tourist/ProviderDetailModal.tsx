@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 import { 
   X, 
   MapPin, 
@@ -7,8 +8,6 @@ import {
   Star, 
   Heart, 
   Phone, 
-  Mail, 
-  Calendar, 
   Check, 
   Users, 
   Clock, 
@@ -16,7 +15,6 @@ import {
   Award, 
   Languages, 
   Building2,
-  ArrowRight,
   MessageSquareQuote
 } from 'lucide-react';
 
@@ -33,6 +31,7 @@ export const ProviderDetailModal: React.FC = () => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'packages' | 'about' | 'reviews'>('packages');
+  const dialogRef = useModalAccessibility(Boolean(selectedProvider), () => setSelectedProvider(null));
 
   if (!selectedProvider) return null;
 
@@ -41,11 +40,22 @@ export const ProviderDetailModal: React.FC = () => {
   const isSaved = savedProviderIds.includes(selectedProvider.id);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
-      <div className="relative bg-[#FAF7F2] dark:bg-[#0D1511] rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={selectedProvider.name}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-[#FAF7F2] dark:bg-[#0D1511] rounded-t-3xl sm:rounded-3xl max-w-4xl w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors focus:outline-hidden"
+      >
         {/* Modal Top Close */}
         <button
+          type="button"
           onClick={() => setSelectedProvider(null)}
+          aria-label="Close operator profile"
           className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors cursor-pointer"
           title="Close profile"
         >
@@ -53,13 +63,19 @@ export const ProviderDetailModal: React.FC = () => {
         </button>
 
         {/* Modal Hero Banner */}
-        <div className="relative bg-linear-to-r from-[#1C2D24] via-[#284435] to-[#16241D] text-white p-6 sm:p-8 shrink-0">
-          <div className="max-w-2xl">
+        <div className="relative bg-linear-to-r from-[#1C2D24] via-[#284435] to-[#16241D] text-white p-5 sm:p-8 shrink-0">
+          <div className="max-w-2xl pr-10">
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-300 bg-white/10 px-3 py-1 rounded-full border border-white/20">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>TALA Verified License: {selectedProvider.talaLicense}</span>
-              </span>
+              {selectedProvider.verified ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-300 bg-white/10 px-3 py-1 rounded-full border border-white/20">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>TALA Verified License: {selectedProvider.talaLicense}</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-200 bg-white/10 px-3 py-1 rounded-full border border-white/20">
+                  <span>TALA License: {selectedProvider.talaLicense} (Pending Review)</span>
+                </span>
+              )}
               <span className="text-xs bg-[#E8B94A]/20 text-[#E8B94A] font-semibold px-2.5 py-1 rounded-full border border-[#E8B94A]/30">
                 Est. {selectedProvider.establishedYear}
               </span>
@@ -79,8 +95,14 @@ export const ProviderDetailModal: React.FC = () => {
               </div>
               <div className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-lg">
                 <Star className="w-3.5 h-3.5 fill-[#E8B94A] text-[#E8B94A]" />
-                <span className="font-bold text-white">{selectedProvider.rating.toFixed(1)}</span>
-                <span>({selectedProvider.reviewsCount} verified traveler reviews)</span>
+                {selectedProvider.reviewsCount > 0 ? (
+                  <>
+                    <span className="font-bold text-white">{selectedProvider.rating.toFixed(1)}</span>
+                    <span>({selectedProvider.reviewsCount} verified traveler reviews)</span>
+                  </>
+                ) : (
+                  <span className="font-bold text-white">New</span>
+                )}
               </div>
               <div className="flex items-center gap-1.5">
                 <Award className="w-4 h-4 text-[#E8B94A]" />
@@ -89,32 +111,36 @@ export const ProviderDetailModal: React.FC = () => {
             </div>
           </div>
 
-          <div className="absolute bottom-6 right-6 flex items-center gap-2">
+          <div className="mt-4 sm:mt-0 sm:absolute sm:bottom-6 sm:right-6 flex items-center gap-2">
             <button
+              type="button"
               onClick={() => toggleSaveProvider(selectedProvider.id)}
-              className="p-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center gap-2 text-xs font-semibold backdrop-blur-md cursor-pointer transition-all border border-white/20"
+              aria-label={isSaved ? 'Remove from saved' : 'Save provider'}
+              className="min-h-[40px] p-2.5 sm:p-3 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center gap-2 text-xs font-semibold backdrop-blur-md cursor-pointer transition-all border border-white/20"
             >
               <Heart className={`w-4 h-4 ${isSaved ? "fill-red-400 text-red-400" : ""}`} />
-              <span className="hidden sm:inline">{isSaved ? 'Saved to Wishlist' : 'Save Provider'}</span>
+              <span>{isSaved ? 'Saved' : 'Save Provider'}</span>
             </button>
           </div>
         </div>
 
         {/* Modal Navigation Tabs */}
-        <div className="flex border-b border-[#E8DFC9] dark:border-[#23352A] bg-white dark:bg-[#152019] px-6 shrink-0 transition-colors">
+        <div className="flex overflow-x-auto border-b border-[#E8DFC9] dark:border-[#23352A] bg-white dark:bg-[#152019] px-4 sm:px-6 shrink-0 transition-colors">
           <button
+            type="button"
             onClick={() => setActiveTab('packages')}
-            className={`py-3.5 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            className={`min-h-[44px] py-3 px-3 sm:px-4 text-xs font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'packages'
                 ? 'border-[#D97843] text-[#284435] dark:text-[#EDF3EF]'
                 : 'border-transparent text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF]'
             }`}
           >
-            Available Tour Packages ({providerListings.length})
+            Packages ({providerListings.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('about')}
-            className={`py-3.5 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            className={`min-h-[44px] py-3 px-3 sm:px-4 text-xs font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'about'
                 ? 'border-[#D97843] text-[#284435] dark:text-[#EDF3EF]'
                 : 'border-transparent text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF]'
@@ -123,19 +149,20 @@ export const ProviderDetailModal: React.FC = () => {
             About & Credentials
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('reviews')}
-            className={`py-3.5 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            className={`min-h-[44px] py-3 px-3 sm:px-4 text-xs font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'reviews'
                 ? 'border-[#D97843] text-[#284435] dark:text-[#EDF3EF]'
                 : 'border-transparent text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF]'
             }`}
           >
-            Traveler Reviews ({providerReviews.length})
+            Reviews ({providerReviews.length})
           </button>
         </div>
 
         {/* Modal Body Content (Scrollable) */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-[#FAF7F2] dark:bg-[#0D1511] transition-colors">
+        <div className="p-4 sm:p-6 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-6 overflow-y-auto space-y-6 flex-1 bg-[#FAF7F2] dark:bg-[#0D1511] transition-colors">
           {activeTab === 'packages' && (
             <div className="space-y-4">
               <div className="bg-[#EAF3EC] dark:bg-emerald-950/40 p-3.5 rounded-2xl border border-[#CDE3D4] dark:border-emerald-800/60 flex items-center justify-between gap-3 text-xs text-[#284435] dark:text-emerald-300">
@@ -236,7 +263,9 @@ export const ProviderDetailModal: React.FC = () => {
                     <Phone className="w-4 h-4 text-[#284435] dark:text-emerald-400 mt-0.5" />
                     <div>
                       <span className="font-bold text-[#284435] dark:text-[#EDF3EF] block">Direct Operator Line</span>
-                      <span className="text-[#6B7A72] dark:text-[#8DA195]">{selectedProvider.phone}</span>
+                      <span className="text-[#6B7A72] dark:text-[#8DA195]">
+                        {selectedProvider.phone ? selectedProvider.phone : 'Available after confirmed booking'}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -276,12 +305,22 @@ export const ProviderDetailModal: React.FC = () => {
               <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between">
                 <div>
                   <div className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF] flex items-center gap-2">
-                    <span>{selectedProvider.rating.toFixed(1)}</span>
-                    <div className="flex text-[#E8B94A] text-base">
-                      {'★'.repeat(Math.round(selectedProvider.rating))}
-                    </div>
+                    {selectedProvider.reviewsCount > 0 ? (
+                      <>
+                        <span>{selectedProvider.rating.toFixed(1)}</span>
+                        <div className="flex text-[#E8B94A] text-base">
+                          {'★'.repeat(Math.round(selectedProvider.rating))}
+                        </div>
+                      </>
+                    ) : (
+                      <span>New Operator</span>
+                    )}
                   </div>
-                  <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">Based on {selectedProvider.reviewsCount} verified traveler trips</p>
+                  <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">
+                    {selectedProvider.reviewsCount > 0
+                      ? `Based on ${selectedProvider.reviewsCount} verified traveler trips`
+                      : 'No traveler reviews yet'}
+                  </p>
                 </div>
                 <div className="text-right text-xs text-[#6B7A72] dark:text-[#8DA195]">
                   100% verified traveler feedback

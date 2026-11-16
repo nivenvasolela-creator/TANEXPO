@@ -8,10 +8,36 @@ export const translations: Record<Language, Record<string, string>> = {
     'act.compliant': 'Tanzania Tourism Act Compliant',
     'usd.approx': 'USD Indicative',
     'reset.demo': 'Reset Demo',
-    'tab.explorer': 'Traveler Explorer',
-    'tab.provider': 'Provider OS',
+    'tab.explorer': 'Explorer',
+    'tab.provider': 'Operator OS',
     'tab.requests': 'My Requests',
     'operating.as': 'Operating As',
+    'explore.tours': 'Explore Tours & Guides',
+    'my.requests': 'My Requests',
+    'saved': 'Saved',
+    'laws': 'TZS & Licensing Laws',
+    'nav.explore': 'Explore',
+    'nav.requests': 'Requests',
+    'nav.saved': 'Saved',
+    'nav.laws': 'Laws',
+    'nav.more': 'More',
+    'nav.signin': 'Sign In',
+
+    // Common Actions
+    'common.close': 'Close',
+    'common.cancel': 'Cancel',
+    'common.save': 'Save',
+    'common.dismiss': 'Dismiss',
+    'common.loading': 'Loading...',
+    'common.reset': 'Reset',
+
+    // PWA & Offline
+    'pwa.install': 'Install App',
+    'pwa.install_ios': 'Install on iOS',
+    'pwa.ios_title': 'Install TANEXPO on iPhone / iPad',
+    'pwa.offline': 'Offline — showing saved catalog. Reconnect to send quotes.',
+    'pwa.update_ready': 'Update ready',
+    'pwa.reload': 'Reload',
 
     // Tourist Home & Explore
     'hero.badge': 'Direct from Licensed Tanzanian Operators',
@@ -28,6 +54,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'compare': 'Compare',
     'compare.btn': 'Compare Providers',
     'saved.wishlist': 'Saved Providers',
+    'empty.operators_title': 'No operators listed yet',
+    'empty.operators_cta': 'Join as an Operator',
 
     // Destinations
     'destinations.title': 'Tanzania Destination Guides',
@@ -52,6 +80,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'provider.financials': 'Financials & Payouts',
     'provider.reviews': 'Reviews',
     'provider.profile': 'Profile & TALA',
+    'provider.add_package': 'Add Tour Package',
 
     // Financials
     'financials.title': 'Financials, Settlements & Payouts',
@@ -67,10 +96,36 @@ export const translations: Record<Language, Record<string, string>> = {
     'act.compliant': 'Inazingatia Sheria ya Utalii ya Tanzania',
     'usd.approx': 'Kiwango cha USD',
     'reset.demo': 'Rudisha Data',
-    'tab.explorer': 'Mtafutaji Utalii',
+    'tab.explorer': 'Mtafutaji',
     'tab.provider': 'Mfumo wa Mwendeshaji',
     'tab.requests': 'Maombi Yangu',
     'operating.as': 'Unaendesha Kama',
+    'explore.tours': 'Gundua Ziara & Waongozaji',
+    'my.requests': 'Maombi Yangu',
+    'saved': 'Zilizohifadhiwa',
+    'laws': 'Sheria za TZS & Leseni',
+    'nav.explore': 'Gundua',
+    'nav.requests': 'Maombi',
+    'nav.saved': 'Hifadhi',
+    'nav.laws': 'Sheria',
+    'nav.more': 'Zaidi',
+    'nav.signin': 'Ingia',
+
+    // Common Actions
+    'common.close': 'Funga',
+    'common.cancel': 'Ghairi',
+    'common.save': 'Hifadhi',
+    'common.dismiss': 'Ondoa',
+    'common.loading': 'Inapakia...',
+    'common.reset': 'Futa',
+
+    // PWA & Offline
+    'pwa.install': 'Weka App',
+    'pwa.install_ios': 'Weka kwenye iOS',
+    'pwa.ios_title': 'Weka TANEXPO kwenye iPhone / iPad',
+    'pwa.offline': 'Hakuna intaneti — tunaonyesha orodha iliyohifadhiwa.',
+    'pwa.update_ready': 'Toleo jipya lipo tayari',
+    'pwa.reload': 'Sasisha',
 
     // Tourist Home & Explore
     'hero.badge': 'Moja kwa Moja kutoka kwa Waendeshaji Wenye Leseni',
@@ -87,6 +142,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'compare': 'Linganisha',
     'compare.btn': 'Linganisha Waendeshaji',
     'saved.wishlist': 'Uliyohifadhi',
+    'empty.operators_title': 'Hakuna waendeshaji bado',
+    'empty.operators_cta': 'Jiunge kama Mwendeshaji',
 
     // Destinations
     'destinations.title': 'Mwongozo wa Maeneo Maarufu Tanzania',
@@ -111,6 +168,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'provider.financials': 'Fedha & Malipo',
     'provider.reviews': 'Maoni ya Watalii',
     'provider.profile': 'Wasifu & Leseni ya TALA',
+    'provider.add_package': 'Ongeza Kifurushi',
 
     // Financials
     'financials.title': 'Fedha, Makazi & Malipo',

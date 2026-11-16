@@ -10,6 +10,8 @@ import {
   initialTransactions
 } from '../src/data/initialData.js';
 import { hashPassword } from './auth.js';
+import { isSeedDemoCatalogEnabled } from './config.js';
+import { normalizePhone, maskPhone } from './phone.js';
 
 let db: PGlite | null = null;
 let dbPromise: Promise<PGlite> | null = null;
@@ -19,6 +21,7 @@ export async function getDb(): Promise<PGlite> {
   if (dbPromise) return dbPromise;
 
   dbPromise = (async () => {
+    const isProd = process.env.NODE_ENV === 'production';
     const dataDir = process.env.PG_DATA_DIR || path.join(process.cwd(), '.data', 'pg');
     let instance: PGlite | undefined;
     try {
@@ -30,25 +33,46 @@ export async function getDb(): Promise<PGlite> {
       const isCatalogOrDirErr =
         err?.code === '23505' ||
         msg.includes('pg_type_typname_nsp_index') ||
-        msg.includes('postmaster.pid');
+        msg.includes('postmaster.pid') ||
+        msg.includes('PG_VERSION') ||
+        msg.includes('failed to initialize') ||
+        msg.toLowerCase().includes('corrupt');
 
       await instance?.close().catch(() => {});
 
-      if (isCatalogOrDirErr && dataDir) {
-        console.warn('Recovering damaged PGlite catalog in', dataDir, msg);
+      let canRenameDir = false;
+      try {
+        canRenameDir = Boolean(isCatalogOrDirErr && dataDir && fs.existsSync(dataDir) && fs.statSync(dataDir).isDirectory());
+      } catch {
+        canRenameDir = false;
+      }
+
+      if (canRenameDir) {
+        const backupDir = `${dataDir}.corrupt-${Date.now()}`;
+        console.error(
+          `[DB CRITICAL] Damaged PGlite data directory detected (${msg}). Renaming to "${backupDir}" (preserving data, never deleting).`
+        );
         try {
-          fs.rmSync(dataDir, { recursive: true, force: true });
+          fs.renameSync(dataDir, backupDir);
           fs.mkdirSync(path.dirname(dataDir), { recursive: true });
           instance = new PGlite(dataDir);
           await initSchemaAndSeed(instance);
-        } catch (retryErr) {
-          console.warn('Fallback to in-memory PGlite due to persistent error:', retryErr);
+        } catch (retryErr: any) {
           await instance?.close().catch(() => {});
+          if (isProd) {
+            console.error('[DB FATAL] Cannot recover PGlite in production:', retryErr);
+            throw retryErr;
+          }
+          console.warn('Fallback to in-memory PGlite in non-production due to persistent error:', retryErr);
           instance = new PGlite();
           await initSchemaAndSeed(instance);
         }
       } else {
-        console.warn('Fallback to in-memory PGlite due to directory/init error:', err);
+        if (isProd) {
+          console.error('[DB FATAL] PGlite initialization failed in production:', err);
+          throw err;
+        }
+        console.warn('Fallback to in-memory PGlite in non-production due to directory/init error:', err);
         instance = new PGlite();
         await initSchemaAndSeed(instance);
       }
@@ -117,6 +141,7 @@ async function initSchemaAndSeed(database: PGlite) {
       provider_id INTEGER NOT NULL,
       tourist_user_id TEXT,
       listing_id INTEGER,
+      lead_id INTEGER,
       status TEXT NOT NULL,
       data JSONB NOT NULL
     );
@@ -142,6 +167,40 @@ async function initSchemaAndSeed(database: PGlite) {
       provider_id INTEGER NOT NULL,
       PRIMARY KEY (user_id, provider_id)
     );
+    CREATE TABLE IF NOT EXISTS whatsapp_messages (
+      id TEXT PRIMARY KEY,
+      wamid TEXT UNIQUE,
+      direction TEXT NOT NULL,
+      wa_phone TEXT NOT NULL,
+      phone_masked TEXT NOT NULL,
+      role TEXT,
+      provider_id INTEGER,
+      lead_id INTEGER,
+      body TEXT NOT NULL,
+      parsed_intent JSONB,
+      status TEXT NOT NULL DEFAULT 'received',
+      last_inbound_at TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS whatsapp_pending_otps (
+      provider_id INTEGER PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      wa_phone TEXT NOT NULL,
+      code_hash TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS notification_log (
+      id TEXT PRIMARY KEY,
+      notification_key TEXT UNIQUE NOT NULL,
+      channel TEXT NOT NULL,
+      recipient_masked TEXT NOT NULL,
+      lead_id INTEGER,
+      provider_id INTEGER,
+      sent_at TEXT NOT NULL
+    );
   `);
 
   // Idempotent migrations for existing .data/pg databases
@@ -151,15 +210,25 @@ async function initSchemaAndSeed(database: PGlite) {
     ALTER TABLE providers ADD COLUMN IF NOT EXISTS owner_user_id TEXT;
     ALTER TABLE providers ADD COLUMN IF NOT EXISTS verified BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE providers ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'application_submitted';
+    ALTER TABLE providers ADD COLUMN IF NOT EXISTS whatsapp_number TEXT;
+    ALTER TABLE providers ADD COLUMN IF NOT EXISTS whatsapp_opt_in BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE providers ADD COLUMN IF NOT EXISTS whatsapp_paused BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE providers ADD COLUMN IF NOT EXISTS whatsapp_verified_at TEXT;
 
     ALTER TABLE leads ADD COLUMN IF NOT EXISTS tourist_user_id TEXT;
 
     ALTER TABLE bookings ADD COLUMN IF NOT EXISTS tourist_user_id TEXT;
     ALTER TABLE bookings ADD COLUMN IF NOT EXISTS listing_id INTEGER;
+    ALTER TABLE bookings ADD COLUMN IF NOT EXISTS lead_id INTEGER;
 
     ALTER TABLE reviews ADD COLUMN IF NOT EXISTS tourist_user_id TEXT;
     ALTER TABLE reviews ADD COLUMN IF NOT EXISTS booking_id INTEGER;
     ALTER TABLE reviews ADD COLUMN IF NOT EXISTS booking_ref TEXT;
+
+    CREATE INDEX IF NOT EXISTS idx_providers_whatsapp_number
+      ON providers (whatsapp_number) WHERE whatsapp_number IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_phone_created
+      ON whatsapp_messages (wa_phone, created_at DESC);
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_booking_id_unique
       ON reviews (booking_id) WHERE booking_id IS NOT NULL;
@@ -167,8 +236,17 @@ async function initSchemaAndSeed(database: PGlite) {
       ON reviews (booking_ref) WHERE booking_ref IS NOT NULL;
   `);
 
-  // Invalidate any legacy sessions missing expires_at
-  await database.query(`DELETE FROM app_sessions WHERE expires_at IS NULL`);
+  // Backfill bookings.lead_id idempotently
+  await database.query(
+    `UPDATE bookings
+     SET lead_id = (data->>'leadId')::integer
+     WHERE lead_id IS NULL AND (data->>'leadId') ~ '^[0-9]+$'`
+  );
+
+  // Invalidate any legacy sessions missing expires_at or containing unhashed raw tokens
+  await database.query(
+    `DELETE FROM app_sessions WHERE expires_at IS NULL OR token !~ '^[0-9a-f]{64}$'`
+  );
 
   // Seed admin account strictly via environment variables (never hardcoded, never via API)
   const adminEmail = process.env.ADMIN_SEED_EMAIL?.trim().toLowerCase();
@@ -198,8 +276,10 @@ async function initSchemaAndSeed(database: PGlite) {
     }
   }
 
-  // Seed demo users ONLY in non-production environments and ONLY with passwords from env
-  if (process.env.NODE_ENV !== 'production') {
+  const seedDemo = isSeedDemoCatalogEnabled();
+
+  // Seed demo users ONLY in non-production environments when demo seeding is enabled and passwords come from env
+  if (process.env.NODE_ENV !== 'production' && seedDemo) {
     const demoTouristPwd = process.env.DEMO_TOURIST_PASSWORD;
     const demoProviderPwd = process.env.DEMO_PROVIDER_PASSWORD;
 
@@ -216,7 +296,7 @@ async function initSchemaAndSeed(database: PGlite) {
           [
             'usr-tourist-demo-1',
             'tourist@tanexpo.co.tz',
-            '+255 700 123 456',
+            '+255700123456',
             touristHash,
             'Sarah Jenkins',
             'tourist',
@@ -249,7 +329,7 @@ async function initSchemaAndSeed(database: PGlite) {
           [
             'usr-provider-demo-1',
             'info@kiliwildsafaris.co.tz',
-            '+255 754 882 109',
+            '+255754882109',
             providerHash,
             'Baraka Mushi',
             'provider',
@@ -278,93 +358,121 @@ async function initSchemaAndSeed(database: PGlite) {
     }
   }
 
-  // Seed public catalog: providers
-  const provCheck = await database.query<any>('SELECT COUNT(*) as count FROM providers');
-  if (Number(provCheck.rows[0]?.count || 0) === 0) {
-    for (const p of initialProviders) {
-      const ownerId = p.id === 1 && process.env.NODE_ENV !== 'production' ? 'usr-provider-demo-1' : null;
-      await database.query(
-        `INSERT INTO providers (id, category, name, owner_user_id, verified, verification_status, data)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          p.id,
-          p.category,
-          p.name,
-          ownerId,
-          Boolean(p.verified),
-          p.verified ? 'tanexpo_verified' : 'application_submitted',
-          JSON.stringify(p)
-        ]
+  // Idempotent phone normalization migration for existing users
+  const usersWithPhones = await database.query<any>(
+    'SELECT id, phone FROM users WHERE phone IS NOT NULL'
+  );
+  for (const row of usersWithPhones.rows) {
+    const norm = normalizePhone(row.phone);
+    if (norm && norm !== row.phone) {
+      const conflict = await database.query<any>(
+        'SELECT id FROM users WHERE phone = $1 AND id <> $2',
+        [norm, row.id]
       );
+      if (conflict.rows.length === 0) {
+        await database.query('UPDATE users SET phone = $1 WHERE id = $2', [norm, row.id]);
+      } else {
+        console.warn(
+          `[DB Migration] Skipped phone normalization for user ${row.id} (${maskPhone(row.phone)}) due to duplicate phone conflict.`
+        );
+      }
     }
-  } else if (process.env.NODE_ENV !== 'production') {
-    await database.query(
-      `UPDATE providers SET owner_user_id = $1 WHERE id = 1 AND owner_user_id IS NULL`,
-      ['usr-provider-demo-1']
+  }
+
+  try {
+    await database.exec(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone_unique ON users (phone) WHERE phone IS NOT NULL'
     );
+  } catch (idxErr) {
+    console.warn('[DB Migration] Could not create unique index on users.phone:', idxErr);
   }
 
-  // Seed public catalog: listings
-  const listCheck = await database.query<any>('SELECT COUNT(*) as count FROM listings');
-  if (Number(listCheck.rows[0]?.count || 0) === 0) {
-    for (const l of initialListings) {
-      await database.query(
-        'INSERT INTO listings (id, provider_id, category, title, data) VALUES ($1, $2, $3, $4, $5)',
-        [l.id, l.providerId, l.category, l.title, JSON.stringify(l)]
-      );
-    }
-  }
-
-  // Seed public catalog: reviews
-  const revCheck = await database.query<any>('SELECT COUNT(*) as count FROM reviews');
-  if (Number(revCheck.rows[0]?.count || 0) === 0) {
-    for (const r of initialReviews) {
-      await database.query(
-        'INSERT INTO reviews (id, provider_id, data) VALUES ($1, $2, $3)',
-        [r.id, r.providerId, JSON.stringify(r)]
-      );
-    }
-  }
-
-  // Seed demo leads/bookings/transactions/saved only when non-production and empty
-  if (process.env.NODE_ENV !== 'production') {
-    const leadCheck = await database.query<any>('SELECT COUNT(*) as count FROM leads');
-    if (Number(leadCheck.rows[0]?.count || 0) === 0) {
-      for (const ld of initialLeads) {
+  // Seed public catalog and demo operational records ONLY when SEED_DEMO_CATALOG is enabled
+  if (seedDemo) {
+    const provCheck = await database.query<any>('SELECT COUNT(*) as count FROM providers');
+    if (Number(provCheck.rows[0]?.count || 0) === 0) {
+      for (const p of initialProviders) {
+        const ownerId = p.id === 1 && process.env.NODE_ENV !== 'production' ? 'usr-provider-demo-1' : null;
         await database.query(
-          'INSERT INTO leads (id, provider_id, tourist_user_id, status, data) VALUES ($1, $2, $3, $4, $5)',
-          [ld.id, ld.providerId, null, ld.status, JSON.stringify(ld)]
+          `INSERT INTO providers (id, category, name, owner_user_id, verified, verification_status, data)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            p.id,
+            p.category,
+            p.name,
+            ownerId,
+            Boolean(p.verified),
+            p.verified ? 'tanexpo_verified' : 'application_submitted',
+            JSON.stringify(p)
+          ]
+        );
+      }
+    } else if (process.env.NODE_ENV !== 'production') {
+      await database.query(
+        `UPDATE providers SET owner_user_id = $1 WHERE id = 1 AND owner_user_id IS NULL`,
+        ['usr-provider-demo-1']
+      );
+    }
+
+    const listCheck = await database.query<any>('SELECT COUNT(*) as count FROM listings');
+    if (Number(listCheck.rows[0]?.count || 0) === 0) {
+      for (const l of initialListings) {
+        await database.query(
+          'INSERT INTO listings (id, provider_id, category, title, data) VALUES ($1, $2, $3, $4, $5)',
+          [l.id, l.providerId, l.category, l.title, JSON.stringify(l)]
         );
       }
     }
 
-    const bkCheck = await database.query<any>('SELECT COUNT(*) as count FROM bookings');
-    if (Number(bkCheck.rows[0]?.count || 0) === 0) {
-      for (const b of initialBookings) {
-        const touristUid = b.id === 1001 ? 'usr-tourist-demo-1' : null;
+    const revCheck = await database.query<any>('SELECT COUNT(*) as count FROM reviews');
+    if (Number(revCheck.rows[0]?.count || 0) === 0) {
+      for (const r of initialReviews) {
         await database.query(
-          'INSERT INTO bookings (id, provider_id, tourist_user_id, status, data) VALUES ($1, $2, $3, $4, $5)',
-          [b.id, b.providerId, touristUid, b.status, JSON.stringify(b)]
+          'INSERT INTO reviews (id, provider_id, data) VALUES ($1, $2, $3)',
+          [r.id, r.providerId, JSON.stringify(r)]
         );
       }
     }
 
-    const txCheck = await database.query<any>('SELECT COUNT(*) as count FROM transactions');
-    if (Number(txCheck.rows[0]?.count || 0) === 0) {
-      for (const tx of initialTransactions) {
+    if (process.env.NODE_ENV !== 'production') {
+      const leadCheck = await database.query<any>('SELECT COUNT(*) as count FROM leads');
+      if (Number(leadCheck.rows[0]?.count || 0) === 0) {
+        for (const ld of initialLeads) {
+          await database.query(
+            'INSERT INTO leads (id, provider_id, tourist_user_id, status, data) VALUES ($1, $2, $3, $4, $5)',
+            [ld.id, ld.providerId, null, ld.status, JSON.stringify(ld)]
+          );
+        }
+      }
+
+      const bkCheck = await database.query<any>('SELECT COUNT(*) as count FROM bookings');
+      if (Number(bkCheck.rows[0]?.count || 0) === 0) {
+        for (const b of initialBookings) {
+          const touristUid = b.id === 1001 ? 'usr-tourist-demo-1' : null;
+          await database.query(
+            'INSERT INTO bookings (id, provider_id, tourist_user_id, status, data) VALUES ($1, $2, $3, $4, $5)',
+            [b.id, b.providerId, touristUid, b.status, JSON.stringify(b)]
+          );
+        }
+      }
+
+      const txCheck = await database.query<any>('SELECT COUNT(*) as count FROM transactions');
+      if (Number(txCheck.rows[0]?.count || 0) === 0) {
+        for (const tx of initialTransactions) {
+          await database.query(
+            'INSERT INTO transactions (id, booking_id, provider_id, data) VALUES ($1, $2, $3, $4)',
+            [tx.id, tx.bookingId, tx.providerId, JSON.stringify(tx)]
+          );
+        }
+      }
+
+      const savedCheck = await database.query<any>('SELECT COUNT(*) as count FROM saved_providers');
+      if (Number(savedCheck.rows[0]?.count || 0) === 0) {
         await database.query(
-          'INSERT INTO transactions (id, booking_id, provider_id, data) VALUES ($1, $2, $3, $4)',
-          [tx.id, tx.bookingId, tx.providerId, JSON.stringify(tx)]
+          'INSERT INTO saved_providers (user_id, provider_id) VALUES ($1, 1), ($1, 2), ($1, 3)',
+          ['usr-tourist-demo-1']
         );
       }
-    }
-
-    const savedCheck = await database.query<any>('SELECT COUNT(*) as count FROM saved_providers');
-    if (Number(savedCheck.rows[0]?.count || 0) === 0) {
-      await database.query(
-        'INSERT INTO saved_providers (user_id, provider_id) VALUES ($1, 1), ($1, 2), ($1, 3)',
-        ['usr-tourist-demo-1']
-      );
     }
   }
 }

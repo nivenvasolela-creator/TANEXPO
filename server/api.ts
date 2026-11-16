@@ -1,17 +1,28 @@
 import express, { Request, Response } from 'express';
 import crypto from 'crypto';
+import zlib from 'zlib';
 import { getDb } from './db.js';
 import {
   hashPassword,
   verifyPassword,
   generateToken,
+  hashSessionToken,
   getSessionExpiryIso,
   getAuthUser,
   requireAuth,
   requireRole,
   loginRateLimiter,
+  loginAccountRateLimiter,
   registerRateLimiter
 } from './auth.js';
+import {
+  getPaymentsMode,
+  isSeedDemoCatalogEnabled,
+  isWhatsAppEnabled,
+  getDarTodayStr
+} from './config.js';
+import { normalizePhone } from './phone.js';
+import { whatsappRouter, notifyOperatorNewLead } from './whatsapp.js';
 import {
   initialProviders,
   initialListings,
@@ -74,6 +85,60 @@ function getUserProviderId(user: NonNullable<Request['authUser']>): number | nul
   return parsePositiveInt(pid);
 }
 
+function isFutureBookingDate(dateStr: unknown): boolean {
+  if (typeof dateStr !== 'string') return false;
+  const trimmed = dateStr.trim();
+  if (!trimmed) return false;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed > getDarTodayStr();
+  }
+  const parsedMs = Date.parse(trimmed);
+  if (Number.isNaN(parsedMs)) return false;
+  const darTodayEndMs = Date.parse(`${getDarTodayStr()}T23:59:59+03:00`);
+  return parsedMs > darTodayEndMs;
+}
+
+async function getViewerPermittedProviderIds(req: Request): Promise<Set<number> | 'all'> {
+  const authUser = await getAuthUser(req);
+  if (!authUser) return new Set();
+  if (authUser.role === 'admin') return 'all';
+
+  const permitted = new Set<number>();
+  if (authUser.role === 'provider') {
+    const pid = getUserProviderId(authUser);
+    if (pid) permitted.add(pid);
+  }
+  if (authUser.role === 'tourist') {
+    const db = await getDb();
+    const res = await db.query<any>(
+      `SELECT DISTINCT provider_id FROM bookings WHERE tourist_user_id = $1 AND status <> 'Cancelled'`,
+      [authUser.id]
+    );
+    for (const row of res.rows) {
+      const pid = Number(row.provider_id);
+      if (Number.isInteger(pid) && pid > 0) permitted.add(pid);
+    }
+  }
+  return permitted;
+}
+
+function sanitizeProviderForViewer(provider: any, permittedIds: Set<number> | 'all'): any {
+  if (!provider || typeof provider !== 'object') return provider;
+  const showAfterBooking = provider.showContactAfterBooking !== false;
+  if (!showAfterBooking) {
+    return { ...provider, showContactAfterBooking: false };
+  }
+  if (permittedIds === 'all' || permittedIds.has(Number(provider.id))) {
+    return { ...provider, showContactAfterBooking: true };
+  }
+  return {
+    ...provider,
+    phone: '',
+    email: '',
+    showContactAfterBooking: true
+  };
+}
+
 // --- AUTHENTICATION ROUTES ---
 
 // Register Tourist or Provider (never Admin)
@@ -102,7 +167,16 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
     }
 
     const normalizedEmail = typeof email === 'string' && email.trim() ? email.trim().toLowerCase() : null;
-    const normalizedPhone = typeof phone === 'string' && phone.trim() ? phone.trim() : null;
+    const rawPhone = typeof phone === 'string' && phone.trim() ? phone.trim() : null;
+    let normalizedPhone: string | null = null;
+
+    if (rawPhone) {
+      normalizedPhone = normalizePhone(rawPhone);
+      if (!normalizedPhone) {
+        res.status(400).json({ error: 'Invalid phone number format. Use +255XXXXXXXXX or 07XXXXXXXX.' });
+        return;
+      }
+    }
 
     if (!normalizedEmail && !normalizedPhone) {
       res.status(400).json({ error: 'Email or phone number is required' });
@@ -111,11 +185,6 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
 
     if (normalizedEmail && !isValidEmail(normalizedEmail)) {
       res.status(400).json({ error: 'Invalid email format' });
-      return;
-    }
-
-    if (normalizedPhone && normalizedPhone.length > 40) {
-      res.status(400).json({ error: 'Phone number is too long' });
       return;
     }
 
@@ -150,6 +219,8 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
     let sanitizedTouristProfile = null;
     let sanitizedProviderProfile = null;
 
+    const legalConsentAt = (req.body as any)?.acceptedLegalTerms === true ? createdAt : undefined;
+
     if (role === 'tourist') {
       const tp = touristProfile && typeof touristProfile === 'object' ? touristProfile : {};
       sanitizedTouristProfile = {
@@ -161,6 +232,7 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
           ? tp.travelParty
           : 'couple',
         interests: Array.isArray(tp.interests) ? tp.interests.slice(0, 10) : ['safari'],
+        ...(legalConsentAt ? { legalConsentAt } : {}),
         ...(tp.budgetPreference && ['budget', 'midrange', 'luxury'].includes(tp.budgetPreference)
           ? { budgetPreference: tp.budgetPreference }
           : {})
@@ -179,14 +251,18 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
         ? pp.talaLicense.trim()
         : undefined;
 
-      // Server-generated unique provider ID; ignore any client-supplied providerId
+      // Server-generated unique provider ID (>= 100); ignore any client-supplied providerId
       const nextIdRes = await db.query<any>(
-        'SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM providers'
+        'SELECT GREATEST(COALESCE(MAX(id), 0) + 1, 100) AS next_id FROM providers'
       );
-      const pId = Number(nextIdRes.rows[0]?.next_id || 1);
+      const pId = Number(nextIdRes.rows[0]?.next_id || 100);
 
       // New providers ALWAYS start unverified; only admin can verify
       const initialVerificationStatus = talaLicense ? 'application_submitted' : 'incomplete';
+
+      const showContactAfterBooking = pp.showContactAfterBooking === false ? false : true;
+      const publicPhone = isNonEmptyString(pp.publicPhone, 40) ? (normalizePhone(pp.publicPhone) || pp.publicPhone.trim()) : '';
+      const publicEmail = isNonEmptyString(pp.publicEmail, 120) && isValidEmail(pp.publicEmail) ? pp.publicEmail.trim().toLowerCase() : '';
 
       sanitizedProviderProfile = {
         businessName,
@@ -197,8 +273,9 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
         primaryCategory: category,
         location,
         region,
-        phone: isNonEmptyString(pp.phone, 40) ? pp.phone.trim() : normalizedPhone || '',
-        email: isNonEmptyString(pp.email, 120) ? pp.email.trim() : normalizedEmail || '',
+        phone: publicPhone,
+        email: publicEmail,
+        showContactAfterBooking,
         talaLicense,
         verificationStatus: initialVerificationStatus,
         setupCompleteness: talaLicense ? 85 : 65,
@@ -208,6 +285,7 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
           Array.isArray(pp.languages) && pp.languages.length > 0
             ? pp.languages.filter((l: unknown) => typeof l === 'string').slice(0, 10)
             : ['English', 'Swahili'],
+        ...(legalConsentAt ? { legalConsentAt } : {}),
         providerId: pId
       };
 
@@ -227,8 +305,9 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
         about:
           sanitizedProviderProfile.about ||
           `Welcome to ${businessName}. Licensed Tanzanian tourism operator.`,
-        phone: sanitizedProviderProfile.phone,
-        email: sanitizedProviderProfile.email,
+        phone: publicPhone,
+        email: publicEmail,
+        showContactAfterBooking,
         establishedYear: new Date().getFullYear(),
         badges: [
           'Newly Registered',
@@ -269,10 +348,11 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
     );
 
     const token = generateToken();
+    const tokenHash = hashSessionToken(token);
     const expiresAt = getSessionExpiryIso();
     await db.query(
       'INSERT INTO app_sessions (token, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)',
-      [token, userId, createdAt, expiresAt]
+      [tokenHash, userId, createdAt, expiresAt]
     );
 
     const user = {
@@ -288,13 +368,13 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req: Request, res: 
 
     res.status(201).json({ token, user });
   } catch (err: any) {
-    console.error('Error in /api/auth/register:', err);
+    console.error('Error in /api/auth/register:', err?.message || 'unknown error');
     res.status(500).json({ error: 'Registration failed' });
   }
 });
 
 // Login with email/phone + required password
-apiRouter.post('/auth/login', loginRateLimiter, async (req: Request, res: Response) => {
+apiRouter.post('/auth/login', loginRateLimiter, loginAccountRateLimiter, async (req: Request, res: Response) => {
   try {
     const { emailOrPhone, password } = req.body ?? {};
 
@@ -305,12 +385,26 @@ apiRouter.post('/auth/login', loginRateLimiter, async (req: Request, res: Respon
 
     const db = await getDb();
     const trimmed = emailOrPhone.trim();
-    const identifier = trimmed.toLowerCase();
+    const isEmailInput = trimmed.includes('@');
+    let userRes;
 
-    const userRes = await db.query<any>(
-      'SELECT * FROM users WHERE LOWER(email) = $1 OR phone = $2',
-      [identifier, trimmed]
-    );
+    if (isEmailInput) {
+      userRes = await db.query<any>(
+        'SELECT * FROM users WHERE LOWER(email) = $1',
+        [trimmed.toLowerCase()]
+      );
+    } else {
+      const normalizedPhone = normalizePhone(trimmed);
+      if (!normalizedPhone) {
+        await verifyPassword(password, null);
+        res.status(401).json({ error: 'Invalid credentials' });
+        return;
+      }
+      userRes = await db.query<any>(
+        'SELECT * FROM users WHERE phone = $1',
+        [normalizedPhone]
+      );
+    }
 
     if (!userRes.rows.length) {
       // Timing-safe dummy check
@@ -333,11 +427,12 @@ apiRouter.post('/auth/login', loginRateLimiter, async (req: Request, res: Respon
     }
 
     const token = generateToken();
+    const tokenHash = hashSessionToken(token);
     const nowIso = new Date().toISOString();
     const expiresAt = getSessionExpiryIso();
     await db.query(
       'INSERT INTO app_sessions (token, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)',
-      [token, row.id, nowIso, expiresAt]
+      [tokenHash, row.id, nowIso, expiresAt]
     );
 
     const user = {
@@ -353,7 +448,7 @@ apiRouter.post('/auth/login', loginRateLimiter, async (req: Request, res: Respon
 
     res.json({ token, user });
   } catch (err: any) {
-    console.error('Error in /api/auth/login:', err);
+    console.error('Error in /api/auth/login:', err?.message || 'unknown error');
     res.status(500).json({ error: 'Login failed' });
   }
 });
@@ -381,7 +476,7 @@ apiRouter.post('/auth/logout', async (req: Request, res: Response) => {
       const token = authHeader.slice('Bearer '.length).trim();
       if (token) {
         const db = await getDb();
-        await db.query('DELETE FROM app_sessions WHERE token = $1', [token]);
+        await db.query('DELETE FROM app_sessions WHERE token = $1', [hashSessionToken(token)]);
       }
     }
     res.json({ success: true });
@@ -440,45 +535,179 @@ apiRouter.put('/auth/profile', requireAuth, async (req: Request, res: Response) 
   }
 });
 
-// --- PUBLIC CATALOG ENDPOINTS (Guest-Accessible) ---
+// Delete / anonymize authenticated user's own account (Tanzania PDPA erasure support)
+apiRouter.delete('/auth/account', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const authUser = req.authUser!;
+    if (authUser.role === 'admin') {
+      res.status(403).json({ error: 'Admin accounts cannot be deleted via self-service' });
+      return;
+    }
 
-apiRouter.get('/catalog', async (_req: Request, res: Response) => {
+    const password = (req.body as any)?.password;
+    if (typeof password !== 'string' || !password) {
+      res.status(400).json({ error: 'Current password confirmation is required to delete your account' });
+      return;
+    }
+
+    const db = await getDb();
+    const userRes = await db.query<any>('SELECT id, password_hash FROM users WHERE id = $1', [authUser.id]);
+    if (!userRes.rows.length) {
+      res.status(404).json({ error: 'Account not found' });
+      return;
+    }
+
+    const { valid } = await verifyPassword(password, userRes.rows[0].password_hash);
+    if (!valid) {
+      res.status(401).json({ error: 'Incorrect password' });
+      return;
+    }
+
+    await db.exec('BEGIN');
+    try {
+      await db.query('DELETE FROM app_sessions WHERE user_id = $1', [authUser.id]);
+      await db.query('DELETE FROM saved_providers WHERE user_id = $1', [authUser.id]);
+
+      if (authUser.role === 'provider') {
+        const pid = getUserProviderId(authUser);
+        if (pid) {
+          const pRes = await db.query<any>('SELECT data FROM providers WHERE id = $1', [pid]);
+          if (pRes.rows.length) {
+            const cleaned = {
+              ...pRes.rows[0].data,
+              name: 'Closed Operator',
+              phone: '',
+              email: '',
+              about: 'This operator account has been closed.',
+              showContactAfterBooking: true
+            };
+            await db.query(
+              'UPDATE providers SET name = $1, owner_user_id = NULL, verified = FALSE, data = $2 WHERE id = $3',
+              ['Closed Operator', JSON.stringify(cleaned), pid]
+            );
+          }
+          const lRes = await db.query<any>('SELECT id, data FROM listings WHERE provider_id = $1', [pid]);
+          for (const row of lRes.rows) {
+            const inactiveListing = { ...row.data, active: false };
+            await db.query('UPDATE listings SET data = $1 WHERE id = $2', [JSON.stringify(inactiveListing), row.id]);
+          }
+        }
+      }
+
+      // Remove unbooked leads for this user; anonymize booked leads, bookings, and reviews
+      await db.query("DELETE FROM leads WHERE tourist_user_id = $1 AND status <> 'Booked'", [authUser.id]);
+
+      const bookedLeads = await db.query<any>('SELECT id, data FROM leads WHERE tourist_user_id = $1', [authUser.id]);
+      for (const row of bookedLeads.rows) {
+        const anonLead = {
+          ...row.data,
+          touristName: 'Deleted User',
+          touristContact: ''
+        };
+        await db.query('UPDATE leads SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
+          JSON.stringify(anonLead),
+          row.id
+        ]);
+      }
+
+      const userBookings = await db.query<any>('SELECT id, data FROM bookings WHERE tourist_user_id = $1', [authUser.id]);
+      for (const row of userBookings.rows) {
+        const anonBooking = {
+          ...row.data,
+          touristName: 'Deleted User',
+          touristContact: ''
+        };
+        await db.query('UPDATE bookings SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
+          JSON.stringify(anonBooking),
+          row.id
+        ]);
+      }
+
+      const userReviews = await db.query<any>('SELECT id, data FROM reviews WHERE tourist_user_id = $1', [authUser.id]);
+      for (const row of userReviews.rows) {
+        const anonReview = {
+          ...row.data,
+          touristName: 'Former Traveler'
+        };
+        await db.query('UPDATE reviews SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
+          JSON.stringify(anonReview),
+          row.id
+        ]);
+      }
+
+      await db.query('DELETE FROM users WHERE id = $1', [authUser.id]);
+      await db.exec('COMMIT');
+    } catch (txErr) {
+      await db.exec('ROLLBACK').catch(() => {});
+      throw txErr;
+    }
+
+    res.json({ success: true, message: 'Account deleted and personal data removed' });
+  } catch (err: any) {
+    console.error('Error in DELETE /api/auth/account:', err?.message || 'unknown error');
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
+// --- PUBLIC CONFIG, HEALTH & CATALOG ENDPOINTS ---
+
+apiRouter.get('/config', (_req: Request, res: Response) => {
+  res.json({
+    paymentsMode: getPaymentsMode(),
+    seedDemoCatalog: isSeedDemoCatalogEnabled(),
+    whatsappEnabled: isWhatsAppEnabled()
+  });
+});
+
+apiRouter.get('/health', async (_req: Request, res: Response) => {
   try {
     const db = await getDb();
-    const [providersRes, listingsRes, reviewsRes] = await Promise.all([
+    await db.query('SELECT 1');
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: 'error' });
+  }
+});
+
+apiRouter.get('/catalog', async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    const [providersRes, listingsRes, reviewsRes, permittedIds] = await Promise.all([
       db.query<any>('SELECT data FROM providers ORDER BY id ASC'),
       db.query<any>('SELECT data FROM listings ORDER BY id ASC'),
-      db.query<any>('SELECT data FROM reviews ORDER BY id DESC')
+      db.query<any>('SELECT data FROM reviews ORDER BY id DESC'),
+      getViewerPermittedProviderIds(req)
     ]);
 
     res.json({
-      providers: providersRes.rows.map((r) => r.data),
+      providers: providersRes.rows.map((r) => sanitizeProviderForViewer(r.data, permittedIds)),
       listings: listingsRes.rows.map((r) => r.data),
       reviews: reviewsRes.rows.map((r) => r.data)
     });
   } catch (err: any) {
-    console.error('Error fetching catalog:', err);
+    console.error('Error fetching catalog:', err?.message || 'unknown error');
     res.status(500).json({ error: 'Failed to fetch catalog' });
   }
 });
 
 // Keep /state strictly scoped to public catalog data (no private leads/bookings/transactions/saved)
-apiRouter.get('/state', async (_req: Request, res: Response) => {
+apiRouter.get('/state', async (req: Request, res: Response) => {
   try {
     const db = await getDb();
-    const [providersRes, listingsRes, reviewsRes] = await Promise.all([
+    const [providersRes, listingsRes, reviewsRes, permittedIds] = await Promise.all([
       db.query<any>('SELECT data FROM providers ORDER BY id ASC'),
       db.query<any>('SELECT data FROM listings ORDER BY id ASC'),
-      db.query<any>('SELECT data FROM reviews ORDER BY id DESC')
+      db.query<any>('SELECT data FROM reviews ORDER BY id DESC'),
+      getViewerPermittedProviderIds(req)
     ]);
 
     res.json({
-      providers: providersRes.rows.map((r) => r.data),
+      providers: providersRes.rows.map((r) => sanitizeProviderForViewer(r.data, permittedIds)),
       listings: listingsRes.rows.map((r) => r.data),
       reviews: reviewsRes.rows.map((r) => r.data)
     });
   } catch (err: any) {
-    console.error('Error fetching state:', err);
+    console.error('Error fetching state:', err?.message || 'unknown error');
     res.status(500).json({ error: 'Failed to fetch catalog state' });
   }
 });
@@ -539,9 +768,19 @@ apiRouter.put('/users/:id', requireAuth, async (req: Request, res: Response) => 
       res.status(400).json({ error: 'Invalid email address' });
       return;
     }
-    if (!isOptionalString(phone, 40)) {
-      res.status(400).json({ error: 'Invalid phone number' });
-      return;
+
+    let nextNormalizedPhone: string | null | undefined = undefined;
+    if (phone !== undefined) {
+      if (phone === null || phone === '') {
+        nextNormalizedPhone = null;
+      } else {
+        const parsed = normalizePhone(phone);
+        if (!parsed) {
+          res.status(400).json({ error: 'Invalid phone number format' });
+          return;
+        }
+        nextNormalizedPhone = parsed;
+      }
     }
 
     const db = await getDb();
@@ -551,6 +790,17 @@ apiRouter.put('/users/:id', requireAuth, async (req: Request, res: Response) => 
       return;
     }
     const existingRow = existingRes.rows[0];
+
+    if (nextNormalizedPhone) {
+      const phoneConflict = await db.query<any>(
+        'SELECT id FROM users WHERE phone = $1 AND id <> $2',
+        [nextNormalizedPhone, id]
+      );
+      if (phoneConflict.rows.length > 0) {
+        res.status(409).json({ error: 'An account with this phone number already exists' });
+        return;
+      }
+    }
 
     let nextTouristProfile = existingRow.tourist_profile;
     if (touristProfile !== undefined) {
@@ -579,18 +829,21 @@ apiRouter.put('/users/:id', requireAuth, async (req: Request, res: Response) => 
       };
     }
 
+    const nextEmail = email !== undefined ? (email ? email.trim().toLowerCase() : null) : existingRow.email;
+    const finalPhone = nextNormalizedPhone !== undefined ? nextNormalizedPhone : existingRow.phone;
+
     await db.query(
       `UPDATE users
        SET name = COALESCE($1, name),
-           email = COALESCE($2, email),
-           phone = COALESCE($3, phone),
+           email = $2,
+           phone = $3,
            tourist_profile = $4,
            provider_profile = $5
        WHERE id = $6`,
       [
         name ? name.trim() : null,
-        email ? email.trim().toLowerCase() : null,
-        phone !== undefined ? (phone ? String(phone).trim() : null) : null,
+        nextEmail,
+        finalPhone,
         nextTouristProfile ? JSON.stringify(nextTouristProfile) : null,
         nextProviderProfile ? JSON.stringify(nextProviderProfile) : null,
         id
@@ -622,11 +875,14 @@ apiRouter.put('/users/:id', requireAuth, async (req: Request, res: Response) => 
 
 // --- PROVIDER ENTITY REST ENDPOINTS ---
 
-apiRouter.get('/providers', async (_req: Request, res: Response) => {
+apiRouter.get('/providers', async (req: Request, res: Response) => {
   try {
     const db = await getDb();
-    const result = await db.query<any>('SELECT data FROM providers ORDER BY id ASC');
-    res.json({ providers: result.rows.map((r) => r.data) });
+    const [result, permittedIds] = await Promise.all([
+      db.query<any>('SELECT data FROM providers ORDER BY id ASC'),
+      getViewerPermittedProviderIds(req)
+    ]);
+    res.json({ providers: result.rows.map((r) => sanitizeProviderForViewer(r.data, permittedIds)) });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch providers' });
   }
@@ -640,12 +896,15 @@ apiRouter.get('/providers/:id', async (req: Request, res: Response) => {
       return;
     }
     const db = await getDb();
-    const result = await db.query<any>('SELECT data FROM providers WHERE id = $1', [id]);
+    const [result, permittedIds] = await Promise.all([
+      db.query<any>('SELECT data FROM providers WHERE id = $1', [id]),
+      getViewerPermittedProviderIds(req)
+    ]);
     if (!result.rows.length) {
       res.status(404).json({ error: 'Provider not found' });
       return;
     }
-    res.json({ provider: result.rows[0].data });
+    res.json({ provider: sanitizeProviderForViewer(result.rows[0].data, permittedIds) });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch provider' });
   }
@@ -688,6 +947,18 @@ apiRouter.post(
       const verified = isAdmin ? Boolean(body.verified) : false;
       const verificationStatus = verified ? 'tanexpo_verified' : 'application_submitted';
 
+      const showContactAfterBooking = body.showContactAfterBooking === false ? false : true;
+      const publicPhone = isNonEmptyString(body.publicPhone, 40)
+        ? body.publicPhone.trim()
+        : isNonEmptyString(body.phone, 40)
+        ? body.phone.trim()
+        : '';
+      const publicEmail = isNonEmptyString(body.publicEmail, 140)
+        ? body.publicEmail.trim()
+        : isNonEmptyString(body.email, 140)
+        ? body.email.trim()
+        : '';
+
       const provider = {
         id,
         category: body.category,
@@ -708,8 +979,9 @@ apiRouter.post(
           ? body.languages.filter((l: unknown) => typeof l === 'string').slice(0, 10)
           : ['English', 'Swahili'],
         about: isNonEmptyString(body.about, 2500) ? body.about.trim() : '',
-        phone: isNonEmptyString(body.phone, 40) ? body.phone.trim() : '',
-        email: isNonEmptyString(body.email, 140) ? body.email.trim() : '',
+        phone: publicPhone,
+        email: publicEmail,
+        showContactAfterBooking,
         establishedYear: Number(body.establishedYear) || new Date().getFullYear(),
         fleetInfo: isNonEmptyString(body.fleetInfo, 400) ? body.fleetInfo.trim() : undefined,
         badges: verified ? ['TALA Licensed', 'Verified Operator'] : ['Newly Registered', 'Verification Pending'],
@@ -788,6 +1060,19 @@ async function handleUpdateProvider(req: Request, res: Response) {
       ? 'tanexpo_verified'
       : row.verification_status || 'application_submitted';
 
+    const nextPhone =
+      body.publicPhone !== undefined
+        ? (typeof body.publicPhone === 'string' ? body.publicPhone.trim().slice(0, 40) : existing.phone)
+        : body.phone !== undefined
+        ? (typeof body.phone === 'string' ? body.phone.trim().slice(0, 40) : existing.phone)
+        : existing.phone;
+    const nextEmail =
+      body.publicEmail !== undefined
+        ? (typeof body.publicEmail === 'string' ? body.publicEmail.trim().slice(0, 140) : existing.email)
+        : body.email !== undefined
+        ? (typeof body.email === 'string' ? body.email.trim().slice(0, 140) : existing.email)
+        : existing.email;
+
     const updatedProvider = {
       ...existing,
       ...(body.name !== undefined ? { name: body.name.trim() } : {}),
@@ -796,8 +1081,11 @@ async function handleUpdateProvider(req: Request, res: Response) {
       ...(isNonEmptyString(body.location, 120) ? { location: body.location.trim() } : {}),
       ...(isNonEmptyString(body.region, 140) ? { region: body.region.trim() } : {}),
       ...(isNonEmptyString(body.talaLicense, 80) ? { talaLicense: body.talaLicense.trim() } : {}),
-      ...(isNonEmptyString(body.phone, 40) ? { phone: body.phone.trim() } : {}),
-      ...(isNonEmptyString(body.email, 140) ? { email: body.email.trim() } : {}),
+      phone: nextPhone,
+      email: nextEmail,
+      ...(typeof body.showContactAfterBooking === 'boolean'
+        ? { showContactAfterBooking: body.showContactAfterBooking }
+        : {}),
       ...(body.about !== undefined && typeof body.about === 'string' && body.about.length <= 2500
         ? { about: body.about.trim() }
         : {}),
@@ -1309,6 +1597,8 @@ apiRouter.post(
         [id, newLead.providerId, authUser.id, newLead.status, JSON.stringify(newLead)]
       );
 
+      void notifyOperatorNewLead(newLead.providerId, newLead);
+
       res.status(201).json({ success: true, lead: newLead });
     } catch (err: any) {
       res.status(500).json({ error: 'Failed to create lead' });
@@ -1696,13 +1986,14 @@ apiRouter.post(
       };
 
       await db.query(
-        `INSERT INTO bookings (id, provider_id, tourist_user_id, listing_id, status, data)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+        `INSERT INTO bookings (id, provider_id, tourist_user_id, listing_id, lead_id, status, data)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           bookingId,
           newBooking.providerId,
           touristUserId,
           listingId,
+          leadRow ? leadRow.id : null,
           newBooking.status,
           JSON.stringify(newBooking)
         ]
@@ -1771,6 +2062,13 @@ apiRouter.put('/bookings/:id', requireAuth, async (req: Request, res: Response) 
         res.status(403).json({ error: 'Tourists cannot modify driver or vehicle logistics' });
         return;
       }
+    }
+
+    if (body.status === 'Completed' && isFutureBookingDate(row.data?.date)) {
+      res.status(409).json({
+        error: 'Cannot mark a future trip as Completed before its departure date'
+      });
+      return;
     }
 
     const updatedBooking = {
@@ -1842,6 +2140,10 @@ apiRouter.get('/transactions', requireAuth, async (req: Request, res: Response) 
 
 apiRouter.post('/transactions', requireAuth, async (req: Request, res: Response) => {
   try {
+    if (getPaymentsMode() === 'live') {
+      res.status(403).json({ error: 'Client-recorded transactions are disabled in live payments mode' });
+      return;
+    }
     const authUser = req.authUser!;
     const body = req.body ?? {};
     const bookingId = parsePositiveInt(body.bookingId);
@@ -2270,6 +2572,58 @@ apiRouter.post(
     }
   }
 );
+
+// --- ADMIN-ONLY BACKUP EXPORT (Excludes password_hash and app_sessions) ---
+
+apiRouter.get(
+  '/admin/backup',
+  requireAuth,
+  requireRole('admin'),
+  async (_req: Request, res: Response) => {
+    try {
+      const db = await getDb();
+      const [usersRes, providersRes, listingsRes, leadsRes, bookingsRes, reviewsRes, txRes, savedRes] =
+        await Promise.all([
+          db.query<any>(
+            'SELECT id, email, phone, name, role, tourist_profile, provider_profile, created_at FROM users ORDER BY created_at ASC'
+          ),
+          db.query<any>('SELECT id, category, name, owner_user_id, verified, verification_status, data FROM providers ORDER BY id ASC'),
+          db.query<any>('SELECT id, provider_id, category, title, data FROM listings ORDER BY id ASC'),
+          db.query<any>('SELECT id, provider_id, tourist_user_id, status, data FROM leads ORDER BY id ASC'),
+          db.query<any>('SELECT id, provider_id, tourist_user_id, listing_id, lead_id, status, data FROM bookings ORDER BY id ASC'),
+          db.query<any>('SELECT id, provider_id, tourist_user_id, booking_id, booking_ref, data FROM reviews ORDER BY id ASC'),
+          db.query<any>('SELECT id, booking_id, provider_id, data FROM transactions ORDER BY id ASC'),
+          db.query<any>('SELECT user_id, provider_id FROM saved_providers ORDER BY user_id, provider_id')
+        ]);
+
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        schemaVersion: 1,
+        tables: {
+          users: usersRes.rows,
+          providers: providersRes.rows,
+          listings: listingsRes.rows,
+          leads: leadsRes.rows,
+          bookings: bookingsRes.rows,
+          reviews: reviewsRes.rows,
+          transactions: txRes.rows,
+          saved_providers: savedRes.rows
+        }
+      };
+
+      const gz = zlib.gzipSync(Buffer.from(JSON.stringify(payload), 'utf8'));
+      const filename = `tanexpo-backup-${getDarTodayStr()}.json.gz`;
+      res.setHeader('Content-Type', 'application/gzip');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(gz);
+    } catch (err: any) {
+      console.error('Admin backup export failed:', err?.message || 'unknown error');
+      res.status(500).json({ error: 'Backup export failed' });
+    }
+  }
+);
+
+apiRouter.use('/whatsapp', whatsappRouter);
 
 apiRouter.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'API endpoint not found' });

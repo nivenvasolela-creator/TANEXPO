@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 import { 
   X, 
   Send, 
@@ -11,7 +12,6 @@ import {
   User, 
   ShieldCheck, 
   CheckCircle2, 
-  Sparkles,
   ArrowRight
 } from 'lucide-react';
 
@@ -36,11 +36,13 @@ export const BookingRequestModal: React.FC = () => {
   const [message, setMessage] = useState('');
   const [submittedLeadId, setSubmittedLeadId] = useState<number | null>(null);
 
+  const dialogRef = useModalAccessibility(Boolean(inquiryPackage), () => setInquiryPackage(null));
+
   // Sync if user logs in while modal is open
   React.useEffect(() => {
     if (currentUser && !name) {
       setName(currentUser.name);
-      setContact(currentUser.email || currentUser.phone || '');
+      setContact(currentUser.email || currentUser?.phone || '');
     }
   }, [currentUser]);
 
@@ -94,21 +96,32 @@ export const BookingRequestModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
-      <div className="relative bg-white dark:bg-[#0D1511] rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Request Quote from ${provider.name}`}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-white dark:bg-[#0D1511] rounded-t-3xl sm:rounded-3xl max-w-xl w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors focus:outline-hidden"
+      >
         {/* Header */}
-        <div className="bg-[#FAF7F2] dark:bg-[#152019] p-5 sm:p-6 border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between">
-          <div>
+        <div className="bg-[#FAF7F2] dark:bg-[#152019] p-5 sm:p-6 border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between gap-3 shrink-0">
+          <div className="min-w-0">
             <span className="text-[10px] uppercase font-bold tracking-wider text-[#D97843] block">
               Direct Tour Request
             </span>
-            <h3 className="font-serif text-xl font-bold text-[#284435] dark:text-[#EDF3EF]">
+            <h3 className="font-serif text-lg sm:text-xl font-bold text-[#284435] dark:text-[#EDF3EF] truncate">
               Request Quote from {provider.name}
             </h3>
           </div>
           <button
+            type="button"
             onClick={() => setInquiryPackage(null)}
-            className="w-8 h-8 rounded-full bg-white dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#6B7A72] dark:text-[#8DA195] flex items-center justify-center border border-[#E8DFC9] dark:border-[#2A3E31] cursor-pointer transition-colors"
+            aria-label="Close quote request modal"
+            className="min-h-[40px] min-w-[40px] rounded-full bg-white dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#6B7A72] dark:text-[#8DA195] flex items-center justify-center border border-[#E8DFC9] dark:border-[#2A3E31] cursor-pointer transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -116,7 +129,7 @@ export const BookingRequestModal: React.FC = () => {
 
         {submittedLeadId ? (
           /* Confirmation Success State */
-          <div className="p-8 text-center space-y-5">
+          <div className="p-6 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-8 overflow-y-auto text-center space-y-5">
             <div className="w-16 h-16 rounded-full bg-[#EAF3EC] dark:bg-emerald-950/50 text-[#284435] flex items-center justify-center mx-auto text-2xl border border-[#CDE3D4] dark:border-emerald-800/80">
               <CheckCircle2 className="w-9 h-9 text-emerald-600 dark:text-emerald-400" />
             </div>
@@ -163,7 +176,7 @@ export const BookingRequestModal: React.FC = () => {
           </div>
         ) : (
           /* Form State */
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 overflow-y-auto space-y-4">
             {/* Selected Package summary pill */}
             <div className="bg-[#FAF7F2] dark:bg-[#152019] p-3 rounded-xl border border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between text-xs">
               <div>

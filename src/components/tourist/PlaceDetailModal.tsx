@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 import { 
   X, 
-  MapPin, 
   Calendar, 
   Coins, 
   CheckCircle2, 
@@ -20,12 +20,8 @@ import {
   FileText, 
   Truck, 
   Users, 
-  HelpCircle,
-  Clock,
-  Check,
-  Plane,
-  HeartPulse,
-  Tag
+  Check, 
+  HeartPulse
 } from 'lucide-react';
 import { DestinationPlace } from '../../types';
 
@@ -50,13 +46,14 @@ export const PlaceDetailModal: React.FC = () => {
     formatPrice,
     setIsLeadModalOpen,
     setSelectedListingForLead,
-    showUSDApprox,
     t 
   } = useApp();
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'overview' | 'photos' | 'logistics' | 'operators'>('overview');
+
+  const dialogRef = useModalAccessibility(Boolean(selectedDestination), () => setSelectedDestination(null));
 
   if (!selectedDestination) return null;
 
@@ -108,8 +105,17 @@ export const PlaceDetailModal: React.FC = () => {
       ].slice(0, Math.max(2, matchedProviders.length));
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6">
-      <div className="relative bg-[#FAF7F2] dark:bg-[#0D1511] rounded-3xl max-w-6xl w-full h-[94vh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={selectedDestination.name}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-[#FAF7F2] dark:bg-[#0D1511] rounded-t-3xl sm:rounded-3xl max-w-6xl w-full h-[92dvh] sm:h-[94dvh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors focus:outline-hidden"
+      >
         {/* Top Control Bar with Fully Working Navigation Tabs */}
         <div className="p-3 sm:p-4 bg-white dark:bg-[#152019] border-b border-[#E8DFC9] dark:border-[#23352A] flex flex-wrap items-center justify-between gap-3 shrink-0 z-20 transition-colors">
           {/* Left: Sidebar Toggle & Destination Title */}
@@ -203,7 +209,8 @@ export const PlaceDetailModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setSelectedDestination(null)}
-            className="w-9 h-9 rounded-full bg-[#FAF7F2] dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#25392D] text-[#1F2A24] dark:text-[#EDF3EF] flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            aria-label="Close destination guide"
+            className="min-h-[40px] min-w-[40px] rounded-full bg-[#FAF7F2] dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#25392D] text-[#1F2A24] dark:text-[#EDF3EF] flex items-center justify-center transition-colors cursor-pointer shrink-0"
             title="Close destination guide"
           >
             <X className="w-5 h-5" />
@@ -533,6 +540,8 @@ export const PlaceDetailModal: React.FC = () => {
                         <img 
                           src={img.url} 
                           alt={img.caption} 
+                          loading="lazy"
+                          decoding="async"
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover" 
                         />
@@ -572,6 +581,8 @@ export const PlaceDetailModal: React.FC = () => {
                           <img 
                             src={img.url} 
                             alt={img.caption} 
+                            loading="lazy"
+                            decoding="async"
                             referrerPolicy="no-referrer"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                           />
@@ -835,10 +846,12 @@ export const PlaceDetailModal: React.FC = () => {
 
                         {/* Badges & Fleet Details */}
                         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[#F0EBE0] dark:border-[#23352A]">
-                          <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800/80">
-                            <ShieldCheck className="w-3 h-3 inline mr-1 text-emerald-600 dark:text-emerald-400" />
-                            {prov.talaLicense}
-                          </span>
+                          {prov.verified && (
+                            <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800/80">
+                              <ShieldCheck className="w-3 h-3 inline mr-1 text-emerald-600 dark:text-emerald-400" />
+                              {prov.talaLicense}
+                            </span>
+                          )}
                           <span className="text-[10px] text-[#52645A] dark:text-[#A7B9B0] bg-[#FAF7F2] dark:bg-[#121D17] px-2 py-1 rounded-md border border-[#E8DFC9] dark:border-[#23352A]">
                             📍 {prov.location}
                           </span>

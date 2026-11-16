@@ -1,39 +1,49 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 import { 
   X, 
-  Ticket, 
   ShieldCheck, 
   CheckCircle2, 
   Calendar, 
   User, 
-  Phone, 
   Building2, 
   Printer, 
-  Download,
   QrCode
 } from 'lucide-react';
 
 export const BookingVoucherModal: React.FC = () => {
   const { activeVoucher, setActiveVoucher, providers, formatPrice } = useApp();
+  const dialogRef = useModalAccessibility(Boolean(activeVoucher), () => setActiveVoucher(null));
 
   if (!activeVoucher) return null;
 
   const provider = providers.find((p) => p.id === activeVoucher.providerId);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
-      <div className="relative bg-white dark:bg-[#0D1511] rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Official Trip Voucher ${activeVoucher.referenceCode}`}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-white dark:bg-[#0D1511] rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors focus:outline-hidden"
+      >
         {/* Top Close */}
         <button
+          type="button"
           onClick={() => setActiveVoucher(null)}
-          className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 text-[#1F2A24] dark:text-white flex items-center justify-center cursor-pointer transition-colors"
+          aria-label="Close voucher"
+          className="absolute top-4 right-4 z-20 min-h-[40px] min-w-[40px] rounded-full bg-black/25 hover:bg-black/45 text-white flex items-center justify-center cursor-pointer transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Voucher Header */}
-        <div className="bg-[#284435] dark:bg-[#16271E] text-white p-6 sm:p-8">
+        <div className="bg-[#284435] dark:bg-[#16271E] text-white p-5 sm:p-8 pr-14 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/15 pb-4 mb-4">
             <div className="flex items-center gap-2">
               <span className="font-serif text-2xl font-bold tracking-tight text-[#FAF7F2]">
@@ -61,7 +71,7 @@ export const BookingVoucherModal: React.FC = () => {
         </div>
 
         {/* Voucher Body */}
-        <div className="p-6 sm:p-8 space-y-6 bg-[#FAF7F2] dark:bg-[#0D1511]">
+        <div className="p-5 sm:p-8 space-y-6 bg-[#FAF7F2] dark:bg-[#0D1511] overflow-y-auto flex-1">
           {/* Main Trip Card */}
           <div className="bg-white dark:bg-[#152019] rounded-2xl p-5 border border-[#E8DFC9] dark:border-[#23352A] space-y-4 shadow-xs transition-colors">
             <div>
@@ -116,7 +126,8 @@ export const BookingVoucherModal: React.FC = () => {
                   <span className="font-medium text-[#284435] dark:text-[#EDF3EF]">Operations Center:</span> {provider.officeAddress}
                 </div>
                 <div>
-                  <span className="font-medium text-[#284435] dark:text-[#EDF3EF]">Direct Guide Line:</span> {provider.phone}
+                  <span className="font-medium text-[#284435] dark:text-[#EDF3EF]">Direct Guide Line:</span>{' '}
+                  {provider.phone || 'Available after confirmed booking'}
                 </div>
               </div>
             )}
@@ -149,17 +160,19 @@ export const BookingVoucherModal: React.FC = () => {
         </div>
 
         {/* Voucher Footer Action */}
-        <div className="p-4 bg-white dark:bg-[#152019] border-t border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-end gap-3 transition-colors">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4 bg-white dark:bg-[#152019] border-t border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-end gap-3 shrink-0 transition-colors">
           <button
+            type="button"
             onClick={() => window.print()}
-            className="px-4 py-2 rounded-xl bg-[#FAF7F2] dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#284435] dark:text-[#EDF3EF] text-xs font-semibold border border-[#E8DFC9] dark:border-[#2A3E31] flex items-center gap-2 cursor-pointer transition-colors"
+            className="min-h-[44px] px-4 py-2 rounded-xl bg-[#FAF7F2] dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#284435] dark:text-[#EDF3EF] text-xs font-semibold border border-[#E8DFC9] dark:border-[#2A3E31] flex items-center gap-2 cursor-pointer transition-colors"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print / Save PDF</span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveVoucher(null)}
-            className="px-5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] dark:bg-[#1F3A2C] dark:hover:bg-[#284B38] text-white text-xs font-bold cursor-pointer transition-colors"
+            className="min-h-[44px] px-5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] dark:bg-[#1F3A2C] dark:hover:bg-[#284B38] text-white text-xs font-bold cursor-pointer transition-colors"
           >
             Close Voucher
           </button>

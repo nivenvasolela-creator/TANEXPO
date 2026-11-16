@@ -29,12 +29,26 @@ export const OverviewTab: React.FC = () => {
   } = useApp();
 
   const provider = providers.find((p) => p.id === activeProviderId) || providers[0];
+  if (!provider) {
+    return (
+      <div className="bg-white dark:bg-[#152019] p-8 rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] text-center text-xs text-[#6B7A72] dark:text-[#8DA195]">
+        No operator profile loaded.
+      </div>
+    );
+  }
+
   const pLeads = leads.filter((l) => l.providerId === activeProviderId);
   const pBookings = bookings.filter((b) => b.providerId === activeProviderId);
   const pReviews = reviews.filter((r) => r.providerId === activeProviderId);
   const pListings = listings.filter((l) => l.providerId === activeProviderId && l.active);
 
   const newLeadsCount = pLeads.filter((l) => l.status === 'New').length;
+  const needsReplyLeads = pLeads.filter((l) => {
+    if (l.status === 'Booked' || l.status === 'Lost') return false;
+    if (l.status === 'New') return true;
+    const msgs = l.messages || [];
+    return msgs.length > 0 && msgs[msgs.length - 1].sender === 'tourist';
+  });
   const bookedLeadsCount = pLeads.filter((l) => l.status === 'Booked').length;
   const conversionRate = pLeads.length > 0 ? Math.round((bookedLeadsCount / pLeads.length) * 100) : 0;
 
@@ -42,9 +56,10 @@ export const OverviewTab: React.FC = () => {
   const commissionPaid = Math.round(grossRevenue * COMMISSION_RATE);
   const netEarnings = grossRevenue - commissionPaid;
 
+  const hasReviews = pReviews.length > 0 || provider.reviewsCount > 0;
   const avgRating = pReviews.length > 0 
     ? (pReviews.reduce((sum, r) => sum + r.rating, 0) / pReviews.length).toFixed(1)
-    : provider.rating.toFixed(1);
+    : provider.reviewsCount > 0 ? provider.rating.toFixed(1) : 'New';
 
   // Revenue by package breakdown
   const packageRevenueMap: Record<string, number> = {};
@@ -60,8 +75,12 @@ export const OverviewTab: React.FC = () => {
       <div className="bg-linear-to-r from-[#284435] to-[#1C2C24] text-white p-6 sm:p-8 rounded-3xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2 max-w-xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-xs font-semibold border border-white/20">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>TALA License {provider.talaLicense} Active</span>
+            <ShieldCheck className={`w-3.5 h-3.5 ${provider.verified ? 'text-emerald-400' : 'text-[#E8B94A]'}`} />
+            <span>
+              {provider.verified
+                ? `TALA Verified • ${provider.talaLicense}`
+                : `TALA License ${provider.talaLicense} (Pending Review)`}
+            </span>
           </div>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
             Karibu, {provider.name}
@@ -73,18 +92,87 @@ export const OverviewTab: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           <button
+            type="button"
             onClick={() => setIsNewListingModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-[#D97843] hover:bg-[#C26735] text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+            className="min-h-[42px] px-4 py-2.5 rounded-xl bg-[#D97843] hover:bg-[#C26735] text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
           >
             + Create Package
           </button>
           <button
+            type="button"
             onClick={() => setProviderTab('leads')}
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition-all cursor-pointer"
+            className="min-h-[42px] px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition-all cursor-pointer"
           >
             Pipeline CRM ({pLeads.length})
           </button>
         </div>
+      </div>
+
+      {/* Calm Needs Reply Summary Card */}
+      <div className="bg-white dark:bg-[#152019] p-5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-serif text-base font-bold text-[#284435] dark:text-[#EDF3EF]">
+              Needs Reply ({needsReplyLeads.length})
+            </h3>
+            <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">
+              {needsReplyLeads.length > 0
+                ? 'Traveler inquiries and messages waiting for your quote or response.'
+                : 'All caught up — no traveler inquiries are waiting for your reply.'}
+            </p>
+          </div>
+
+          {needsReplyLeads.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setProviderTab('leads')}
+              className="min-h-[38px] px-3.5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] dark:bg-emerald-800 dark:hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <span>Open Pipeline</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {needsReplyLeads.length > 0 && (
+          <div className="mt-4 divide-y divide-[#F0EBE0] dark:divide-[#23352A] border-t border-[#F0EBE0] dark:border-[#23352A]">
+            {needsReplyLeads.slice(0, 4).map((lead) => {
+              const lastMsg = lead.messages && lead.messages.length > 0
+                ? lead.messages[lead.messages.length - 1]
+                : null;
+              return (
+                <div
+                  key={lead.id}
+                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{lead.touristName}</span>
+                      <span className="text-[11px] text-[#D97843] font-medium truncate">
+                        • {lead.listingTitle}
+                      </span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        {lead.status === 'New' ? 'New Inquiry' : 'Traveler Replied'}
+                      </span>
+                    </div>
+                    {lastMsg ? (
+                      <p className="text-[11px] text-[#6B7A72] dark:text-[#8DA195] truncate mt-0.5">
+                        "{lastMsg.text}"
+                      </p>
+                    ) : lead.message ? (
+                      <p className="text-[11px] text-[#6B7A72] dark:text-[#8DA195] truncate mt-0.5">
+                        "{lead.message}"
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="text-[11px] text-[#6B7A72] dark:text-[#8DA195] shrink-0">
+                    {lead.date} • {lead.groupSize} {lead.groupSize === 1 ? 'guest' : 'guests'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Primary KPI Grid */}
@@ -100,8 +188,8 @@ export const OverviewTab: React.FC = () => {
           <div className="flex items-baseline justify-between">
             <span className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF]">{pLeads.length}</span>
             {newLeadsCount > 0 && (
-              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 animate-pulse">
-                {newLeadsCount} New!
+              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                {newLeadsCount} New
               </span>
             )}
           </div>
@@ -152,7 +240,7 @@ export const OverviewTab: React.FC = () => {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF]">{avgRating}</span>
-            <span className="text-xs text-[#8A9790] dark:text-[#6B7A72]">/ 5.0</span>
+            {hasReviews && <span className="text-xs text-[#8A9790] dark:text-[#6B7A72]">/ 5.0</span>}
           </div>
           <p className="text-[11px] text-[#6B7A72] dark:text-[#8DA195]">
             From {pReviews.length} verified traveler review{pReviews.length !== 1 ? 's' : ''}
@@ -225,7 +313,9 @@ export const OverviewTab: React.FC = () => {
                 <ShieldCheck className="w-4 h-4 text-[#284435] dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold text-[#284435] dark:text-[#EDF3EF] block">TALA Registration:</span>
-                  <span className="text-[#6B7A72] dark:text-[#8DA195]">{provider.talaLicense} (Verified Active)</span>
+                  <span className="text-[#6B7A72] dark:text-[#8DA195]">
+                    {provider.talaLicense} ({provider.verified ? 'Verified Active' : 'Pending Admin Verification'})
+                  </span>
                 </div>
               </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 import { 
   X, 
   ShieldCheck, 
@@ -10,12 +11,9 @@ import {
   Loader2, 
   Copy, 
   Check, 
-  QrCode, 
   Ticket, 
   RefreshCw,
-  Building2,
   PhoneCall,
-  Clock,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -30,7 +28,7 @@ export const CheckoutModal: React.FC = () => {
     formatPrice,
     listings,
     currentUser,
-    t
+    paymentsMode
   } = useApp();
 
   const [paymentRail, setPaymentRail] = useState<Transaction['paymentRail']>('M-Pesa');
@@ -45,6 +43,15 @@ export const CheckoutModal: React.FC = () => {
   const [showManualSteps, setShowManualSteps] = useState(false);
   const [controlNumber, setControlNumber] = useState('9942 0184 3920');
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
+  const [paymentError, setPaymentError] = useState('');
+
+  const closeCheckout = () => {
+    setCheckoutLead(null);
+    setPaymentStep('details');
+    setPaymentError('');
+  };
+
+  const dialogRef = useModalAccessibility(Boolean(checkoutLead), closeCheckout);
 
   useEffect(() => {
     if (checkoutLead) {
@@ -62,6 +69,11 @@ export const CheckoutModal: React.FC = () => {
 
   const handleStartPayment = (e: React.FormEvent) => {
     e.preventDefault();
+    setPaymentError('');
+    if (paymentsMode === 'live') {
+      setPaymentError('Online checkout is disabled while live payment rails are being finalized. Confirm direct operator arrangements in chat.');
+      return;
+    }
     if (paymentRail === 'CRDB Bank') {
       // Bank card processing
       setIsVerifying(true);
@@ -71,6 +83,8 @@ export const CheckoutModal: React.FC = () => {
         if (booking) {
           setConfirmedBooking(booking);
           setPaymentStep('success');
+        } else {
+          setPaymentError('Could not confirm booking. The quote may have expired, already been booked, or been closed.');
         }
       }, 1200);
     } else {
@@ -87,6 +101,11 @@ export const CheckoutModal: React.FC = () => {
   };
 
   const handleVerifyHandsetPayment = () => {
+    setPaymentError('');
+    if (paymentsMode === 'live') {
+      setPaymentError('Simulated payment confirmation is disabled in live payments mode.');
+      return;
+    }
     setIsVerifying(true);
     setTimeout(async () => {
       const booking = await processPaymentConfirmation(checkoutLead.id, paymentRail, phoneNumber);
@@ -94,6 +113,8 @@ export const CheckoutModal: React.FC = () => {
       if (booking) {
         setConfirmedBooking(booking);
         setPaymentStep('success');
+      } else {
+        setPaymentError('Could not confirm booking. The quote may have expired, already been booked, or been closed.');
       }
     }, 1500);
   };
@@ -107,29 +128,54 @@ export const CheckoutModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
-      <div className="relative bg-[#FAF7F2] dark:bg-[#0D1511] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Confirm and Book Expedition"
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-[#FAF7F2] dark:bg-[#0D1511] rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors focus:outline-hidden"
+      >
         {/* Top Header */}
-        <div className="p-6 bg-white dark:bg-[#152019] border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between gap-4">
+        <div className="p-5 sm:p-6 bg-white dark:bg-[#152019] border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between gap-4 shrink-0">
           <div>
-            <span className="text-xs font-bold text-[#D97843] uppercase tracking-wider block">
-              Secure Booking Checkout
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#D97843] uppercase tracking-wider">
+                Secure Booking Checkout
+              </span>
+              {paymentsMode === 'simulated' && (
+                <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                  Demo payments
+                </span>
+              )}
+            </div>
             <h3 className="font-serif text-xl font-bold text-[#284435] dark:text-[#EDF3EF]">
               Confirm & Book Expedition
             </h3>
           </div>
           <button
-            onClick={() => { setCheckoutLead(null); setPaymentStep('details'); }}
-            className="w-9 h-9 rounded-full bg-[#FAF7F2] dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#1F2A24] dark:text-[#EDF3EF] flex items-center justify-center transition-colors cursor-pointer"
+            type="button"
+            onClick={closeCheckout}
+            aria-label="Close checkout dialog"
+            className="min-h-[40px] min-w-[40px] rounded-full bg-[#FAF7F2] dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#1F2A24] dark:text-[#EDF3EF] flex items-center justify-center transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        <div className="overflow-y-auto flex-1 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-0">
+        {paymentError && (
+          <div className="mx-5 sm:mx-6 mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+            {paymentError}
+          </div>
+        )}
+
         {/* Step 1: Payment Method & Details */}
         {paymentStep === 'details' && (
-          <form onSubmit={handleStartPayment} className="p-6 space-y-5">
+          <form onSubmit={handleStartPayment} className="p-5 sm:p-6 space-y-5">
             {/* Itinerary Summary */}
             <div className="bg-white dark:bg-[#152019] p-4 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] space-y-2">
               <div className="flex justify-between items-start">
@@ -489,6 +535,7 @@ export const CheckoutModal: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import { MessageThread } from '../shared/MessageThread';
 
 export const MyRequestsView: React.FC = () => {
   const { 
@@ -33,6 +34,7 @@ export const MyRequestsView: React.FC = () => {
     sendMessageOnLead,
     formatPrice,
     declineQuote,
+    paymentsMode,
     t
   } = useApp();
 
@@ -61,6 +63,11 @@ export const MyRequestsView: React.FC = () => {
             Track operator responses, negotiate details, review custom TZS quotes, and pay via M-Pesa / Tigo Pesa / Airtel Money.
           </p>
         </div>
+        {paymentsMode === 'simulated' && (
+          <span className="px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-[10px] font-semibold text-amber-800 dark:text-amber-300 shrink-0">
+            Demo payments
+          </span>
+        )}
       </div>
 
       {leads.length === 0 ? (
@@ -98,7 +105,7 @@ export const MyRequestsView: React.FC = () => {
                         {lead.listingTitle}
                       </span>
                       {lead.status === 'Negotiating' && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#D97843] text-white px-2 py-0.5 rounded-full animate-pulse">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#D97843] text-white px-2 py-0.5 rounded-full">
                           {t('quote.ready', 'Quote Ready!')}
                         </span>
                       )}
@@ -149,9 +156,9 @@ export const MyRequestsView: React.FC = () => {
                   {/* Quote Section if provider sent quote */}
                   {lead.quote && (
                     <div className="rounded-2xl border border-[#D97843]/30 bg-linear-to-b from-[#FFFBF7] to-[#FAF6EE] dark:from-[#1A251E] dark:to-[#131D17] p-5 space-y-4 shadow-xs">
-                      <div className="flex items-center justify-between border-b border-[#E8DFC9] dark:border-[#23352A] pb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E8DFC9] dark:border-[#23352A] pb-3">
                         <div className="flex items-center gap-2">
-                          <MessageSquareQuote className="w-5 h-5 text-[#D97843]" />
+                          <MessageSquareQuote className="w-5 h-5 text-[#D97843] shrink-0" />
                           <div>
                             <h4 className="font-serif text-base font-bold text-[#284435] dark:text-[#EDF3EF]">
                               Official Quote from {lead.providerName}
@@ -161,7 +168,7 @@ export const MyRequestsView: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="sm:text-right">
                           <span className="text-[10px] uppercase font-bold text-[#8A9790] dark:text-[#8DA195] block">Quote Total</span>
                           <span className="font-bold text-lg text-[#284435] dark:text-[#EDF3EF]">
                             {formatPrice(lead.quote.total)}
@@ -210,15 +217,17 @@ export const MyRequestsView: React.FC = () => {
                       {lead.status === 'Negotiating' && (
                         <div className="pt-2 flex flex-wrap items-center gap-3">
                           <button
+                            type="button"
                             onClick={() => setCheckoutLead(lead)}
-                            className="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
+                            className="min-h-[44px] px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
                           >
                             <Lock className="w-4 h-4 text-[#E8B94A]" />
                             <span>{t('accept.pay', 'Accept Quote & Pay Securely')}</span>
                           </button>
                           <button
+                            type="button"
                             onClick={() => declineQuote(lead.id)}
-                            className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#152019] hover:bg-red-50 dark:hover:bg-red-950/40 text-red-700 dark:text-red-400 text-xs font-semibold border border-red-200 dark:border-red-900/60 transition-colors cursor-pointer"
+                            className="min-h-[44px] px-4 py-2.5 rounded-xl bg-white dark:bg-[#152019] hover:bg-red-50 dark:hover:bg-red-950/40 text-red-700 dark:text-red-400 text-xs font-semibold border border-red-200 dark:border-red-900/60 transition-colors cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5 inline mr-1" />
                             <span>{t('decline', 'Decline')}</span>
@@ -243,10 +252,11 @@ export const MyRequestsView: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => setActiveVoucher(confirmedBooking)}
-                          className="px-3.5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] dark:bg-[#1F3A2C] dark:hover:bg-[#284B38] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] dark:bg-[#1F3A2C] dark:hover:bg-[#284B38] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
                         >
                           <Ticket className="w-3.5 h-3.5 text-[#E8B94A]" />
                           <span>View Voucher</span>
@@ -254,8 +264,9 @@ export const MyRequestsView: React.FC = () => {
 
                         {!confirmedBooking.hasReview && (
                           <button
+                            type="button"
                             onClick={() => setReviewingBooking(confirmedBooking)}
-                            className="px-3.5 py-2 rounded-xl bg-[#FAF7F2] dark:bg-[#101914] hover:bg-[#EDE5D5] dark:hover:bg-[#1A2820] text-[#284435] dark:text-[#EDF3EF] text-xs font-bold border border-[#CDE3D4] dark:border-emerald-800/60 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                            className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#FAF7F2] dark:bg-[#101914] hover:bg-[#EDE5D5] dark:hover:bg-[#1A2820] text-[#284435] dark:text-[#EDF3EF] text-xs font-bold border border-[#CDE3D4] dark:border-emerald-800/60 flex items-center gap-1.5 cursor-pointer shadow-xs"
                           >
                             <Star className="w-3.5 h-3.5 text-[#E8B94A]" />
                             <span>Write Review</span>
@@ -280,54 +291,17 @@ export const MyRequestsView: React.FC = () => {
                     </button>
 
                     {isChatOpen && (
-                      <div className="mt-3 bg-[#FAF7F2] dark:bg-[#101914] p-4 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] space-y-3">
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                          {(!lead.messages || lead.messages.length === 0) ? (
-                            <p className="text-xs text-[#8A9790] dark:text-[#8DA195] italic">
-                              No messages yet. Send a note below to discuss dietary needs, pickup location, or custom dates.
-                            </p>
-                          ) : (
-                            lead.messages.map((m) => (
-                              <div
-                                key={m.id}
-                                className={`p-2.5 rounded-xl text-xs max-w-sm ${
-                                  m.sender === 'tourist'
-                                    ? 'bg-[#284435] dark:bg-emerald-800 text-white ml-auto'
-                                    : 'bg-white dark:bg-[#152019] text-[#1F2A24] dark:text-[#EDF3EF] border border-[#E8DFC9] dark:border-[#23352A] mr-auto'
-                                }`}
-                              >
-                                <div className="flex justify-between items-center text-[10px] opacity-75 mb-1 gap-3">
-                                  <span>{m.sender === 'tourist' ? 'You' : lead.providerName}</span>
-                                  <span>{m.timestamp}</span>
-                                </div>
-                                <p className="leading-relaxed">{m.text}</p>
-                              </div>
-                            ))
-                          )}
-                        </div>
-
-                        {/* Input row */}
-                        <div className="flex items-center gap-2 pt-2 border-t border-[#E8DFC9] dark:border-[#23352A]">
-                          <input
-                            type="text"
-                            value={chatInput[lead.id] || ''}
-                            onChange={(e) => setChatInput({ ...chatInput, [lead.id]: e.target.value })}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSendChat(lead.id);
-                            }}
-                            placeholder={t('send.message', 'Send message to operator...')}
-                            className="flex-1 px-3 py-2 text-xs rounded-xl bg-white dark:bg-[#152019] text-[#1F2A24] dark:text-[#EDF3EF] border border-[#DED5C6] dark:border-[#2A3E31] focus:outline-hidden focus:border-[#284435] dark:focus:border-emerald-500"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleSendChat(lead.id)}
-                            className="px-3 py-2 bg-[#284435] hover:bg-[#1E332A] dark:bg-[#1F3A2C] dark:hover:bg-[#284B38] text-white rounded-xl text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Send className="w-3 h-3" />
-                            <span>Send</span>
-                          </button>
-                        </div>
-                      </div>
+                      <MessageThread
+                        messages={lead.messages}
+                        viewerRole="tourist"
+                        counterpartName={lead.providerName}
+                        draft={chatInput[lead.id] || ''}
+                        onDraftChange={(val) => setChatInput((prev) => ({ ...prev, [lead.id]: val }))}
+                        onSend={() => handleSendChat(lead.id)}
+                        placeholder={t('send.message', 'Send message to operator...')}
+                        emptyText="No messages yet. Send a note below to discuss dietary needs, pickup location, or custom dates."
+                        inputAriaLabel={`Message ${lead.providerName}`}
+                      />
                     )}
                   </div>
                 </div>

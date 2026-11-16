@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 import { 
   Compass, 
   Briefcase, 
@@ -37,6 +38,7 @@ export const OnboardingFlow: React.FC = () => {
     login,
     categories,
     guestPendingAction,
+    openLegalDoc,
     t
   } = useApp();
 
@@ -73,6 +75,9 @@ export const OnboardingFlow: React.FC = () => {
 
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
+
+  const dialogRef = useModalAccessibility(isOnboardingOpen, closeOnboarding);
 
   if (!isOnboardingOpen) return null;
 
@@ -107,18 +112,25 @@ export const OnboardingFlow: React.FC = () => {
       setFormError('Password must be at least 8 characters.');
       return;
     }
+    if (!acceptedLegalTerms) {
+      setFormError('Please agree to the Privacy Policy and Terms of Service to create an account.');
+      return;
+    }
 
+    const rawContact = touristEmailOrPhone.trim();
+    const isEmailInput = rawContact.includes('@');
     setIsSubmitting(true);
     const res = await registerTourist({
       name: touristName.trim(),
-      email: touristEmailOrPhone.trim(),
+      ...(isEmailInput ? { email: rawContact } : { phone: rawContact }),
       password: touristPassword,
       touristType,
       homeCountry: touristType === 'domestic' ? 'Tanzania' : touristCountry,
       currency: touristCurrency,
       language: touristLang,
       travelParty: touristParty,
-      interests: touristInterests
+      interests: touristInterests,
+      acceptedLegalTerms: true
     });
     setIsSubmitting(false);
     if (!res.ok) {
@@ -143,6 +155,10 @@ export const OnboardingFlow: React.FC = () => {
       setFormError('Please enter an account password of at least 8 characters.');
       return;
     }
+    if (!acceptedLegalTerms) {
+      setFormError('Please agree to the Privacy Policy and Terms of Service to register your operator account.');
+      return;
+    }
 
     setIsSubmitting(true);
     const res = await registerProvider({
@@ -154,9 +170,13 @@ export const OnboardingFlow: React.FC = () => {
       region: businessRegion,
       phone: businessPhone.trim(),
       email: businessEmail.trim(),
+      publicPhone: '',
+      publicEmail: '',
+      showContactAfterBooking: true,
       password: providerPassword,
       talaLicense: talaLicense.trim() || undefined,
       about: aboutBusiness.trim(),
+      acceptedLegalTerms: true,
       firstPackage: {
         title: serviceTitle.trim() || `${businessCategory.toUpperCase()} Signature Trip`,
         priceTZS: Number(servicePriceTZS) || 2000000,
@@ -171,37 +191,49 @@ export const OnboardingFlow: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-[#FAF7F2] text-[#1F2A24] rounded-2xl shadow-2xl border border-[#D9CEBF] overflow-hidden my-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/75 backdrop-blur-md overflow-y-auto animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-label="TANEXPO Onboarding and Sign In"
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative w-full max-w-2xl max-h-[92dvh] flex flex-col bg-[#FAF7F2] text-[#1F2A24] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-[#D9CEBF] overflow-hidden focus:outline-hidden"
+      >
         
         {/* Top Header Bar */}
-        <div className="bg-[#1C2C24] text-white px-6 py-4 flex items-center justify-between border-b border-[#284435]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#284435] border border-[#3E6551] flex items-center justify-center text-[#E8B94A]">
+        <div className="bg-[#1C2C24] text-white px-5 sm:px-6 py-4 flex items-center justify-between border-b border-[#284435] shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#284435] border border-[#3E6551] flex items-center justify-center text-[#E8B94A] shrink-0">
               <Compass className="w-5 h-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="font-serif font-bold text-lg text-white">
                 TAN<span className="text-[#D97843]">EXPO</span>
               </span>
-              <span className="text-[10px] text-emerald-300 ml-2 font-medium tracking-wide uppercase">
+              <span className="hidden sm:inline text-[10px] text-emerald-300 ml-2 font-medium tracking-wide uppercase">
                 Tanzania National Tourism OS
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {onboardingStep !== 'intro_1' && (
               <button
+                type="button"
                 onClick={() => continueAsGuest()}
-                className="text-xs text-zinc-300 hover:text-white underline cursor-pointer"
+                className="min-h-[36px] text-xs text-zinc-300 hover:text-white underline cursor-pointer"
               >
                 Browse as Guest
               </button>
             )}
             <button
+              type="button"
               onClick={closeOnboarding}
-              className="text-zinc-400 hover:text-white p-1 rounded-md cursor-pointer transition-colors"
+              aria-label="Close sign in dialog"
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center text-zinc-300 hover:text-white rounded-full cursor-pointer transition-colors"
               title="Close"
             >
               <X className="w-5 h-5" />
@@ -210,7 +242,7 @@ export const OnboardingFlow: React.FC = () => {
         </div>
 
         {/* Dynamic Screen Content */}
-        <div className="p-6 sm:p-8">
+        <div className="p-5 sm:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-8 overflow-y-auto flex-1">
 
           {/* SCREEN 1: WELCOME */}
           {onboardingStep === 'intro_1' && (
@@ -699,6 +731,34 @@ export const OnboardingFlow: React.FC = () => {
                       ))}
                     </div>
                   </div>
+
+                  <label className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-[#D9CEBF] text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acceptedLegalTerms}
+                      onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
+                      className="mt-0.5 rounded border-[#D9CEBF] text-[#284435]"
+                    />
+                    <span className="text-[#4D5E55] leading-relaxed">
+                      I agree to the{' '}
+                      <button
+                        type="button"
+                        onClick={() => openLegalDoc('privacy')}
+                        className="font-bold text-[#284435] underline cursor-pointer"
+                      >
+                        Privacy Policy (Draft)
+                      </button>{' '}
+                      and{' '}
+                      <button
+                        type="button"
+                        onClick={() => openLegalDoc('terms')}
+                        className="font-bold text-[#284435] underline cursor-pointer"
+                      >
+                        Terms of Service (Draft)
+                      </button>
+                      .
+                    </span>
+                  </label>
                 </div>
               ) : (
                 <div className="space-y-4 text-xs">
@@ -1096,6 +1156,34 @@ export const OnboardingFlow: React.FC = () => {
                     Your profile will initially launch as <strong>Application Submitted</strong> and undergo TANEXPO registry cross-checking before gaining the full <strong>TANEXPO Verified</strong> seal.
                   </p>
                 </div>
+
+                <label className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-[#D9CEBF] text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={acceptedLegalTerms}
+                    onChange={(e) => setAcceptedLegalTerms(e.target.checked)}
+                    className="mt-0.5 rounded border-[#D9CEBF] text-[#284435]"
+                  />
+                  <span className="text-[#4D5E55] leading-relaxed">
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      onClick={() => openLegalDoc('privacy')}
+                      className="font-bold text-[#284435] underline cursor-pointer"
+                    >
+                      Privacy Policy (Draft)
+                    </button>{' '}
+                    and{' '}
+                    <button
+                      type="button"
+                      onClick={() => openLegalDoc('terms')}
+                      className="font-bold text-[#284435] underline cursor-pointer"
+                    >
+                      Terms of Service (Draft)
+                    </button>
+                    .
+                  </span>
+                </label>
               </div>
 
               {formError && (

@@ -2,21 +2,66 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TANEXPO — Tanzania Tourism Marketplace & Provider OS</title>
-    <meta name="description" content="Next-generation tourism marketplace and provider operating system for Tanzania. Empowering local tour operators, safari guides, and travelers with direct booking, dynamic quoting, and legal TZS currency compliance." />
-    <meta property="og:title" content="TANEXPO — Tanzania Tourism Marketplace & Provider OS" />
-    <meta property="og:description" content="Next-generation tourism marketplace and provider operating system for Tanzania. Empowering local tour operators, safari guides, and travelers with direct booking, dynamic quoting, and legal TZS currency compliance." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>TANEXPO — Tanzania Tourism Marketplace & Operator OS</title>
+    <meta
+      name="description"
+      content="Direct tourism marketplace connecting travelers with licensed Tanzanian tour operators, safari guides, and Zanzibar hosts — quoted transparently in TZS."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#284435" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TANEXPO" />
+
+    <link rel="canonical" href="/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- OpenGraph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="TANEXPO" />
+    <meta property="og:title" content="TANEXPO — Tanzania Tourism Marketplace & Operator OS" />
+    <meta
+      property="og:description"
+      content="Connect directly with TALA-licensed Tanzanian safari, Kilimanjaro, and Zanzibar operators with transparent TZS quoting."
+    />
+    <meta property="og:image" content="/pwa-512x512.png" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TANEXPO — Tanzania Tourism Marketplace & Operator OS" />
+    <meta
+      name="twitter:description"
+      content="Connect directly with TALA-licensed Tanzanian safari, Kilimanjaro, and Zanzibar operators with transparent TZS quoting."
+    />
+    <meta name="twitter:image" content="/pwa-512x512.png" />
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "TANEXPO",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "All",
+        "inLanguage": ["en", "sw"],
+        "areaServed": {
+          "@type": "Country",
+          "name": "Tanzania"
+        },
+        "description": "Two-sided Tanzania tourism marketplace and operator operating system with transparent TZS quoting.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "TZS"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

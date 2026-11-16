@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, Star, CheckCircle2, ShieldCheck, Send } from 'lucide-react';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
+import { X, Star, ShieldCheck, Send } from 'lucide-react';
 
 export const WriteReviewModal: React.FC = () => {
   const { reviewingBooking, setReviewingBooking, addReview } = useApp();
@@ -10,6 +11,8 @@ export const WriteReviewModal: React.FC = () => {
   const [comment, setComment] = useState('');
   const [reviewerName, setReviewerName] = useState(reviewingBooking?.touristName || '');
   const [submitError, setSubmitError] = useState('');
+
+  const dialogRef = useModalAccessibility(Boolean(reviewingBooking), () => setReviewingBooking(null));
 
   if (!reviewingBooking) return null;
 
@@ -36,10 +39,19 @@ export const WriteReviewModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
-      <div className="relative bg-[#FAF7F2] dark:bg-[#0D1511] rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Rate Your Trip with ${reviewingBooking.providerName}`}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-[#FAF7F2] dark:bg-[#0D1511] rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors focus:outline-hidden"
+      >
         {/* Header */}
-        <div className="p-6 bg-white dark:bg-[#152019] border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between gap-4 transition-colors">
+        <div className="p-5 sm:p-6 bg-white dark:bg-[#152019] border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between gap-4 shrink-0 transition-colors">
           <div>
             <span className="text-xs font-bold text-[#D97843] uppercase tracking-wider block">
               Verified Traveler Review
@@ -49,15 +61,17 @@ export const WriteReviewModal: React.FC = () => {
             </h3>
           </div>
           <button
+            type="button"
             onClick={() => setReviewingBooking(null)}
-            className="w-9 h-9 rounded-full bg-[#FAF7F2] dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#1F2A24] dark:text-[#EDF3EF] flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Close review modal"
+            className="min-h-[40px] min-w-[40px] rounded-full bg-[#FAF7F2] dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#1F2A24] dark:text-[#EDF3EF] flex items-center justify-center transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 overflow-y-auto space-y-5">
           {/* Booking Verification Pill */}
           <div className="bg-[#EAF3EC] dark:bg-emerald-950/40 p-3 rounded-2xl border border-[#CDE3D4] dark:border-emerald-800/60 flex items-center gap-2.5 text-xs text-[#284435] dark:text-emerald-300">
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -77,10 +91,11 @@ export const WriteReviewModal: React.FC = () => {
                 <button
                   key={star}
                   type="button"
+                  aria-label={`Rate ${star} stars`}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(0)}
                   onClick={() => setRating(star)}
-                  className="p-1 cursor-pointer transition-transform hover:scale-110"
+                  className="min-h-[40px] min-w-[40px] flex items-center justify-center p-1 cursor-pointer transition-transform hover:scale-110"
                 >
                   <Star
                     className={`w-7 h-7 ${
@@ -133,7 +148,7 @@ export const WriteReviewModal: React.FC = () => {
           {/* Submit CTA */}
           <button
             type="submit"
-            className="w-full py-3 rounded-xl bg-[#284435] hover:bg-[#1E332A] dark:bg-[#1F3A2C] dark:hover:bg-[#284B38] text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md"
+            className="w-full min-h-[44px] py-3 rounded-xl bg-[#284435] hover:bg-[#1E332A] dark:bg-[#1F3A2C] dark:hover:bg-[#284B38] text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md"
           >
             <Send className="w-4 h-4 text-[#E8B94A]" />
             <span>Publish Verified Review</span>

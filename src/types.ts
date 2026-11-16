@@ -44,6 +44,10 @@ export interface ProviderProfile {
   fleetInfo?: string;
   languages: string[];
   providerId: number; // links to catalog provider
+  showContactAfterBooking?: boolean;
+  whatsappOptIn?: boolean;
+  whatsappPaused?: boolean;
+  whatsappVerifiedAt?: string;
 }
 
 export interface User {
@@ -127,6 +131,9 @@ export interface Provider {
   fleetInfo?: string;
   badges: string[];
   officeAddress: string;
+  showContactAfterBooking?: boolean;
+  whatsappOptIn?: boolean;
+  whatsappPaused?: boolean;
 }
 
 export interface ListingPackage {
@@ -167,6 +174,7 @@ export interface LeadMessage {
   sender: 'tourist' | 'provider';
   text: string;
   timestamp: string;
+  channel?: 'web' | 'whatsapp';
 }
 
 export interface Lead {

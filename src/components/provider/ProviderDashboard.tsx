@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   LayoutDashboard, 
@@ -13,21 +13,39 @@ import {
   Plus,
   PanelLeftClose,
   PanelLeftOpen,
-  ChevronRight,
   Menu,
   X,
-  ExternalLink,
-  Sparkles
+  MoreHorizontal
 } from 'lucide-react';
-import { OverviewTab } from './OverviewTab';
-import { LeadsPipelineTab } from './LeadsPipelineTab';
-import { ListingsTab } from './ListingsTab';
-import { BookingsTab } from './BookingsTab';
-import { FinancialsTab } from './FinancialsTab';
-import { ReviewsTab } from './ReviewsTab';
-import { ProfileSettingsTab } from './ProfileSettingsTab';
-import { QuoteBuilderModal } from './QuoteBuilderModal';
-import { ListingEditorModal } from './ListingEditorModal';
+import { ErrorBoundary } from '../ErrorBoundary';
+
+const OverviewTab = lazy(() =>
+  import('./OverviewTab').then((m) => ({ default: m.OverviewTab }))
+);
+const LeadsPipelineTab = lazy(() =>
+  import('./LeadsPipelineTab').then((m) => ({ default: m.LeadsPipelineTab }))
+);
+const ListingsTab = lazy(() =>
+  import('./ListingsTab').then((m) => ({ default: m.ListingsTab }))
+);
+const BookingsTab = lazy(() =>
+  import('./BookingsTab').then((m) => ({ default: m.BookingsTab }))
+);
+const FinancialsTab = lazy(() =>
+  import('./FinancialsTab').then((m) => ({ default: m.FinancialsTab }))
+);
+const ReviewsTab = lazy(() =>
+  import('./ReviewsTab').then((m) => ({ default: m.ReviewsTab }))
+);
+const ProfileSettingsTab = lazy(() =>
+  import('./ProfileSettingsTab').then((m) => ({ default: m.ProfileSettingsTab }))
+);
+const QuoteBuilderModal = lazy(() =>
+  import('./QuoteBuilderModal').then((m) => ({ default: m.QuoteBuilderModal }))
+);
+const ListingEditorModal = lazy(() =>
+  import('./ListingEditorModal').then((m) => ({ default: m.ListingEditorModal }))
+);
 
 export const ProviderDashboard: React.FC = () => {
   const { 
@@ -39,7 +57,10 @@ export const ProviderDashboard: React.FC = () => {
     leads,
     bookings,
     listings,
+    isNewListingModalOpen,
     setIsNewListingModalOpen,
+    quoteBuilderLead,
+    editingListing,
     currentUser
   } = useApp();
 
@@ -52,11 +73,32 @@ export const ProviderDashboard: React.FC = () => {
     localStorage.setItem('tanexpo_provider_sidebar_collapsed', isCollapsed ? 'true' : 'false');
   }, [isCollapsed]);
 
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMobileOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isMobileOpen]);
+
   const provider = providers.find((p) => p.id === activeProviderId) || providers[0];
   const pLeads = leads.filter((l) => l.providerId === activeProviderId);
   const newLeadsCount = pLeads.filter((l) => l.status === 'New').length;
   const pBookings = bookings.filter((b) => b.providerId === activeProviderId);
   const pListings = listings.filter((l) => l.providerId === activeProviderId && l.active);
+
+  if (!provider) {
+    return (
+      <div className="bg-white dark:bg-[#152019] rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] p-12 text-center max-w-md mx-auto my-8 space-y-3">
+        <Building2 className="w-10 h-10 text-[#D97843] mx-auto" />
+        <h3 className="font-serif text-lg font-bold text-[#284435] dark:text-[#EDF3EF]">No operator workspace selected</h3>
+        <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">
+          Sign in with an operator account or register your tourism business to access the Operator OS.
+        </p>
+      </div>
+    );
+  }
 
   const tabs: { 
     id: typeof providerTab; 
@@ -70,7 +112,7 @@ export const ProviderDashboard: React.FC = () => {
     { id: 'listings', label: 'Tour Packages', icon: Package, badge: pListings.length, sublabel: 'Inventory & Rates' },
     { id: 'bookings', label: 'Bookings & Trips', icon: CalendarCheck, badge: pBookings.length, sublabel: 'Confirmed Bookings' },
     { id: 'financials', label: 'Financials & Payouts', icon: BadgeDollarSign, sublabel: 'TZS Settlements' },
-    { id: 'reviews', label: 'Reviews', icon: Star, sublabel: `${provider?.rating.toFixed(1)} Rating` },
+    { id: 'reviews', label: 'Reviews', icon: Star, sublabel: provider.reviewsCount > 0 ? `${provider.rating.toFixed(1)} Rating` : 'New' },
     { id: 'profile', label: 'Profile & Licenses', icon: Settings, sublabel: 'TALA Credentials' }
   ];
 
@@ -102,7 +144,7 @@ export const ProviderDashboard: React.FC = () => {
             {tabs.find(t => t.id === providerTab)?.label}
           </span>
           {newLeadsCount > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#E8B94A] text-[#1E332A] font-bold animate-pulse">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#E8B94A] text-[#1E332A] font-bold">
               {newLeadsCount} new
             </span>
           )}
@@ -185,7 +227,8 @@ export const ProviderDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsMobileOpen(false)}
-                  className="lg:hidden p-1.5 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-[#253A2E] cursor-pointer"
+                  aria-label="Close navigation menu"
+                  className="lg:hidden min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-[#253A2E] cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -297,19 +340,114 @@ export const ProviderDashboard: React.FC = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 min-w-0 w-full">
-          {providerTab === 'overview' && <OverviewTab />}
-          {providerTab === 'leads' && <LeadsPipelineTab />}
-          {providerTab === 'listings' && <ListingsTab />}
-          {providerTab === 'bookings' && <BookingsTab />}
-          {providerTab === 'financials' && <FinancialsTab />}
-          {providerTab === 'reviews' && <ReviewsTab />}
-          {providerTab === 'profile' && <ProfileSettingsTab />}
+          <ErrorBoundary fallbackTitle="Dashboard section failed to load">
+            <Suspense
+              fallback={
+                <div className="rounded-3xl bg-white dark:bg-[#152019] border border-[#E8DFC9] dark:border-[#23352A] p-8 text-center text-xs text-[#6B7A72] dark:text-[#8DA195]">
+                  Loading workspace...
+                </div>
+              }
+            >
+              {providerTab === 'overview' && <OverviewTab />}
+              {providerTab === 'leads' && <LeadsPipelineTab />}
+              {providerTab === 'listings' && <ListingsTab />}
+              {providerTab === 'bookings' && <BookingsTab />}
+              {providerTab === 'financials' && <FinancialsTab />}
+              {providerTab === 'reviews' && <ReviewsTab />}
+              {providerTab === 'profile' && <ProfileSettingsTab />}
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
 
-      {/* Modals rendered when active */}
-      <QuoteBuilderModal />
-      <ListingEditorModal />
+      {/* Mobile Bottom Navigation Bar */}
+      <nav
+        aria-label="Operator mobile navigation"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-30 glass border-t border-[#E7DFD3] dark:border-[#23352A] safe-bottom"
+      >
+        <div className="grid grid-cols-5 gap-1 px-1.5 py-1.5">
+          <button
+            type="button"
+            onClick={() => handleTabClick('overview')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+              providerTab === 'overview'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            <span>Overview</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTabClick('leads')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+              providerTab === 'leads'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <div className="relative">
+              <Kanban className="w-4 h-4" />
+              {newLeadsCount > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-[#D97843] text-white text-[9px] font-bold flex items-center justify-center">
+                  {newLeadsCount}
+                </span>
+              )}
+            </div>
+            <span>Leads</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTabClick('listings')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+              providerTab === 'listings'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            <span>Packages</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTabClick('bookings')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+              providerTab === 'bookings'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <CalendarCheck className="w-4 h-4" />
+            <span>Bookings</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen(true)}
+            aria-label="More operator sections"
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+              providerTab === 'financials' || providerTab === 'reviews' || providerTab === 'profile'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <MoreHorizontal className="w-4 h-4" />
+            <span>More</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Modals rendered only when active */}
+      <ErrorBoundary fallbackTitle="Modal failed to load">
+        <Suspense fallback={null}>
+          {quoteBuilderLead && <QuoteBuilderModal />}
+          {(isNewListingModalOpen || editingListing) && <ListingEditorModal />}
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 };

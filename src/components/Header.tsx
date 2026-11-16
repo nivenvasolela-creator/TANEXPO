@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useModalAccessibility } from '../hooks/useModalAccessibility';
+import { PWAInstallButton } from './pwa/PWAControls';
 import { 
   Compass, 
   Briefcase, 
@@ -16,7 +18,9 @@ import {
   ShieldCheck,
   Check,
   Sun,
-  Moon
+  Moon,
+  Trash2,
+  X
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -40,16 +44,23 @@ export const Header: React.FC = () => {
     isGuest,
     theme,
     toggleTheme,
+    seedDemoCatalog,
+    deleteAccount,
     t
   } = useApp();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const preferencesRef = useRef<HTMLDivElement>(null);
+  const deleteDialogRef = useModalAccessibility(isDeleteModalOpen, () => setIsDeleteModalOpen(false));
 
-  // Close dropdowns when clicking outside
+  // Close dropdowns when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -59,8 +70,18 @@ export const Header: React.FC = () => {
         setIsPreferencesOpen(false);
       }
     };
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsUserMenuOpen(false);
+        setIsPreferencesOpen(false);
+      }
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
   }, []);
 
   // Handle Logo Click: stays strictly in the user's role space
@@ -75,21 +96,21 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FAF7F2]/95 dark:bg-[#0D1511]/95 backdrop-blur-md border-b border-[#E7DFD3] dark:border-[#23352A] shadow-2xs transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 glass border-b border-[#E7DFD3] dark:border-[#23352A] shadow-2xs transition-colors">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand & Workspace Indicator */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button 
             type="button"
             onClick={handleLogoClick}
-            className="cursor-pointer group flex items-center gap-2.5 bg-transparent border-none p-0 focus:outline-hidden"
+            className="min-h-[44px] cursor-pointer group flex items-center gap-2 bg-transparent border-none p-0"
             title={currentView === 'tourist' ? 'Explore Tanzania' : 'Provider Dashboard'}
           >
             {/* Minimalist Tanexpo Favicon Badge */}
-            <div className="w-9 h-9 rounded-xl bg-[#284435] flex items-center justify-center text-[#E8B94A] shadow-xs group-hover:bg-[#1E332A] dark:group-hover:bg-[#20362B] transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-[#284435] flex items-center justify-center text-[#E8B94A] shadow-xs group-hover:bg-[#1E332A] dark:group-hover:bg-[#20362B] transition-colors shrink-0">
               <Compass className="w-5 h-5" />
             </div>
-            <span className="font-serif font-bold text-2xl tracking-tight text-[#284435] dark:text-[#EDF3EF]">
+            <span className="font-serif font-bold text-xl sm:text-2xl tracking-tight text-[#284435] dark:text-[#EDF3EF]">
               TAN<span className="text-[#D97843]">EXPO</span>
             </span>
           </button>
@@ -99,42 +120,54 @@ export const Header: React.FC = () => {
             {currentView === 'tourist' ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white dark:bg-[#152019] border border-[#E8DFC9] dark:border-[#23352A] text-xs font-semibold text-[#284435] dark:text-[#E2ECE5] shadow-2xs">
                 <Compass className="w-3.5 h-3.5 text-[#D97843]" />
-                <span>Explorer</span>
+                <span>{t('tab.explorer', 'Explorer')}</span>
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#284435] dark:bg-[#1F3327] text-white text-xs font-semibold shadow-2xs border border-transparent dark:border-[#2E4537]">
                 <Briefcase className="w-3.5 h-3.5 text-[#E8B94A]" />
-                <span>Operator OS</span>
+                <span>{t('tab.provider', 'Operator OS')}</span>
+              </span>
+            )}
+            {seedDemoCatalog && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+                Demo data
               </span>
             )}
           </div>
         </div>
 
         {/* Right Navigation Controls */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* In-app PWA Install Prompt */}
+          <PWAInstallButton compact />
+
           {/* Comparison Action (Traveler Only) */}
           {comparedProviderIds.length > 0 && currentView === 'tourist' && (
             <button
+              type="button"
               onClick={() => setIsCompareModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E8B94A] hover:bg-[#D4A335] text-[#1C2C24] text-xs font-bold shadow-xs cursor-pointer transition-all"
+              aria-label={`Compare ${comparedProviderIds.length} providers`}
+              className="hidden sm:flex min-h-[38px] items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E8B94A] hover:bg-[#D4A335] text-[#1C2C24] text-xs font-bold shadow-xs cursor-pointer transition-all"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Compare ({comparedProviderIds.length})</span>
+              <span>{t('compare', 'Compare')} ({comparedProviderIds.length})</span>
             </button>
           )}
 
           {/* Tourist My Requests Tab Button */}
           {currentView === 'tourist' && (
             <button
+              type="button"
               onClick={() => setTouristTab('requests')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              aria-label={t('tab.requests', 'My Requests')}
+              className={`hidden md:flex min-h-[38px] items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                 touristTab === 'requests'
                   ? 'bg-[#284435] dark:bg-[#1F3327] text-white border-[#284435] dark:border-[#2E4537]'
                   : 'bg-white dark:bg-[#152019] text-[#284435] dark:text-[#E2ECE5] border-[#DED5C6] dark:border-[#23352A] hover:bg-[#F3EFE6] dark:hover:bg-[#1A2820]'
               }`}
             >
               <Bell className="w-3.5 h-3.5 text-[#D97843]" />
-              <span className="hidden xs:inline">{t('tab.requests', 'My Requests')}</span>
+              <span>{t('tab.requests', 'My Requests')}</span>
               {leads.length > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-[#D97843] text-white text-[10px] font-bold">
                   {leads.length}
@@ -143,22 +176,22 @@ export const Header: React.FC = () => {
             </button>
           )}
 
-          {/* Direct Dark Mode Toggle Button (Icon only, no words) */}
+          {/* Direct Dark Mode Toggle Button */}
           <button
             type="button"
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             title={theme === 'dark' ? 'Light Theme' : 'Dark Theme'}
-            className="w-8.5 h-8.5 rounded-xl flex items-center justify-center border border-[#DED5C6] dark:border-[#23352A] bg-white dark:bg-[#152019] text-[#52645A] dark:text-[#E8B94A] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-zinc-50 dark:hover:bg-[#1A2820] transition-all cursor-pointer"
+            className="w-10 h-10 rounded-xl flex items-center justify-center border border-[#DED5C6] dark:border-[#23352A] bg-white dark:bg-[#152019] text-[#52645A] dark:text-[#E8B94A] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-zinc-50 dark:hover:bg-[#1A2820] transition-all cursor-pointer"
           >
             {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-[#E8B94A] transition-transform duration-300 hover:rotate-45" />
+              <Sun className="w-4 h-4 text-[#E8B94A]" />
             ) : (
-              <Moon className="w-4 h-4 text-[#284435] transition-transform duration-300 hover:-rotate-12" />
+              <Moon className="w-4 h-4 text-[#284435]" />
             )}
           </button>
 
-          {/* Preferences / System Settings Popover (Stores Currency, Language, Reset, Compliance cleanly inside) */}
+          {/* Preferences / System Settings Popover */}
           <div className="relative" ref={preferencesRef}>
             <button
               type="button"
@@ -167,8 +200,9 @@ export const Header: React.FC = () => {
                 setIsUserMenuOpen(false);
               }}
               aria-label="System Preferences"
+              aria-expanded={isPreferencesOpen}
               title="Preferences (Currency, Language, Legal & Reset)"
-              className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
                 isPreferencesOpen
                   ? 'bg-[#284435] dark:bg-[#1F3327] text-white border-[#284435] dark:border-[#2E4537]'
                   : 'bg-white dark:bg-[#152019] text-[#52645A] dark:text-[#9DB0A4] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] border-[#DED5C6] dark:border-[#23352A] hover:bg-zinc-50 dark:hover:bg-[#1A2820]'
@@ -285,7 +319,9 @@ export const Header: React.FC = () => {
                   setIsUserMenuOpen(!isUserMenuOpen);
                   setIsPreferencesOpen(false);
                 }}
-                className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-white dark:bg-[#152019] border border-[#DED5C6] dark:border-[#23352A] rounded-xl text-xs font-semibold text-[#1C2C24] dark:text-[#EDF3EF] hover:bg-zinc-50 dark:hover:bg-[#1A2820] cursor-pointer transition-colors shadow-2xs"
+                aria-label="Account menu"
+                aria-expanded={isUserMenuOpen}
+                className="min-h-[40px] flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-white dark:bg-[#152019] border border-[#DED5C6] dark:border-[#23352A] rounded-xl text-xs font-semibold text-[#1C2C24] dark:text-[#EDF3EF] hover:bg-zinc-50 dark:hover:bg-[#1A2820] cursor-pointer transition-colors shadow-2xs"
               >
                 <div className="w-6 h-6 rounded-full bg-[#284435] dark:bg-[#1F3327] text-[#E8B94A] flex items-center justify-center font-bold text-xs shrink-0">
                   {currentUser.name.charAt(0)}
@@ -312,11 +348,27 @@ export const Header: React.FC = () => {
                       setIsUserMenuOpen(false);
                       startOnboarding('role_select');
                     }}
-                    className="w-full text-left px-3.5 py-2 hover:bg-zinc-50 dark:hover:bg-[#1A2820] text-zinc-700 dark:text-[#EDF3EF] flex items-center gap-2 cursor-pointer"
+                    className="w-full min-h-[40px] text-left px-3.5 py-2 hover:bg-zinc-50 dark:hover:bg-[#1A2820] text-zinc-700 dark:text-[#EDF3EF] flex items-center gap-2 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 text-[#D97843]" />
                     <span>Switch Role / Account</span>
                   </button>
+
+                  {currentUser.role !== 'admin' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setDeletePassword('');
+                        setDeleteError('');
+                        setIsDeleteModalOpen(true);
+                      }}
+                      className="w-full min-h-[40px] text-left px-3.5 py-2 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-700 dark:text-red-400 flex items-center gap-2 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete My Account</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -324,7 +376,7 @@ export const Header: React.FC = () => {
                       setIsUserMenuOpen(false);
                       logout();
                     }}
-                    className="w-full text-left px-3.5 py-2 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-700 dark:text-red-400 flex items-center gap-2 cursor-pointer border-t border-zinc-100 dark:border-[#23352A] mt-1"
+                    className="w-full min-h-[40px] text-left px-3.5 py-2 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-700 dark:text-red-400 flex items-center gap-2 cursor-pointer border-t border-zinc-100 dark:border-[#23352A] mt-1"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign Out</span>
@@ -336,14 +388,92 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => startOnboarding('role_select')}
-              className="px-3 sm:px-4 py-1.5 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-semibold shadow-xs cursor-pointer transition-all flex items-center gap-1.5"
+              className="min-h-[40px] px-3 sm:px-4 py-1.5 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-semibold shadow-xs cursor-pointer transition-all flex items-center gap-1.5"
             >
               <UserIcon className="w-3.5 h-3.5 text-[#E8B94A]" />
-              <span>Sign In</span>
+              <span>{t('nav.signin', 'Sign In')}</span>
             </button>
           )}
         </div>
       </div>
+
+      {isDeleteModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Delete My Account"
+        >
+          <div
+            ref={deleteDialogRef}
+            tabIndex={-1}
+            className="bg-white dark:bg-[#152019] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 border border-[#E8DFC9] dark:border-[#23352A] shadow-2xl space-y-4 focus:outline-hidden"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif text-lg font-bold text-red-700 dark:text-red-400">
+                Delete My Account
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="min-h-[40px] min-w-[40px] rounded-full hover:bg-zinc-100 dark:hover:bg-[#1A2820] text-zinc-500 flex items-center justify-center cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-[#4D5E55] dark:text-[#A7B9B0] leading-relaxed">
+              This permanently removes your login credentials, active sessions, saved operators, and unbooked inquiries. Any past confirmed booking records are anonymized. Enter your password to confirm.
+            </p>
+            {deleteError && (
+              <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                {deleteError}
+              </div>
+            )}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setDeleteError('');
+                setIsDeleting(true);
+                const res = await deleteAccount(deletePassword);
+                setIsDeleting(false);
+                if (!res.ok) {
+                  setDeleteError(res.error || 'Could not delete account');
+                } else {
+                  setIsDeleteModalOpen(false);
+                }
+              }}
+              className="space-y-3"
+            >
+              <input
+                type="password"
+                required
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Confirm current password"
+                aria-label="Confirm current password"
+                className="w-full min-h-[44px] px-3 py-2 text-xs rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] bg-white dark:bg-[#101914] text-[#1F2A24] dark:text-[#EDF3EF]"
+              />
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="min-h-[44px] px-4 py-2 rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] text-xs font-semibold text-[#4D5E55] dark:text-[#A7B9B0] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDeleting}
+                  className="min-h-[44px] px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold cursor-pointer"
+                >
+                  {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

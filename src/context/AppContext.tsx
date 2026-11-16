@@ -23,9 +23,6 @@ import {
 } from '../types';
 import {
   categories,
-  initialProviders,
-  initialListings,
-  initialReviews,
   COMMISSION_RATE,
   TZS_TO_USD_RATE
 } from '../data/initialData';
@@ -54,7 +51,7 @@ interface AppContextType {
   setOnboardingStep: (step: OnboardingStep) => void;
   registerTourist: (data: {
     name: string;
-    email: string;
+    email?: string;
     phone?: string;
     password: string;
     touristType: TouristType;
@@ -63,6 +60,7 @@ interface AppContextType {
     language: Language;
     travelParty?: 'solo' | 'couple' | 'family' | 'group';
     interests?: string[];
+    acceptedLegalTerms?: boolean;
   }) => Promise<AuthActionResult>;
   registerProvider: (data: {
     businessName: string;
@@ -73,9 +71,13 @@ interface AppContextType {
     region: string;
     phone: string;
     email: string;
+    publicPhone?: string;
+    publicEmail?: string;
+    showContactAfterBooking?: boolean;
     password: string;
     talaLicense?: string;
     about: string;
+    acceptedLegalTerms?: boolean;
     firstPackage?: {
       title: string;
       priceTZS: number;
@@ -86,6 +88,10 @@ interface AppContextType {
   login: (emailOrPhone: string, role: UserRole, password: string) => Promise<AuthActionResult>;
   continueAsGuest: () => void;
   logout: () => void;
+  deleteAccount: (password: string) => Promise<{ ok: boolean; error?: string }>;
+  activeLegalDoc: 'privacy' | 'terms' | null;
+  openLegalDoc: (doc: 'privacy' | 'terms') => void;
+  closeLegalDoc: () => void;
   updateTouristProfile: (profile: Partial<TouristProfile>) => void;
   updateProviderBusinessProfile: (profile: Partial<ProviderProfile>) => void;
   requireAuth: (action: GuestPendingAction) => boolean;
@@ -94,6 +100,11 @@ interface AppContextType {
   isInternationalTourist: boolean;
   isGuest: boolean;
   isProvider: boolean;
+
+  // Runtime Config & Loading State
+  catalogLoaded: boolean;
+  paymentsMode: 'simulated' | 'live';
+  seedDemoCatalog: boolean;
 
   // State
   categories: Category[];
@@ -180,7 +191,7 @@ interface AppContextType {
     status: 'Upcoming' | 'Completed' | 'Cancelled',
     driver?: string,
     vehicle?: string
-  ) => void;
+  ) => Promise<{ ok: boolean; error?: string }>;
   updateProviderProfile: (updated: Provider) => void;
   toggleSaveProvider: (providerId: number) => void;
   resetAllData: () => void;
@@ -223,9 +234,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const destinations = initialDestinations;
 
   // Public catalog state (available to guests & authenticated users)
-  const [providers, setProviders] = useState<Provider[]>(initialProviders);
-  const [listings, setListings] = useState<ListingPackage[]>(initialListings);
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [listings, setListings] = useState<ListingPackage[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [catalogLoaded, setCatalogLoaded] = useState<boolean>(false);
+  const [paymentsMode, setPaymentsMode] = useState<'simulated' | 'live'>('simulated');
+  const [seedDemoCatalog, setSeedDemoCatalog] = useState<boolean>(false);
 
   // Private role-scoped state (populated only after authenticated fetches)
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -247,7 +261,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return null;
   });
 
+  const [activeLegalDoc, setActiveLegalDoc] = useState<'privacy' | 'terms' | null>(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/privacy') return 'privacy';
+      if (window.location.pathname === '/terms') return 'terms';
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const onPopState = () => {
+      if (window.location.pathname === '/privacy') setActiveLegalDoc('privacy');
+      else if (window.location.pathname === '/terms') setActiveLegalDoc('terms');
+      else setActiveLegalDoc(null);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const openLegalDoc = (doc: 'privacy' | 'terms') => {
+    setActiveLegalDoc(doc);
+    if (typeof window !== 'undefined') {
+      const target = doc === 'privacy' ? '/privacy' : '/terms';
+      if (window.location.pathname !== target) {
+        window.history.pushState({}, '', target);
+      }
+    }
+  };
+
+  const closeLegalDoc = () => {
+    setActiveLegalDoc(null);
+    if (
+      typeof window !== 'undefined' &&
+      (window.location.pathname === '/privacy' || window.location.pathname === '/terms')
+    ) {
+      window.history.pushState({}, '', '/');
+    }
+  };
+
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => {
+    if (
+      typeof window !== 'undefined' &&
+      (window.location.pathname === '/privacy' || window.location.pathname === '/terms')
+    ) {
+      return false;
+    }
     const seen = localStorage.getItem(STORAGE_KEYS.INTRO_SEEN);
     const session = localStorage.getItem(STORAGE_KEYS.USER_SESSION);
     return !seen && !session;
@@ -368,19 +426,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [handleUnauthorized]
   );
 
+  // Public config fetch
+  const syncConfig = useCallback(async () => {
+    try {
+      const res = await fetch('/api/config');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.paymentsMode === 'live' || data.paymentsMode === 'simulated') {
+        setPaymentsMode(data.paymentsMode);
+      }
+      if (typeof data.seedDemoCatalog === 'boolean') {
+        setSeedDemoCatalog(data.seedDemoCatalog);
+      }
+    } catch {
+      // ignore non-fatal config error
+    }
+  }, []);
+
   // Public catalog fetch (safe for guests)
   const syncCatalog = useCallback(async () => {
     try {
-      const res = await fetch('/api/catalog');
+      const res = await apiFetch('/api/catalog', {}, { redirectOn401: false });
       if (!res.ok) return;
       const data = await res.json();
-      if (Array.isArray(data.providers) && data.providers.length > 0) setProviders(data.providers);
-      if (Array.isArray(data.listings) && data.listings.length > 0) setListings(data.listings);
+      if (Array.isArray(data.providers)) setProviders(data.providers);
+      if (Array.isArray(data.listings)) setListings(data.listings);
       if (Array.isArray(data.reviews)) setReviews(data.reviews);
+      setCatalogLoaded(true);
     } catch (err) {
       console.warn('Catalog fetch error:', err);
+      setCatalogLoaded(true);
     }
-  }, []);
+  }, [apiFetch]);
 
   // Role-scoped authenticated data fetch
   const syncAuthenticatedData = useCallback(async () => {
@@ -428,6 +505,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [syncCatalog, syncAuthenticatedData]);
 
   useEffect(() => {
+    syncConfig();
     syncCatalog();
 
     const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
@@ -467,7 +545,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [syncCatalog, syncAuthenticatedData, syncAll, apiFetch, clearPrivateState]);
+  }, [syncConfig, syncCatalog, syncAuthenticatedData, syncAll, apiFetch, clearPrivateState]);
 
   // Session & Onboarding Methods
   const startOnboarding = (step: OnboardingStep = 'role_select') => {
@@ -497,7 +575,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const registerTourist = async (data: {
     name: string;
-    email: string;
+    email?: string;
     phone?: string;
     password: string;
     touristType: TouristType;
@@ -506,6 +584,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     language: Language;
     travelParty?: 'solo' | 'couple' | 'family' | 'group';
     interests?: string[];
+    acceptedLegalTerms?: boolean;
   }): Promise<AuthActionResult> => {
     try {
       const touristProfile: TouristProfile = {
@@ -521,12 +600,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: data.email,
-          phone: data.phone,
+          ...(data.email ? { email: data.email } : {}),
+          ...(data.phone ? { phone: data.phone } : {}),
           name: data.name,
           role: 'tourist',
           touristProfile,
-          password: data.password
+          password: data.password,
+          acceptedLegalTerms: Boolean(data.acceptedLegalTerms)
         })
       });
 
@@ -565,9 +645,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     region: string;
     phone: string;
     email: string;
+    publicPhone?: string;
+    publicEmail?: string;
+    showContactAfterBooking?: boolean;
     password: string;
     talaLicense?: string;
     about: string;
+    acceptedLegalTerms?: boolean;
     firstPackage?: {
       title: string;
       priceTZS: number;
@@ -583,8 +667,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         primaryCategory: data.primaryCategory,
         location: data.location,
         region: data.region,
-        phone: data.phone,
-        email: data.email,
+        publicPhone: data.publicPhone || '',
+        publicEmail: data.publicEmail || '',
+        showContactAfterBooking: data.showContactAfterBooking !== false,
         talaLicense: data.talaLicense,
         about: data.about,
         languages: ['English', 'Swahili']
@@ -599,7 +684,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           name: data.businessName,
           role: 'provider',
           providerProfile: providerProfilePayload,
-          password: data.password
+          password: data.password,
+          acceptedLegalTerms: Boolean(data.acceptedLegalTerms)
         })
       });
 
@@ -706,6 +792,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     clearPrivateState();
     setCurrentView('tourist');
     setTouristTab('explore');
+  };
+
+  const deleteAccount = async (password: string): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await apiFetch('/api/auth/account', {
+        method: 'DELETE',
+        body: JSON.stringify({ password })
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { ok: false, error: result.error || 'Could not delete account' };
+      }
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+      setCurrentUser(null);
+      clearPrivateState();
+      setCurrentView('tourist');
+      setTouristTab('explore');
+      await syncCatalog();
+      return { ok: true };
+    } catch (err: any) {
+      return { ok: false, error: err?.message || 'Network error while deleting account' };
+    }
   };
 
   const updateTouristProfile = (profileUpdate: Partial<TouristProfile>) => {
@@ -1031,12 +1140,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateBookingStatus = (
+  const updateBookingStatus = async (
     bookingId: number,
     status: 'Upcoming' | 'Completed' | 'Cancelled',
     driver?: string,
     vehicle?: string
-  ) => {
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const previousBookings = bookings;
     setBookings((prev) =>
       prev.map((b) => {
         if (b.id !== bookingId) return b;
@@ -1049,14 +1159,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    apiFetch(`/api/bookings/${bookingId}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        status,
-        ...(driver ? { assignedDriver: driver } : {}),
-        ...(vehicle ? { vehicleReg: vehicle } : {})
-      })
-    }).catch((e) => console.warn('Backend update booking status error:', e));
+    try {
+      const res = await apiFetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          status,
+          ...(driver ? { assignedDriver: driver } : {}),
+          ...(vehicle ? { vehicleReg: vehicle } : {})
+        })
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setBookings(previousBookings);
+        return { ok: false, error: result.error || 'Failed to update booking status' };
+      }
+      if (result.booking) {
+        setBookings((prev) => prev.map((b) => (b.id === bookingId ? result.booking : b)));
+      }
+      return { ok: true };
+    } catch (e: any) {
+      setBookings(previousBookings);
+      return { ok: false, error: e?.message || 'Network error updating booking' };
+    }
   };
 
   const updateProviderProfile = (updated: Provider) => {
@@ -1122,6 +1246,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login,
         continueAsGuest,
         logout,
+        deleteAccount,
+        activeLegalDoc,
+        openLegalDoc,
+        closeLegalDoc,
         updateTouristProfile,
         updateProviderBusinessProfile,
         requireAuth,
@@ -1130,6 +1258,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isInternationalTourist,
         isGuest,
         isProvider,
+        catalogLoaded,
+        paymentsMode,
+        seedDemoCatalog,
         categories,
         destinations,
         providers,

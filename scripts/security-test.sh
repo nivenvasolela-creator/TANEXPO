@@ -163,7 +163,7 @@ assert_status "Provider A creates listing" "201" "$RESP_STATUS" "$RESP_BODY"
 LISTING_A_ID=$(node -e "const d = JSON.parse(process.argv[1]); console.log(d.listing.id);" "$RESP_BODY")
 
 # Tourist creates a lead for Provider A's listing (groupSize=2)
-parse_res "$(req POST /leads "$TOURIST_TOKEN" "{\"listingId\":${LISTING_A_ID},\"touristName\":\"Test Tourist\",\"touristContact\":\"${TOURIST_EMAIL}\",\"date\":\"2026-12-20\",\"groupSize\":2,\"message\":\"Window seats please\"}")"
+parse_res "$(req POST /leads "$TOURIST_TOKEN" "{\"listingId\":${LISTING_A_ID},\"touristName\":\"Test Tourist\",\"touristContact\":\"${TOURIST_EMAIL}\",\"date\":\"2026-10-01\",\"groupSize\":2,\"message\":\"Window seats please\"}")"
 assert_status "Tourist creates lead for Provider A" "201" "$RESP_STATUS" "$RESP_BODY"
 LEAD_A_ID=$(node -e "const d = JSON.parse(process.argv[1]); console.log(d.lead.id);" "$RESP_BODY")
 

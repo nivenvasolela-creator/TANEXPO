@@ -15,11 +15,12 @@ import {
 } from 'lucide-react';
 
 export const BookingsTab: React.FC = () => {
-  const { activeProviderId, bookings, setActiveVoucher, updateBookingStatus, formatPrice } = useApp();
+  const { activeProviderId, bookings, setActiveVoucher, updateBookingStatus, formatPrice, paymentsMode } = useApp();
 
   const [editingBookingId, setEditingBookingId] = useState<number | null>(null);
   const [driverInput, setDriverInput] = useState('');
   const [vehicleInput, setVehicleInput] = useState('');
+  const [statusError, setStatusError] = useState('');
 
   const providerBookings = bookings.filter((b) => b.providerId === activeProviderId);
 
@@ -29,9 +30,22 @@ export const BookingsTab: React.FC = () => {
     setVehicleInput(b.vehicleReg || '');
   };
 
-  const handleSaveLogistics = (bookingId: number) => {
-    updateBookingStatus(bookingId, 'Upcoming', driverInput, vehicleInput);
+  const handleSaveLogistics = async (bookingId: number) => {
+    setStatusError('');
+    const res = await updateBookingStatus(bookingId, 'Upcoming', driverInput, vehicleInput);
+    if (!res.ok) {
+      setStatusError(res.error || 'Could not update booking logistics');
+      return;
+    }
     setEditingBookingId(null);
+  };
+
+  const handleMarkCompleted = async (bookingId: number) => {
+    setStatusError('');
+    const res = await updateBookingStatus(bookingId, 'Completed');
+    if (!res.ok) {
+      setStatusError(res.error || 'Cannot mark this booking completed yet');
+    }
   };
 
   return (
@@ -49,11 +63,31 @@ export const BookingsTab: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-[#FAF7F2] dark:bg-[#101914] px-4 py-2 rounded-xl border border-[#E8DFC9] dark:border-[#23352A] text-xs text-[#284435] dark:text-emerald-300 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span>All trips processed securely via licensed payment partner</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {paymentsMode === 'simulated' && (
+            <span className="px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+              Demo payments
+            </span>
+          )}
+          <div className="bg-[#FAF7F2] dark:bg-[#101914] px-4 py-2 rounded-xl border border-[#E8DFC9] dark:border-[#23352A] text-xs text-[#284435] dark:text-emerald-300 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>All trips processed securely via licensed payment partner</span>
+          </div>
         </div>
       </div>
+
+      {statusError && (
+        <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-3">
+          <span>{statusError}</span>
+          <button
+            type="button"
+            onClick={() => setStatusError('')}
+            className="font-bold underline cursor-pointer shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {providerBookings.length === 0 ? (
         <div className="bg-white dark:bg-[#152019] rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] p-12 text-center max-w-md mx-auto space-y-3 transition-colors">
@@ -173,7 +207,7 @@ export const BookingsTab: React.FC = () => {
                 <div className="flex items-center gap-2">
                   {b.status === 'Upcoming' && (
                     <button
-                      onClick={() => updateBookingStatus(b.id, 'Completed')}
+                      onClick={() => handleMarkCompleted(b.id)}
                       className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
                       title="Mark as successfully completed after trip returns"
                     >

@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 import { QuoteExtraItem } from '../../types';
 import { 
   X, 
   Send, 
   Plus, 
-  Trash2, 
-  Coins, 
-  ShieldCheck, 
-  Sparkles, 
-  CheckCircle2,
-  Calendar,
-  User,
-  MessageSquare
+  Trash2
 } from 'lucide-react';
 import { COMMISSION_RATE } from '../../data/initialData';
 
@@ -53,6 +47,8 @@ export const QuoteBuilderModal: React.FC = () => {
       setValidDays(10);
     }
   }, [quoteBuilderLead, listings]);
+
+  const dialogRef = useModalAccessibility(Boolean(quoteBuilderLead), () => setQuoteBuilderLead(null));
 
   if (!quoteBuilderLead) return null;
 
@@ -95,28 +91,39 @@ export const QuoteBuilderModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
-      <div className="relative bg-white dark:bg-[#0D1511] rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Build Custom Quote for ${quoteBuilderLead.touristName}`}
+    >
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative bg-white dark:bg-[#0D1511] rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl border border-[#E8DFC9] dark:border-[#23352A] transition-colors focus:outline-hidden"
+      >
         {/* Header */}
-        <div className="bg-[#FAF7F2] dark:bg-[#152019] p-5 sm:p-6 border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between transition-colors">
-          <div>
+        <div className="bg-[#FAF7F2] dark:bg-[#152019] p-5 sm:p-6 border-b border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between gap-3 shrink-0 transition-colors">
+          <div className="min-w-0">
             <span className="text-[10px] uppercase font-bold tracking-wider text-[#D97843] block">
               Lead ID: #{quoteBuilderLead.id}
             </span>
-            <h3 className="font-serif text-xl font-bold text-[#284435] dark:text-[#EDF3EF]">
+            <h3 className="font-serif text-lg sm:text-xl font-bold text-[#284435] dark:text-[#EDF3EF] truncate">
               Build Custom Quote for {quoteBuilderLead.touristName}
             </h3>
           </div>
           <button
+            type="button"
             onClick={() => setQuoteBuilderLead(null)}
-            className="w-8 h-8 rounded-full bg-white dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#6B7A72] dark:text-[#8DA195] flex items-center justify-center border border-[#E8DFC9] dark:border-[#2A3E31] cursor-pointer transition-colors"
+            aria-label="Close quote builder"
+            className="min-h-[40px] min-w-[40px] rounded-full bg-white dark:bg-[#1A2820] hover:bg-[#EDE5D5] dark:hover:bg-[#253A2E] text-[#6B7A72] dark:text-[#8DA195] flex items-center justify-center border border-[#E8DFC9] dark:border-[#2A3E31] cursor-pointer transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Lead Context Summary */}
-        <div className="bg-[#F6F2E9] dark:bg-[#121D16] px-6 py-3 border-b border-[#E8DFC9] dark:border-[#23352A] flex flex-wrap items-center justify-between gap-3 text-xs text-[#4D5E55] dark:text-[#BED0C5] transition-colors">
+        <div className="bg-[#F6F2E9] dark:bg-[#121D16] px-5 sm:px-6 py-3 border-b border-[#E8DFC9] dark:border-[#23352A] flex flex-wrap items-center justify-between gap-3 text-xs text-[#4D5E55] dark:text-[#BED0C5] shrink-0 transition-colors">
           <div>
             <span>Requested: <strong>{quoteBuilderLead.listingTitle}</strong></span>
           </div>
@@ -128,7 +135,7 @@ export const QuoteBuilderModal: React.FC = () => {
         </div>
 
         {/* Quote Form */}
-        <form onSubmit={handleSendQuote} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleSendQuote} className="p-5 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 space-y-5 flex-1 overflow-y-auto">
           {/* Base Package Rate */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-baseline">
@@ -179,7 +186,8 @@ export const QuoteBuilderModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleRemoveExtra(ex.id)}
-                      className="text-zinc-400 hover:text-red-500 cursor-pointer"
+                      aria-label={`Remove ${ex.title}`}
+                      className="min-h-[32px] min-w-[32px] flex items-center justify-center text-zinc-400 hover:text-red-500 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -293,7 +301,7 @@ export const QuoteBuilderModal: React.FC = () => {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3 px-4 rounded-xl bg-[#D97843] hover:bg-[#C26735] text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] py-3 px-4 rounded-xl bg-[#D97843] hover:bg-[#C26735] text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Send className="w-4 h-4" />
               <span>Send Official Quote to {quoteBuilderLead.touristName}</span>

@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import { MessageThread } from '../shared/MessageThread';
 
 export const LeadsPipelineTab: React.FC = () => {
   const { 
@@ -87,15 +88,15 @@ export const LeadsPipelineTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Kanban Board Container */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 overflow-x-auto min-h-[600px] items-start">
+      {/* Kanban Board Container: horizontal snap-scroll on mobile/tablet, 5-column grid on desktop */}
+      <div className="flex lg:grid lg:grid-cols-5 gap-4 overflow-x-auto snap-x snap-mandatory pb-3 min-h-[520px] items-start">
         {columns.map((col) => {
           const colLeads = filteredLeads.filter((l) => l.status === col.status);
 
           return (
             <div
               key={col.status}
-              className={`rounded-2xl border ${col.color} p-3 flex flex-col gap-3 min-h-[500px] shadow-xs`}
+              className={`w-[84vw] sm:w-[320px] lg:w-auto shrink-0 snap-start rounded-2xl border ${col.color} p-3 flex flex-col gap-3 min-h-[460px] shadow-xs`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
@@ -130,7 +131,7 @@ export const LeadsPipelineTab: React.FC = () => {
                               {lead.touristName}
                             </span>
                             {lead.status === 'New' && (
-                              <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                              <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" title="New inquiry" />
                             )}
                           </div>
                           <p className="text-[11px] font-medium text-[#D97843] truncate">
@@ -194,98 +195,69 @@ export const LeadsPipelineTab: React.FC = () => {
                           </button>
 
                           {isChatOpen && (
-                            <div className="mt-2 p-2.5 bg-[#FAF7F2] dark:bg-[#101914] rounded-xl border border-[#E8DFC9] dark:border-[#23352A] space-y-2">
-                              <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                                {(!lead.messages || lead.messages.length === 0) ? (
-                                  <p className="text-[10px] text-[#8A9790] dark:text-[#6B7A72] italic">
-                                    No messages yet. Send a greeting or date confirmation.
-                                  </p>
-                                ) : (
-                                  lead.messages.map((m) => (
-                                    <div
-                                      key={m.id}
-                                      className={`p-1.5 rounded-lg text-[10px] ${
-                                        m.sender === 'provider'
-                                          ? 'bg-[#284435] text-white ml-auto max-w-[85%]'
-                                          : 'bg-white dark:bg-[#152019] text-[#1F2A24] dark:text-[#EDF3EF] border border-[#E8DFC9] dark:border-[#23352A] mr-auto max-w-[85%]'
-                                      }`}
-                                    >
-                                      <div className="flex justify-between items-center opacity-70 mb-0.5">
-                                        <span>{m.sender === 'provider' ? 'You' : lead.touristName}</span>
-                                        <span>{m.timestamp}</span>
-                                      </div>
-                                      <p>{m.text}</p>
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-
-                              <div className="flex items-center gap-1 pt-1 border-t border-[#E8DFC9] dark:border-[#23352A]">
-                                <input
-                                  type="text"
-                                  value={operatorReply[lead.id] || ''}
-                                  onChange={(e) => setOperatorReply({ ...operatorReply, [lead.id]: e.target.value })}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSendOperatorReply(lead.id);
-                                  }}
-                                  placeholder="Reply to traveler..."
-                                  className="flex-1 px-2 py-1 text-[11px] bg-white dark:bg-[#152019] text-[#1F2A24] dark:text-[#EDF3EF] rounded-lg border border-[#DED5C6] dark:border-[#2A3E31] focus:outline-hidden"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleSendOperatorReply(lead.id)}
-                                  className="p-1.5 bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white rounded-lg text-[11px] cursor-pointer"
-                                  title="Send reply"
-                                >
-                                  <Send className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
+                            <MessageThread
+                              messages={lead.messages}
+                              viewerRole="provider"
+                              counterpartName={lead.touristName}
+                              draft={operatorReply[lead.id] || ''}
+                              onDraftChange={(val) => setOperatorReply((prev) => ({ ...prev, [lead.id]: val }))}
+                              onSend={() => handleSendOperatorReply(lead.id)}
+                              placeholder="Reply to traveler..."
+                              emptyText="No messages yet. Send a greeting or date confirmation."
+                              inputAriaLabel={`Reply to ${lead.touristName}`}
+                              compact
+                            />
                           )}
-                        </div>
+                          </div>
 
-                        {/* Action Controls */}
-                        <div className="pt-2 border-t border-[#F0EBE0] dark:border-[#23352A] flex flex-wrap items-center gap-1.5">
-                          {lead.status === 'New' && (
-                            <button
-                              onClick={() => updateLeadStatus(lead.id, 'Contacted')}
-                              className="flex-1 py-1.5 px-2 bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                            >
-                              <span>Mark Contacted</span>
-                              <ArrowRight className="w-3 h-3" />
-                            </button>
-                          )}
+                          {/* Action Controls */}
+                          <div className="pt-2 border-t border-[#F0EBE0] dark:border-[#23352A] flex flex-wrap items-center gap-1.5">
+                            {lead.status === 'New' && (
+                              <button
+                                type="button"
+                                onClick={() => updateLeadStatus(lead.id, 'Contacted')}
+                                className="flex-1 min-h-[38px] py-1.5 px-2 bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                              >
+                                <span>Mark Contacted</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </button>
+                            )}
 
-                          {(lead.status === 'New' || lead.status === 'Contacted' || lead.status === 'Negotiating') && (
-                            <button
-                              onClick={() => setQuoteBuilderLead(lead)}
-                              className="flex-1 py-1.5 px-2 bg-[#D97843] hover:bg-[#C26735] text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                            >
-                              <Send className="w-3 h-3" />
-                              <span>{lead.quote ? 'Revise Quote' : 'Build Quote'}</span>
-                            </button>
-                          )}
+                            {(lead.status === 'New' || lead.status === 'Contacted' || lead.status === 'Negotiating') && (
+                              <button
+                                type="button"
+                                onClick={() => setQuoteBuilderLead(lead)}
+                                className="flex-1 min-h-[38px] py-1.5 px-2 bg-[#D97843] hover:bg-[#C26735] text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                              >
+                                <Send className="w-3 h-3" />
+                                <span>{lead.quote ? 'Revise Quote' : 'Build Quote'}</span>
+                              </button>
+                            )}
 
-                          {lead.status !== 'Booked' && lead.status !== 'Lost' && (
-                            <button
-                              onClick={() => markLeadBookedDirect(lead.id)}
-                              className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-lg border border-emerald-200 dark:border-emerald-800 cursor-pointer transition-colors"
-                              title="Mark as Booked & Confirmed"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                            {lead.status !== 'Booked' && lead.status !== 'Lost' && (
+                              <button
+                                type="button"
+                                onClick={() => markLeadBookedDirect(lead.id)}
+                                aria-label="Mark as Booked and Confirmed"
+                                className="min-h-[38px] min-w-[38px] flex items-center justify-center p-1.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-lg border border-emerald-200 dark:border-emerald-800 cursor-pointer transition-colors"
+                                title="Mark as Booked & Confirmed"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            )}
 
-                          {lead.status !== 'Lost' && lead.status !== 'Booked' && (
-                            <button
-                              onClick={() => updateLeadStatus(lead.id, 'Lost')}
-                              className="p-1.5 bg-zinc-50 dark:bg-[#101914] hover:bg-red-50 dark:hover:bg-red-950/40 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 rounded-lg border border-zinc-200 dark:border-[#23352A] cursor-pointer transition-colors"
-                              title="Mark as Lost / Cancelled"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
+                            {lead.status !== 'Lost' && lead.status !== 'Booked' && (
+                              <button
+                                type="button"
+                                onClick={() => updateLeadStatus(lead.id, 'Lost')}
+                                aria-label="Mark as Lost or Cancelled"
+                                className="min-h-[38px] min-w-[38px] flex items-center justify-center p-1.5 bg-zinc-50 dark:bg-[#101914] hover:bg-red-50 dark:hover:bg-red-950/40 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 rounded-lg border border-zinc-200 dark:border-[#23352A] cursor-pointer transition-colors"
+                                title="Mark as Lost / Cancelled"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                       </div>
                     );
                   })

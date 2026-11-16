@@ -3,8 +3,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-serif: 'Fraunces', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
   --color-safari-green: #284435;
   --color-safari-dark: #192C23;
   --color-safari-ochre: #D97843;
@@ -12,23 +12,112 @@
   --color-safari-card: #FFFFFF;
 }
 
+:root {
+  --bg: #FAF7F2;
+  --surface: #FFFFFF;
+  --surface-elevated: rgba(255, 255, 255, 0.78);
+  --surface-muted: #F3EFE6;
+  --border-subtle: rgba(217, 206, 191, 0.85);
+  --text: #1F2A24;
+  --text-muted: #52645A;
+  --accent: #284435;
+  --accent-warm: #D97843;
+  --accent-gold: #E8B94A;
+}
+
+html.dark {
+  color-scheme: dark;
+  --bg: #0D1511;
+  --surface: #152019;
+  --surface-elevated: rgba(21, 32, 25, 0.82);
+  --surface-muted: #1A2820;
+  --border-subtle: rgba(46, 69, 55, 0.75);
+  --text: #EDF3EF;
+  --text-muted: #A7B9B0;
+  --accent: #3F7A5A;
+  --accent-warm: #D97843;
+  --accent-gold: #E8B94A;
+}
+
+html,
 body {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  background-color: #FAF7F2;
-  color: #1F2A24;
+  overflow-x: clip;
+  min-height: 100dvh;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .font-serif {
-  font-family: 'Fraunces', Georgia, serif;
+  font-family: var(--font-serif);
+}
+
+/* Visible keyboard focus ring (WCAG AA) */
+*:focus-visible {
+  outline: 2px solid #D97843;
+  outline-offset: 2px;
+}
+
+/* Safe-area padding helper for mobile bottom bars & sheets */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Liquid Glass surface — applied strictly to navigation chrome & modals */
+.glass {
+  background-color: var(--surface-elevated);
+  border-color: var(--border-subtle);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass {
+    background-color: var(--surface);
+  }
+}
+
+/* Low-end / Data Saver / Reduced Transparency fallback */
+html.perf-lite .glass,
+html.perf-lite [class*="backdrop-blur"] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background-color: var(--surface) !important;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background-color: var(--surface) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html.perf-lite *,
+html.perf-lite *::before,
+html.perf-lite *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
 }
 
 /* Base HTML Dark Mode Support */
-html.dark {
-  color-scheme: dark;
-}
-
 html.dark body {
   background-color: #0D1511;
   color: #EDF3EF;

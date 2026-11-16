@@ -15,7 +15,7 @@ import {
 import { COMMISSION_RATE } from '../../data/initialData';
 
 export const FinancialsTab: React.FC = () => {
-  const { activeProviderId, transactions, bookings, formatPrice } = useApp();
+  const { activeProviderId, transactions, bookings, formatPrice, paymentsMode } = useApp();
 
   const [selectedDisbursementRail, setSelectedDisbursementRail] = useState<string>('M-Pesa');
   const [phoneNumber, setPhoneNumber] = useState('+255 754 882 109');
@@ -50,9 +50,16 @@ export const FinancialsTab: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-[#EAF3EC] dark:bg-emerald-950/40 px-3.5 py-1.5 rounded-xl border border-[#CDE3D4] dark:border-emerald-800 text-xs font-semibold text-[#284435] dark:text-emerald-300">
-          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span>BOT 100% TZS Mandate Compliant</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {paymentsMode === 'simulated' && (
+            <span className="px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-[10px] font-semibold text-amber-800 dark:text-amber-300">
+              Demo payments
+            </span>
+          )}
+          <div className="flex items-center gap-2 bg-[#EAF3EC] dark:bg-emerald-950/40 px-3.5 py-1.5 rounded-xl border border-[#CDE3D4] dark:border-emerald-800 text-xs font-semibold text-[#284435] dark:text-emerald-300">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>BOT 100% TZS Mandate Compliant</span>
+          </div>
         </div>
       </div>
 
@@ -144,7 +151,7 @@ export const FinancialsTab: React.FC = () => {
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full py-2 px-4 rounded-xl bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
+              className="w-full min-h-[42px] py-2 px-4 rounded-xl bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
             >
               Update Settlement Rails
             </button>
@@ -174,7 +181,7 @@ export const FinancialsTab: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[680px] text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#FAF7F2] dark:bg-[#101914] text-[#6B7A72] dark:text-[#8DA195] uppercase font-bold text-[10px] tracking-wider border-b border-[#E8DFC9] dark:border-[#23352A]">
                   <th className="py-3 px-4">Ref / Tx ID</th>

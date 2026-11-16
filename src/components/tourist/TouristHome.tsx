@@ -1,31 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useApp } from '../../context/AppContext';
-import { CategoryId, Provider, ListingPackage } from '../../types';
+import { CategoryId, Provider } from '../../types';
 import { 
   Search, 
   MapPin, 
   Star, 
   ShieldCheck, 
   Heart, 
-  Clock, 
-  Users, 
   ArrowRight, 
   CheckCircle2, 
   Languages, 
   Calendar,
   Sparkles,
-  Award,
   Truck,
-  Compass,
   Coins,
   SlidersHorizontal,
   X,
   Map,
-  LayoutGrid,
-  Trophy,
-  Plane
+  LayoutGrid
 } from 'lucide-react';
-import { TanzaniaMap } from '../map/TanzaniaMap';
+
+const TanzaniaMap = lazy(() =>
+  import('../map/TanzaniaMap').then((m) => ({ default: m.TanzaniaMap }))
+);
 
 export const TouristHome: React.FC = () => {
   const { 
@@ -48,6 +45,7 @@ export const TouristHome: React.FC = () => {
     isGuest,
     startOnboarding,
     setInquiryPackage,
+    catalogLoaded,
     t
   } = useApp();
 
@@ -90,9 +88,9 @@ export const TouristHome: React.FC = () => {
   });
 
   return (
-    <div className="space-y-10 pb-24">
+    <div className="space-y-10 pb-10">
       {/* Hero Header with Adaptive Personalization */}
-      <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#1E332A] via-[#284435] to-[#15231C] text-white p-8 sm:p-12 shadow-md">
+      <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#1E332A] via-[#284435] to-[#15231C] text-white p-6 sm:p-12 shadow-md">
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-[#D97843]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 bg-[#E8B94A]/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -206,13 +204,14 @@ export const TouristHome: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-[#FAF7F2] rounded-xl border border-[#E8DFC9] text-xs font-medium text-[#4D5E55]">
-                <MapPin className="w-4 h-4 text-[#D97843]" />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex-1 flex items-center gap-1.5 min-h-[44px] px-3 py-2 bg-[#FAF7F2] rounded-xl border border-[#E8DFC9] text-xs font-medium text-[#4D5E55]">
+                <MapPin className="w-4 h-4 text-[#D97843] shrink-0" />
                 <select
                   value={selectedRegion}
                   onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="bg-transparent border-none focus:outline-hidden text-xs font-semibold cursor-pointer"
+                  aria-label={t('all.regions', 'All Regions')}
+                  className="w-full bg-transparent border-none focus:outline-hidden text-xs font-semibold cursor-pointer"
                 >
                   <option value="all">{t('all.regions', 'All Regions')}</option>
                   {regions.filter(r => r !== 'all').map((r) => (
@@ -222,14 +221,15 @@ export const TouristHome: React.FC = () => {
               </div>
 
               <button
+                type="button"
                 onClick={() => {
                   setSelectedCategory('all');
                   setSelectedRegion('all');
                   setSearchQuery('');
                 }}
-                className="px-4 py-2.5 text-xs font-semibold text-[#6B7A72] hover:text-[#1F2A24] bg-white border border-[#E8DFC9] rounded-xl hover:bg-[#F3EFE6] transition-colors cursor-pointer"
+                className="min-h-[44px] px-4 py-2.5 text-xs font-semibold text-[#6B7A72] hover:text-[#1F2A24] bg-white border border-[#E8DFC9] rounded-xl hover:bg-[#F3EFE6] transition-colors cursor-pointer"
               >
-                Reset
+                {t('common.reset', 'Reset')}
               </button>
             </div>
           </div>
@@ -373,6 +373,22 @@ export const TouristHome: React.FC = () => {
           </div>
         </div>
 
+        {!catalogLoaded ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true" aria-label="Loading destination guides">
+            {[0, 1, 2].map((idx) => (
+              <div
+                key={idx}
+                className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] overflow-hidden shadow-xs"
+              >
+                <div className="h-44 bg-[#EDE5D5] dark:bg-[#1A2820]" />
+                <div className="p-4 space-y-3">
+                  <div className="h-3.5 w-2/3 rounded bg-[#F3EFE6] dark:bg-[#1A2820]" />
+                  <div className="h-3 w-1/2 rounded bg-[#FAF7F2] dark:bg-[#101914]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {destinations.map((dest) => (
             <div
@@ -385,6 +401,8 @@ export const TouristHome: React.FC = () => {
                   <img 
                     src={dest.featuredImage} 
                     alt={dest.name} 
+                    loading="lazy"
+                    decoding="async"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -433,6 +451,7 @@ export const TouristHome: React.FC = () => {
             </div>
           ))}
         </div>
+        )}
       </section>
 
       {/* Featured Providers Section */}
@@ -514,15 +533,24 @@ export const TouristHome: React.FC = () => {
               </button>
             </div>
 
-            <TanzaniaMap
-              providers={filteredProviders}
-              selectedCategory={selectedCategory}
-              onSelectProvider={(p) => setSelectedProvider(p)}
-              onRequestQuote={handleRequestQuote}
-              nearAfconOnly={nearAfconOnly}
-              onToggleNearAfcon={(near) => setNearAfconOnly(near)}
-              className="h-[640px] w-full rounded-3xl shadow-lg border border-[#E8DFC9] overflow-hidden"
-            />
+            <Suspense
+              fallback={
+                <div className="h-[460px] sm:h-[640px] w-full rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] bg-white dark:bg-[#152019] flex flex-col items-center justify-center gap-2 text-xs text-[#6B7A72] dark:text-[#8DA195]">
+                  <Map className="w-7 h-7 text-[#D97843]" />
+                  <span>Loading interactive Tanzania map...</span>
+                </div>
+              }
+            >
+              <TanzaniaMap
+                providers={filteredProviders}
+                selectedCategory={selectedCategory}
+                onSelectProvider={(p) => setSelectedProvider(p)}
+                onRequestQuote={handleRequestQuote}
+                nearAfconOnly={nearAfconOnly}
+                onToggleNearAfcon={(near) => setNearAfconOnly(near)}
+                className="h-[480px] sm:h-[640px] w-full rounded-3xl shadow-lg border border-[#E8DFC9] overflow-hidden"
+              />
+            </Suspense>
           </div>
         ) : (
           <>
@@ -551,7 +579,47 @@ export const TouristHome: React.FC = () => {
               </button>
             </div>
 
-        {filteredProviders.length === 0 ? (
+        {!catalogLoaded ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true" aria-label="Loading verified operators">
+            {[0, 1, 2].map((idx) => (
+              <div
+                key={idx}
+                className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] p-6 space-y-4 shadow-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-3 w-28 rounded bg-[#F3EFE6] dark:bg-[#1A2820]" />
+                  <div className="h-7 w-20 rounded-lg bg-[#FAF7F2] dark:bg-[#101914]" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-5 w-3/4 rounded bg-[#EDE5D5] dark:bg-[#1A2820]" />
+                  <div className="h-3 w-1/2 rounded bg-[#F3EFE6] dark:bg-[#1A2820]" />
+                </div>
+                <div className="space-y-2 pt-2">
+                  <div className="h-3 w-full rounded bg-[#FAF7F2] dark:bg-[#101914]" />
+                  <div className="h-3 w-5/6 rounded bg-[#FAF7F2] dark:bg-[#101914]" />
+                </div>
+                <div className="pt-4 border-t border-[#F0EBE0] dark:border-[#23352A] flex items-center justify-between">
+                  <div className="h-4 w-24 rounded bg-[#EDE5D5] dark:bg-[#1A2820]" />
+                  <div className="h-9 w-28 rounded-xl bg-[#F3EFE6] dark:bg-[#1A2820]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : providers.length === 0 ? (
+          <div className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] p-12 text-center max-w-md mx-auto space-y-3">
+            <h3 className="font-serif text-lg font-bold text-[#284435] dark:text-[#EDF3EF]">No operators listed yet</h3>
+            <p className="text-sm text-[#6B7A72] dark:text-[#8DA195]">
+              Are you a licensed Tanzanian tour operator, mountain guide, or coastal host? Be the first to publish packages on TANEXPO.
+            </p>
+            <button
+              type="button"
+              onClick={() => startOnboarding('provider_type')}
+              className="px-5 py-2.5 bg-[#D97843] hover:bg-[#C26532] text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+            >
+              Join as an Operator
+            </button>
+          </div>
+        ) : filteredProviders.length === 0 ? (
           <div className="bg-white rounded-2xl border border-[#E8DFC9] p-12 text-center max-w-md mx-auto">
             <p className="text-3xl mb-3">🔍</p>
             <h3 className="font-serif text-lg font-bold text-[#284435] mb-1">No operators found</h3>
@@ -588,14 +656,15 @@ export const TouristHome: React.FC = () => {
                         <span>{provider.location}</span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleCompareProvider(provider.id);
                           }}
-                          className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                          aria-label={isCompared ? `Remove ${provider.name} from comparison` : `Compare ${provider.name}`}
+                          className={`min-h-[36px] text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
                             isCompared
                               ? 'bg-[#284435] text-white border-[#284435]'
                               : 'bg-[#FAF7F2] text-[#6B7A72] border-[#E8DFC9] hover:bg-[#EDE5D5]'
@@ -606,11 +675,13 @@ export const TouristHome: React.FC = () => {
                         </button>
 
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleSaveProvider(provider.id);
                           }}
-                          className="w-8 h-8 rounded-full bg-[#FAF7F2] hover:bg-[#F0EBE0] flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
+                          aria-label={isSaved ? `Remove ${provider.name} from saved` : `Save ${provider.name}`}
+                          className="w-9 h-9 rounded-full bg-[#FAF7F2] hover:bg-[#F0EBE0] flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
                           title={isSaved ? "Remove from saved" : "Save provider"}
                         >
                           <Heart className={`w-4 h-4 ${isSaved ? "fill-red-500 text-red-500" : ""}`} />
@@ -641,8 +712,14 @@ export const TouristHome: React.FC = () => {
                       )}
                       <div className="flex items-center gap-1 text-xs text-amber-700 font-semibold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                         <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span>{provider.rating.toFixed(1)}</span>
-                        <span className="text-zinc-400 font-normal">({provider.reviewsCount})</span>
+                        {provider.reviewsCount > 0 ? (
+                          <>
+                            <span>{provider.rating.toFixed(1)}</span>
+                            <span className="text-zinc-400 font-normal">({provider.reviewsCount})</span>
+                          </>
+                        ) : (
+                          <span>New</span>
+                        )}
                       </div>
                     </div>
 
@@ -695,8 +772,9 @@ export const TouristHome: React.FC = () => {
                     </div>
 
                     <button
+                      type="button"
                       onClick={() => setSelectedProvider(provider)}
-                      className="px-3.5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                      className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
                     >
                       <span>{t('view.quote', 'View & Quote')}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -713,24 +791,27 @@ export const TouristHome: React.FC = () => {
 
       {/* Floating Compare Action Dock */}
       {comparedProviderIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#1C2C24] text-white px-5 py-3 rounded-full shadow-2xl border border-white/20 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="flex items-center gap-2 text-xs">
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1.5rem)] bg-[#1C2C24]/95 glass text-white px-4 sm:px-5 py-2.5 rounded-full shadow-2xl border border-white/20 flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 text-xs shrink-0">
             <SlidersHorizontal className="w-4 h-4 text-[#E8B94A]" />
             <span>
-              <strong>{comparedProviderIds.length}</strong> operator{comparedProviderIds.length > 1 ? 's' : ''} selected
+              <strong>{comparedProviderIds.length}</strong> selected
             </span>
           </div>
 
           <button
+            type="button"
             onClick={() => setIsCompareModalOpen(true)}
-            className="px-4 py-1.5 rounded-full bg-[#E8B94A] hover:bg-[#D4A335] text-[#1C2C24] text-xs font-bold transition-colors cursor-pointer shadow-sm"
+            className="min-h-[36px] px-3.5 sm:px-4 py-1.5 rounded-full bg-[#E8B94A] hover:bg-[#D4A335] text-[#1C2C24] text-xs font-bold transition-colors cursor-pointer shadow-sm shrink-0"
           >
-            {t('compare.btn', 'Compare Side-by-Side')}
+            {t('compare.btn', 'Compare')}
           </button>
 
           <button
+            type="button"
             onClick={clearCompare}
-            className="text-zinc-400 hover:text-white p-1"
+            aria-label="Clear comparison list"
+            className="min-h-[36px] min-w-[36px] flex items-center justify-center text-zinc-300 hover:text-white rounded-full cursor-pointer"
             title="Clear comparison list"
           >
             <X className="w-4 h-4" />
