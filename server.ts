@@ -2,7 +2,6 @@ import express, { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import helmet from 'helmet';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import { apiRouter } from './server/api.js';
 import { getDb } from './server/db.js';
 import { getPaymentsMode } from './server/config.js';
@@ -127,6 +126,8 @@ async function startServer() {
 
   // Vite middleware for development
   if (!isProd) {
+    // Loaded lazily: vite is a devDependency and is absent from production installs.
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true, host: '0.0.0.0', port: PORT },
       appType: 'spa'

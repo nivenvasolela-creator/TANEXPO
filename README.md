@@ -110,7 +110,7 @@ BASE_URL=http://127.0.0.1:3099/api PG_DATA_DIR="$TMP_PG/pg" \
   ADMIN_SEED_EMAIL="admin@tanexpo.tz" ADMIN_SEED_PASSWORD="AdminStrongPassword123!" \
   node scripts/integrity-test.mjs
 
-# 4. WhatsApp Operator OS & AI Concierge checks (13 assertions: OTP link, Mode A/B EN+SW, PII masking, dedupe, HMAC webhook)
+# 4. WhatsApp Operator OS & AI Concierge checks (14 assertions: OTP link, Mode A/B EN+SW, PII masking, dedupe, HMAC webhook)
 BASE_URL=http://127.0.0.1:3099/api \
   ADMIN_SEED_EMAIL="admin@tanexpo.tz" ADMIN_SEED_PASSWORD="AdminStrongPassword123!" \
   node scripts/whatsapp-test.mjs

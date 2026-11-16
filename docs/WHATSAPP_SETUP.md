@@ -14,7 +14,7 @@ By default (`WHATSAPP_ENABLED=false`), all outbound messages run through the bui
 | **Mode B: Tourist Concierge** | Travelers messaging TANEXPO | Server-side `@google/genai` (`gemini-4-hydrogen`) extracts destination, category, preferred date, group size, and budget in English or Swahili, creates a real lead in Postgres, replies with the Lead ID, and notifies the matched operator. Falls back cleanly to deterministic parsing if `GEMINI_API_KEY` is unset. |
 
 ### Guardrails & Compliance
-- **HMAC-SHA256 Webhook Verification**: `POST /api/whatsapp/webhook` verifies `X-Hub-Signature-256` against raw request bytes (`req.rawBody`) using `crypto.timingSafeEqual` whenever `WHATSAPP_APP_SECRET` is set or in production when `WHATSAPP_ENABLED=true`.
+- **HMAC-SHA256 Webhook Verification**: `POST /api/whatsapp/webhook` verifies `X-Hub-Signature-256` against raw request bytes (`req.rawBody`) using `crypto.timingSafeEqual` whenever `WHATSAPP_APP_SECRET` is set. In production the webhook rejects every request (401) until `WHATSAPP_APP_SECRET` is configured; unsigned posts are accepted only in local development.
 - **Idempotency**: Inbound Meta `wamid` IDs are deduplicated in `whatsapp_messages`, and proactive operator alerts are deduplicated in `notification_log`.
 - **24-Hour Customer Service Window & Dar Quiet Hours**: Outbound handlers track `last_inbound_at` per sender, and reminder notifications respect `Africa/Dar_es_Salaam` quiet hours (21:00–07:00 EAT).
 - **PII Protection**: Server logs, `whatsapp_messages.phone_masked`, and `leads.touristContact` mask all phone digits except the last 3 characters (`maskPhone`).

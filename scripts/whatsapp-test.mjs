@@ -69,6 +69,13 @@ async function main() {
   assert.equal(unauthSim.status, 401, `Expected 401 on unauthenticated /simulate-inbound, got ${unauthSim.status}`);
   pass('Unauthenticated POST /whatsapp/simulate-inbound blocked with 401 in production');
 
+  // Security: production without WHATSAPP_APP_SECRET must reject unsigned webhook posts
+  const unsignedHook = await req('POST', '/whatsapp/webhook', '', {
+    entry: [{ changes: [{ value: { messages: [{ id: `wamid_unsigned_${ts}`, from: '255712000999', type: 'text', text: { body: 'LEADS' } }] } }] }]
+  });
+  assert.equal(unsignedHook.status, 401, `Expected 401 on unsigned webhook in production, got ${unsignedHook.status}`);
+  pass('Unsigned POST /whatsapp/webhook rejected with 401 in production when no app secret is set');
+
   // 2. Register Provider and check /whatsapp/status
   const provEmail = `wa_prov_${ts}@example.com`;
   const provReg = await req('POST', '/auth/register', '', {

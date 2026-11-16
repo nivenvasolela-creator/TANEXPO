@@ -67,8 +67,10 @@ function verifyMetaSignature(req: Request): boolean {
   const isProd = process.env.NODE_ENV === 'production';
 
   if (!appSecret) {
-    // Allow local/unconfigured dev & simulated test posts unless live WhatsApp is explicitly enabled in production
-    return !(isProd && isWhatsAppEnabled());
+    // Without an app secret nothing proves a payload came from Meta. Unsigned posts are only
+    // tolerated in local development; production always rejects them (admins can still use
+    // the authenticated /simulate-inbound endpoint).
+    return !isProd;
   }
 
   const sigHeader = req.headers['x-hub-signature-256'];
