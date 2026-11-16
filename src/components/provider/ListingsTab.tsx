@@ -124,7 +124,7 @@ export const ListingsTab: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingListing(pkg)}
-                    className="p-2 rounded-xl bg-[#FAF7F2] dark:bg-[#101914] hover:bg-[#EDE5D5] dark:hover:bg-[#1C2C24] text-[#284435] dark:text-[#EDF3EF] border border-[#E8DFC9] dark:border-[#23352A] text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                    className="min-h-[40px] px-3 py-2 rounded-xl bg-[#FAF7F2] dark:bg-[#101914] hover:bg-[#EDE5D5] dark:hover:bg-[#1C2C24] text-[#284435] dark:text-[#EDF3EF] border border-[#E8DFC9] dark:border-[#23352A] text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                     title="Edit package"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -133,7 +133,8 @@ export const ListingsTab: React.FC = () => {
 
                   <button
                     onClick={() => deleteListing(pkg.id)}
-                    className="p-2 rounded-xl bg-white dark:bg-[#101914] hover:bg-red-50 dark:hover:bg-red-950/40 text-zinc-400 hover:text-red-600 border border-[#E8DFC9] dark:border-[#23352A] cursor-pointer transition-colors"
+                    aria-label="Delete package"
+                    className="min-h-[40px] min-w-[40px] flex items-center justify-center p-2 rounded-xl bg-white dark:bg-[#101914] hover:bg-red-50 dark:hover:bg-red-950/40 text-zinc-400 hover:text-red-600 border border-[#E8DFC9] dark:border-[#23352A] cursor-pointer transition-colors"
                     title="Delete package"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

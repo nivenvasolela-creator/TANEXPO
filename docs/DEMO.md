@@ -4,17 +4,7 @@ A 10-minute walkthrough on a phone. The goal is not compliments. Watch for: "whe
 
 ## Demo server settings
 
-Deploy as in `DEPLOYMENT.md` (one instance, persistent disk) with:
-
-```env
-NODE_ENV=production
-ADMIN_SEED_EMAIL=<you>
-ADMIN_SEED_PASSWORD=<strong password>
-PAYMENTS_MODE=simulated
-ALLOW_WHATSAPP_SIMULATOR=true     # WhatsApp chat preview in the dashboard
-SEED_DEMO_CATALOG=true            # sample operators so the traveler side is not empty
-APP_URL=https://<your-domain>
-```
+`render.yaml` and `fly.toml` already contain these settings; follow "Deploying the demo" in `DEPLOYMENT.md`. You only supply the admin email and password.
 
 `SEED_DEMO_CATALOG=true` fills the public catalog with invented sample operators. Use it on the demo site only, never on the site real travelers use. The header shows a demo badge while it is on.
 

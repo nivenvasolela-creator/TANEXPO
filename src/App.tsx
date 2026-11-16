@@ -3,7 +3,6 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { TouristView } from './components/tourist/TouristView';
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
-import { ThemeToggle } from './components/ThemeToggle';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { OfflineAndUpdateBanner } from './components/pwa/PWAControls';
 import { ShieldCheck } from 'lucide-react';
@@ -88,7 +87,6 @@ const MainLayout: React.FC = () => {
       <OfflineAndUpdateBanner />
 
       {/* Floating Theme Toggle */}
-      <ThemeToggle />
 
       {/* Footer */}
       <footer className="bg-[#1C2C24] dark:bg-[#0A100D] text-[#E4DFD5] border-t border-[#2A3F33] dark:border-[#1A2820] py-10 pb-24 md:pb-10 mt-12 transition-colors">

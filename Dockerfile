@@ -21,9 +21,11 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
 
-RUN mkdir -p /data/pg && chown -R node:node /app /data
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && mkdir -p /data/pg && chown -R node:node /app /data
 
-USER node
+# Starts as root only long enough to take ownership of the mounted data disk, then runs as "node".
+ENTRYPOINT ["docker-entrypoint.sh"]
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

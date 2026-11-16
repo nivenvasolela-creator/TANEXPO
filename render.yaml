@@ -1,0 +1,40 @@
+# Render Blueprint for the TANEXPO demo: one Docker web service with a persistent disk.
+# In Render: New > Blueprint > pick this repository (and the branch that holds this file).
+# You are asked for the values marked "sync: false" when you create it.
+services:
+  - type: web
+    name: tanexpo-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter            # a persistent disk needs a paid instance; the free tier would wipe the database
+    region: frankfurt        # closest Render region to East Africa
+    numInstances: 1          # must stay 1: the embedded database is single-process
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: tanexpo-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: PG_DATA_DIR
+        value: /data/pg
+      - key: PAYMENTS_MODE
+        value: simulated
+      - key: SEED_DEMO_CATALOG
+        value: "true"
+      - key: ALLOW_WHATSAPP_SIMULATOR
+        value: "true"
+      - key: WHATSAPP_ENABLED
+        value: "false"
+      - key: ADMIN_SEED_EMAIL
+        sync: false
+      - key: ADMIN_SEED_PASSWORD
+        sync: false
+      - key: APP_URL
+        sync: false            # the https://....onrender.com address, once you know it
+      - key: GEMINI_API_KEY
+        sync: false            # optional; leave empty to use the keyword parser

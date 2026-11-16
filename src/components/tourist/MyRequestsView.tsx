@@ -281,7 +281,7 @@ export const MyRequestsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setActiveChatLeadId(isChatOpen ? null : lead.id)}
-                      className="text-xs font-bold text-[#284435] dark:text-[#EDF3EF] hover:text-[#D97843] flex items-center gap-1.5 cursor-pointer"
+                      className="min-h-[40px] text-xs font-bold text-[#284435] dark:text-[#EDF3EF] hover:text-[#D97843] flex items-center gap-1.5 cursor-pointer"
                     >
                       <MessageCircle className="w-4 h-4 text-[#D97843]" />
                       <span>

@@ -40,7 +40,7 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - Payments stay simulated, and the UI says so: demo banners, no fake control-number instructions, no "licensed payment partner" claims while `PAYMENTS_MODE=simulated`.
 - Reviews: need the tourist's own Completed booking; a tourist's booking can only be completed after its trip date AND with a recorded payment; only the tourist (or admin) can record a simulated payment.
 - WhatsApp layer per section 2: Mode A alerts + commands, Mode B forward-to-lead, fixed reply to unlinked numbers, HMAC-verified webhook (production rejects everything without `WHATSAPP_APP_SECRET`), OTP linking, scheduler (Monday digest, reminders, quiet hours), templates outside the 24h window, dashboard preview simulator behind `ALLOW_WHATSAPP_SIMULATOR`.
-- Suites: 50 security, 26 integrity, 23 WhatsApp checks. Tourist and operator flows were also walked in a real browser at phone width.
+- Suites: 50 security, 26 integrity, 23 WhatsApp checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
 
 ## 5. Not verified / needs a human
 
@@ -48,7 +48,7 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - No live Gemini call has been made (no key in the test environment). `GEMINI_MODEL` defaults to `gemini-3.8-flash`; confirm the model name with a real key.
 - Swahili bot copy was written by a non-native speaker; Selemani or Harrison should read it.
 - Legal claims in the UI (Bank of Tanzania TZS rules, Tourism Act, PDPA, "Registered in Dar es Salaam & Arusha") and the draft privacy policy/terms need a lawyer.
-- Not deployed anywhere yet.
+- Not deployed anywhere yet. `render.yaml`, `fly.toml` and `docker-entrypoint.sh` are untested on a real host (no registry or host access from the build sandbox).
 
 ## 6. Known open issues
 

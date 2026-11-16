@@ -1,3 +1,4 @@
+import { photoProps, PHOTO_SIZES } from '../../utils/images';
 import React, { useState, Suspense, lazy } from 'react';
 import { useApp } from '../../context/AppContext';
 import { CategoryId, Provider } from '../../types';
@@ -94,7 +95,29 @@ export const TouristHome: React.FC = () => {
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-[#D97843]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 bg-[#E8B94A]/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 max-w-3xl">
+        {/* Photo tiles fill the open side of the hero on wide screens */}
+        <div className="hidden xl:grid absolute z-10 right-12 top-12 bottom-32 w-[330px] 2xl:w-[400px] grid-cols-2 grid-rows-2 gap-3">
+          {destinations.filter((d) => d.featuredImage).slice(0, 3).map((dest, idx) => (
+            <button
+              key={dest.id}
+              type="button"
+              onClick={() => setSelectedDestination(dest)}
+              className={`group relative overflow-hidden rounded-2xl border border-white/15 shadow-lg cursor-pointer text-left bg-linear-to-br ${dest.heroGradient} ${idx === 0 ? 'row-span-2' : ''}`}
+            >
+              <img
+                {...photoProps(dest.featuredImage!, PHOTO_SIZES.heroTile, [400, 800])}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-transparent" />
+              <span className="absolute left-3 right-3 bottom-3 font-serif text-sm font-bold text-white leading-tight">
+                {dest.name}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="relative z-10 max-w-3xl xl:max-w-[60%]">
           {isDomesticTourist ? (
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-4 border border-emerald-400/30">
               <span className="text-base">🇹🇿</span>
@@ -246,7 +269,7 @@ export const TouristHome: React.FC = () => {
                 const elem = document.getElementById('operators-directory');
                 if (elem) elem.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="px-3.5 py-1.5 rounded-lg bg-[#E8B94A] hover:bg-[#D4A335] text-[#1E332A] text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0"
+              className="min-h-[40px] px-3.5 py-1.5 rounded-lg bg-[#E8B94A] hover:bg-[#D4A335] text-[#1E332A] text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0"
             >
               <span>{viewMode === 'map' ? 'Map View Active' : 'Open Tanzania Map'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -399,11 +422,9 @@ export const TouristHome: React.FC = () => {
               <div className="relative h-44 overflow-hidden">
                 {dest.featuredImage ? (
                   <img 
-                    src={dest.featuredImage} 
+                    {...photoProps(dest.featuredImage, PHOTO_SIZES.card)}
                     alt={dest.name} 
                     loading="lazy"
-                    decoding="async"
-                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : null}
