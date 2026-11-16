@@ -137,6 +137,11 @@ export const LeadsPipelineTab: React.FC = () => {
                           <p className="text-[11px] font-medium text-[#D97843] truncate">
                             {lead.listingTitle}
                           </p>
+                          {lead.sourceChannel === 'whatsapp_forward' && (
+                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+                              Forwarded from WhatsApp
+                            </span>
+                          )}
                         </div>
 
                         {/* Details row: Date, Travelers, Budget */}
@@ -149,10 +154,12 @@ export const LeadsPipelineTab: React.FC = () => {
                             <Users className="w-3 h-3 text-[#284435] dark:text-emerald-400" />
                             <span>Group: <strong>{lead.groupSize} Guests</strong></span>
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <Phone className="w-3 h-3 text-[#6B7A72] dark:text-[#8DA195]" />
-                            <span className="truncate">{lead.touristContact}</span>
-                          </div>
+                          {lead.touristContact && (
+                            <div className="flex items-center gap-1.5">
+                              <Phone className="w-3 h-3 text-[#6B7A72] dark:text-[#8DA195]" />
+                              <span className="truncate">{lead.touristContact}</span>
+                            </div>
+                          )}
                           {lead.budgetTZS && (
                             <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400">
                               <DollarSign className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />

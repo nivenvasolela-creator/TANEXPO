@@ -625,9 +625,9 @@ function heuristicParseInquiry(rawText: string): ParsedInquiry {
   }
 
   const budgetMatch =
-    rawText.match(/(?:budget|bajeti)[^\d$]{0,20}((?:usd|tzs|tsh|\$)?\s?\d[\d,.]*\s?(?:usd|tzs|tsh|dollars|\$|k|m)?)/i) ||
+    rawText.match(/(?:budget|bajeti)[^\d$]{0,20}?((?:usd|tzs|tsh|\$)?\s?\d[\d,.]*\s?(?:usd|tzs|tsh|dollars|\$|k\b|m\b)?)/i) ||
     rawText.match(/((?:usd|tzs|tsh|\$)\s?\d[\d,.]*|\d[\d,.]*\s?(?:usd|tzs|tsh|dollars))/i);
-  const budget = budgetMatch ? budgetMatch[1].trim().slice(0, 60) : '';
+  const budget = budgetMatch ? budgetMatch[1].trim().replace(/[.,]+$/, '').slice(0, 60) : '';
 
   const nameMatch =
     rawText.match(/\b(?:my name is|this is|i am|i'm|jina langu ni|naitwa|mimi ni)\s+([A-Z][\p{L}'-]+(?:\s+[A-Z][\p{L}'-]+)?)/u) ||

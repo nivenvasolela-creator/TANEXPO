@@ -103,6 +103,7 @@ interface AppContextType {
 
   // Runtime Config & Loading State
   catalogLoaded: boolean;
+  refreshData: () => Promise<void>;
   paymentsMode: 'simulated' | 'live';
   seedDemoCatalog: boolean;
 
@@ -123,8 +124,8 @@ interface AppContextType {
   setCurrentView: (view: 'tourist' | 'provider') => void;
   touristTab: 'explore' | 'requests' | 'saved' | 'compliance';
   setTouristTab: (tab: 'explore' | 'requests' | 'saved' | 'compliance') => void;
-  providerTab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile';
-  setProviderTab: (tab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile') => void;
+  providerTab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp';
+  setProviderTab: (tab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp') => void;
   activeProviderId: number;
   setActiveProviderId: (id: number) => void;
   showUSDApprox: boolean;
@@ -206,6 +207,21 @@ const STORAGE_KEYS = {
   INTRO_SEEN: 'tanexpo_intro_seen_v3',
   AUTH_TOKEN: 'tanexpo_auth_token'
 };
+
+/**
+ * The service worker keeps the last catalog response for offline use. A signed-in traveler's
+ * catalog can include contact details of operators they booked, so the copy is dropped
+ * whenever the signed-in user changes.
+ */
+function clearCachedCatalog(): void {
+  try {
+    if (typeof caches !== 'undefined') {
+      void caches.delete('tanexpo-public-catalog').catch(() => {});
+    }
+  } catch {
+    // Cache Storage unavailable (private mode, old browser): nothing to clear.
+  }
+}
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Language
@@ -328,7 +344,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [touristTab, setTouristTab] = useState<'explore' | 'requests' | 'saved' | 'compliance'>('explore');
   const [providerTab, setProviderTab] = useState<
-    'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile'
+    'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp'
   >('overview');
   const [activeProviderId, setActiveProviderId] = useState<number>(() => {
     if (currentUser?.providerProfile?.providerId) {
@@ -390,6 +406,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     (redirectToLogin = true) => {
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+      clearCachedCatalog();
       setCurrentUser(null);
       clearPrivateState();
       setCurrentView('tourist');
@@ -787,6 +804,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }).catch(() => {});
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     }
+    clearCachedCatalog();
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
     clearPrivateState();
@@ -1275,6 +1293,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentView,
         touristTab,
         setTouristTab,
+        refreshData: syncAll,
         providerTab,
         setProviderTab,
         activeProviderId,

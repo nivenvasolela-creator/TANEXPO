@@ -7,7 +7,7 @@ export const ThemeToggle: React.FC = () => {
   const isDark = theme === 'dark';
 
   return (
-    <div className="fixed bottom-20 md:bottom-5 right-4 sm:right-5 z-40">
+    <div className="hidden md:block fixed bottom-5 right-5 z-40">
       <button
         type="button"
         onClick={toggleTheme}

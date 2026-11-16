@@ -69,10 +69,12 @@ export const BookingsTab: React.FC = () => {
               Demo payments
             </span>
           )}
-          <div className="bg-[#FAF7F2] dark:bg-[#101914] px-4 py-2 rounded-xl border border-[#E8DFC9] dark:border-[#23352A] text-xs text-[#284435] dark:text-emerald-300 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>All trips processed securely via licensed payment partner</span>
-          </div>
+          {paymentsMode !== 'simulated' && (
+            <div className="bg-[#FAF7F2] dark:bg-[#101914] px-4 py-2 rounded-xl border border-[#E8DFC9] dark:border-[#23352A] text-xs text-[#284435] dark:text-emerald-300 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>All trips processed securely via licensed payment partner</span>
+            </div>
+          )}
         </div>
       </div>
 

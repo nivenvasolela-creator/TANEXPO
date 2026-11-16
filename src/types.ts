@@ -194,6 +194,8 @@ export interface Lead {
   createdAt: string;
   lastUpdated?: string;
   messages?: LeadMessage[];
+  /** 'whatsapp_forward': the operator forwarded a customer's WhatsApp message to TANEXPO. */
+  sourceChannel?: 'whatsapp_forward';
 }
 
 export interface Booking {

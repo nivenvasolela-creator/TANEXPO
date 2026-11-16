@@ -11,7 +11,7 @@
    - **Never run more than 1 replica** against PGlite. To scale horizontally (`replicas > 1`), follow the [Migrating from PGlite to Managed Postgres](#migrating-from-pglite-to-managed-postgres) section below.
 
 3. **Lockfile Standardization**
-   - Both `package-lock.json` and `bun.lock` may exist from earlier tooling. Standardize on **`package-lock.json`** and `npm ci` (matching `Dockerfile` and `.npmrc`). If your CI detects `bun.lock` automatically, remove `bun.lock` locally before committing.
+   - `package-lock.json` is the only lockfile and the `Dockerfile` runs `npm ci`. If a tool regenerates `bun.lock`, delete it before committing.
 
 ---
 

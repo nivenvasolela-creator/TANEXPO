@@ -1,7 +1,10 @@
 import React from 'react';
+import { useApp } from '../../context/AppContext';
 import { ShieldCheck, Scale, Banknote, FileCheck, CheckCircle2 } from 'lucide-react';
 
 export const ComplianceInfoView: React.FC = () => {
+  const { paymentsMode } = useApp();
+  const paymentsLive = paymentsMode === 'live';
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16 transition-colors">
       <div className="bg-white dark:bg-[#152019] p-6 sm:p-8 rounded-3xl border border-[#E8DFC9] dark:border-[#23352A] shadow-xs">
@@ -70,21 +73,25 @@ export const ComplianceInfoView: React.FC = () => {
             <ShieldCheck className="w-5 h-5" />
           </div>
           <h3 className="font-serif text-xl font-bold text-[#284435] dark:text-[#EDF3EF]">
-            Licensed Payment & Digital Payout Guarantee
+            {paymentsLive ? 'Licensed Payment & Digital Payout Guarantee' : 'Online payment is coming'}
           </h3>
           <p className="text-xs text-[#4D5E55] dark:text-[#B5C5BC] leading-relaxed">
-            Payment disputes frequently harm travelers and local operators in informal phone or cash bookings. Payments on TANEXPO are processed via licensed mobile money and payment partners and released to the verified operator once the booking is confirmed.
+            {paymentsLive
+              ? 'Payment disputes frequently harm travelers and local operators in informal phone or cash bookings. Payments on TANEXPO are processed via licensed mobile money and payment partners and released to the verified operator once the booking is confirmed.'
+              : 'Paying through TANEXPO is not available yet. Checkout on this site is a demonstration: no money is charged, held or paid out. Until payments launch, agree payment directly with your operator.'}
           </p>
-          <div className="bg-[#FAF7F2] dark:bg-[#0D1511] p-4 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] text-xs space-y-2">
-            <div className="flex items-start gap-2 text-[#284435] dark:text-[#EDF3EF]">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <span>Operators receive direct mobile money payouts (M-Pesa, Tigo Pesa, Airtel) or domestic bank transfers.</span>
+          {paymentsLive && (
+            <div className="bg-[#FAF7F2] dark:bg-[#0D1511] p-4 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] text-xs space-y-2">
+              <div className="flex items-start gap-2 text-[#284435] dark:text-[#EDF3EF]">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <span>Operators receive direct mobile money payouts (M-Pesa, Tigo Pesa, Airtel) or domestic bank transfers.</span>
+              </div>
+              <div className="flex items-start gap-2 text-[#284435] dark:text-[#EDF3EF]">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <span>Transparent 15% platform fee covers booking verification, customer dispute mediation, and system infrastructure.</span>
+              </div>
             </div>
-            <div className="flex items-start gap-2 text-[#284435] dark:text-[#EDF3EF]">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <span>Transparent 15% platform fee covers booking verification, customer dispute mediation, and system infrastructure.</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Data Protection Act */}

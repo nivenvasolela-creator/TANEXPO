@@ -15,7 +15,8 @@ import {
   PanelLeftOpen,
   Menu,
   X,
-  MoreHorizontal
+  MoreHorizontal,
+  MessageCircle
 } from 'lucide-react';
 import { ErrorBoundary } from '../ErrorBoundary';
 
@@ -24,6 +25,9 @@ const OverviewTab = lazy(() =>
 );
 const LeadsPipelineTab = lazy(() =>
   import('./LeadsPipelineTab').then((m) => ({ default: m.LeadsPipelineTab }))
+);
+const WhatsAppTab = lazy(() =>
+  import('./WhatsAppTab').then((m) => ({ default: m.WhatsAppTab }))
 );
 const ListingsTab = lazy(() =>
   import('./ListingsTab').then((m) => ({ default: m.ListingsTab }))
@@ -109,6 +113,7 @@ export const ProviderDashboard: React.FC = () => {
   }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, sublabel: 'Metrics & Performance' },
     { id: 'leads', label: 'Pipeline Leads', icon: Kanban, badge: newLeadsCount, sublabel: 'Inquiries & Quotes' },
+    { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, sublabel: 'Alerts & Commands' },
     { id: 'listings', label: 'Tour Packages', icon: Package, badge: pListings.length, sublabel: 'Inventory & Rates' },
     { id: 'bookings', label: 'Bookings & Trips', icon: CalendarCheck, badge: pBookings.length, sublabel: 'Confirmed Bookings' },
     { id: 'financials', label: 'Financials & Payouts', icon: BadgeDollarSign, sublabel: 'TZS Settlements' },
@@ -324,7 +329,6 @@ export const ProviderDashboard: React.FC = () => {
             {!isCollapsed ? (
               <div className="pt-2 text-center text-[10px] text-[#8A9790] dark:text-[#6B7A72] border-t border-[#F0EBE0] dark:border-[#23352A]">
                 <span>TALA Tanzanian Operator OS</span>
-                <span className="block text-[9px] text-[#6B7A72] dark:text-[#8DA195]">Licensed Payment Partner Protected</span>
               </div>
             ) : null}
           </div>
@@ -355,6 +359,7 @@ export const ProviderDashboard: React.FC = () => {
               {providerTab === 'financials' && <FinancialsTab />}
               {providerTab === 'reviews' && <ReviewsTab />}
               {providerTab === 'profile' && <ProfileSettingsTab />}
+              {providerTab === 'whatsapp' && <WhatsAppTab />}
             </Suspense>
           </ErrorBoundary>
         </main>
@@ -401,15 +406,15 @@ export const ProviderDashboard: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => handleTabClick('listings')}
+            onClick={() => handleTabClick('whatsapp')}
             className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
-              providerTab === 'listings'
+              providerTab === 'whatsapp'
                 ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
-            <Package className="w-4 h-4" />
-            <span>Packages</span>
+            <MessageCircle className="w-4 h-4" />
+            <span>WhatsApp</span>
           </button>
 
           <button
@@ -430,7 +435,7 @@ export const ProviderDashboard: React.FC = () => {
             onClick={() => setIsMobileOpen(true)}
             aria-label="More operator sections"
             className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
-              providerTab === 'financials' || providerTab === 'reviews' || providerTab === 'profile'
+              providerTab === 'listings' || providerTab === 'financials' || providerTab === 'reviews' || providerTab === 'profile'
                 ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}

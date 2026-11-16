@@ -126,7 +126,7 @@ export const TouristHome: React.FC = () => {
             {isDomesticTourist ? (
               'Explore resident-tier park fees, weekend safari escapes, family coastal getaways, and local transport deals with official TZS transparent rates.'
             ) : isInternationalTourist ? (
-              'Connect directly with TALA-registered safari guides, Kilimanjaro expedition leaders, and Zanzibar dhow captains with zero foreign markups and licensed payment partner settlement.'
+              'Connect directly with TALA-registered safari guides, Kilimanjaro expedition leaders, and Zanzibar dhow captains with zero foreign markups.'
             ) : (
               t('hero.subtitle', 'Connect directly with TALA-registered safari guides, Kilimanjaro leaders, and Zanzibar dhow captains. No foreign markups. Custom itineraries quoted directly in official Tanzanian Shillings.')
             )}
@@ -262,7 +262,7 @@ export const TouristHome: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>100% Verified TALA Tourism Licenses & Licensed Payment Processing</span>
+            <span>Operators show as verified only after their TALA licence is checked</span>
           </div>
         </div>
       </section>

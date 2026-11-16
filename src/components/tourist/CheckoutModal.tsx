@@ -202,7 +202,9 @@ export const CheckoutModal: React.FC = () => {
               <div>
                 <strong className="block font-bold">Bank of Tanzania (BOT) Currency Compliance:</strong>
                 <span className="text-[11px] text-[#4D5E55] dark:text-[#A7B9B0] leading-relaxed">
-                  Invoiced in lawful Tanzanian Shillings (TZS). Payments are processed securely via a licensed mobile money/payment partner and released to the provider once the booking is confirmed.
+                  {paymentsMode === 'simulated'
+                    ? 'Invoiced in Tanzanian Shillings (TZS). This is a demo checkout: no money is charged and nothing is sent to your phone.'
+                    : 'Invoiced in lawful Tanzanian Shillings (TZS). Payments are processed securely via a licensed mobile money/payment partner and released to the provider once the booking is confirmed.'}
                 </span>
               </div>
             </div>
@@ -255,7 +257,9 @@ export const CheckoutModal: React.FC = () => {
                   />
                 </div>
                 <p className="text-[11px] text-[#6B7A72] dark:text-[#8DA195] pt-1">
-                  We will dispatch an automated prompt to your phone and generate an official Control Number for payment.
+                  {paymentsMode === 'simulated'
+                    ? 'Demo only: no prompt is sent and no payment is taken.'
+                    : 'We will dispatch an automated prompt to your phone and generate an official Control Number for payment.'}
                 </p>
               </div>
             ) : (
@@ -332,6 +336,8 @@ export const CheckoutModal: React.FC = () => {
                   <span>
                     {paymentRail === 'CRDB Bank'
                       ? `Pay ${formatPrice(totalAmountTZS, false)} with Card`
+                      : paymentsMode === 'simulated'
+                      ? 'Continue (demo, no charge)'
                       : `Generate Control Number & Push Prompt`}
                   </span>
                 </>
@@ -343,6 +349,12 @@ export const CheckoutModal: React.FC = () => {
         {/* Step 2: Professional Payment Reference & Control Number Screen */}
         {paymentStep === 'control_number' && (
           <div className="p-6 space-y-5">
+            {paymentsMode === 'simulated' && (
+              <div role="alert" className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-sm text-amber-900 dark:text-amber-200">
+                <strong className="block">Demo checkout. Do not send any money.</strong>
+                The number below is a sample, not a real payment reference. Nothing was sent to your phone.
+              </div>
+            )}
             {/* Control Number Card */}
             <div className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] p-5 space-y-4 shadow-sm text-center">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800/80">
@@ -401,7 +413,7 @@ export const CheckoutModal: React.FC = () => {
             </div>
 
             {/* Handset Push Notification Banner */}
-            <div className="bg-[#FAF0E9] dark:bg-[#2A1D16] p-4 rounded-2xl border border-[#EBD0BC] dark:border-[#3D281E] flex items-start gap-3">
+            <div hidden={paymentsMode === 'simulated'} className="bg-[#FAF0E9] dark:bg-[#2A1D16] p-4 rounded-2xl border border-[#EBD0BC] dark:border-[#3D281E] flex items-start gap-3">
               <PhoneCall className="w-5 h-5 text-[#D97843] shrink-0 mt-0.5 animate-pulse" />
               <div className="text-xs space-y-1">
                 <strong className="text-[#284435] dark:text-[#EDF3EF] block">
@@ -414,7 +426,7 @@ export const CheckoutModal: React.FC = () => {
             </div>
 
             {/* Manual Instructions Accordion */}
-            <div className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] overflow-hidden text-xs">
+            <div hidden={paymentsMode === 'simulated'} className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] overflow-hidden text-xs">
               <button
                 type="button"
                 onClick={() => setShowManualSteps(!showManualSteps)}
@@ -467,12 +479,12 @@ export const CheckoutModal: React.FC = () => {
                 {isVerifying ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Verifying Handset Payment from {paymentRail} Gateway...</span>
+                    <span>{paymentsMode === 'simulated' ? 'Confirming booking...' : `Verifying Handset Payment from ${paymentRail} Gateway...`}</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>I Have Authorized on My Handset / Verify Payment</span>
+                    <span>{paymentsMode === 'simulated' ? 'Complete demo booking' : 'I Have Authorized on My Handset / Verify Payment'}</span>
                   </>
                 )}
               </button>
@@ -497,7 +509,7 @@ export const CheckoutModal: React.FC = () => {
 
             <div className="space-y-1">
               <h4 className="font-serif text-2xl font-bold text-[#284435] dark:text-[#EDF3EF]">
-                Malipo Yamekamilika!
+                {paymentsMode === 'simulated' ? 'Booking confirmed (demo)' : 'Malipo Yamekamilika!'}
               </h4>
               <p className="text-xs text-[#6B7A72] dark:text-[#8DA195]">
                 Booking Reference: <strong className="text-[#284435] dark:text-[#EDF3EF] font-mono">{confirmedBooking.referenceCode}</strong>
@@ -514,7 +526,7 @@ export const CheckoutModal: React.FC = () => {
                 <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{confirmedBooking.providerName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#6B7A72] dark:text-[#8DA195]">Amount Paid:</span>
+                <span className="text-[#6B7A72] dark:text-[#8DA195]">{paymentsMode === 'simulated' ? 'Amount (not charged):' : 'Amount Paid:'}</span>
                 <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{formatPrice(confirmedBooking.amountTZS, false)}</span>
               </div>
               <div className="flex justify-between">

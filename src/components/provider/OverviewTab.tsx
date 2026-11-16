@@ -86,7 +86,7 @@ export const OverviewTab: React.FC = () => {
             Karibu, {provider.name}
           </h2>
           <p className="text-xs sm:text-sm text-[#D3DFD7] leading-relaxed">
-            Your centralized operating system for northern circuit safaris, client inquiries, dynamic quoting, and guaranteed mobile money settlements.
+            Your centralized operating system for northern circuit safaris, client inquiries, quotes and bookings — on the web and on WhatsApp.
           </p>
         </div>
 
@@ -330,8 +330,8 @@ export const OverviewTab: React.FC = () => {
               <div className="flex items-start gap-2.5">
                 <Calendar className="w-4 h-4 text-[#284435] dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-[#284435] dark:text-[#EDF3EF] block">Payment Settlement:</span>
-                  <span className="text-[#6B7A72] dark:text-[#8DA195]">M-Pesa / CRDB disbursement on departure.</span>
+                  <span className="font-bold text-[#284435] dark:text-[#EDF3EF] block">Payments:</span>
+                  <span className="text-[#6B7A72] dark:text-[#8DA195]">Online payouts are not live yet. Amounts shown are test figures.</span>
                 </div>
               </div>
             </div>
