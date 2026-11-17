@@ -31,7 +31,7 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - Features: tourist side (home, place/provider pages, compare, booking request, checkout, voucher, my requests, saved, reviews, compliance info). Provider side (overview, leads pipeline, WhatsApp tab, bookings, financials, listings editor, quote builder, reviews, profile/verification). English + Swahili, TZS + USD, legal pages (drafts), account deletion, admin backup export.
 - Much of the code was generated through **Google AI Studio (Gemini)**. Two AI Studio apps exist: **FORGE** (a different project, never touch) and **TANEXPO**. Gemini's own reports and tests describe its own work; verify by running.
 - Build/test: `npm ci`, `npx tsc --noEmit`, `npm run build`, `npm test` (runs all three suites, each against a fresh production-mode server). npm is the only lockfile.
-- Docs: `README.md`, `DEPLOYMENT.md`, `docs/WHATSAPP_SETUP.md`, `docs/DEMO.md`.
+- Docs: `docs/LAUNCH.md` (launch checklist with links), `README.md`, `DEPLOYMENT.md`, `docs/WHATSAPP_SETUP.md`, `docs/DEMO.md`. Local demo: `npm run build && npm run demo` (or `npm run demo:public` for a Cloudflare Tunnel link; settings in the uncommitted `.env.demo`).
 
 ## 4. What is done (verified by running, 2026-11-16)
 

@@ -116,6 +116,7 @@ npm test
 
 - **Production Deployment, Backups & Managed Postgres Migration**: [`DEPLOYMENT.md`](./DEPLOYMENT.md)
 - **WhatsApp layer, Meta setup and templates**: [`docs/WHATSAPP_SETUP.md`](./docs/WHATSAPP_SETUP.md)
+- **Launch checklist with every account and link (start here)**: [`docs/LAUNCH.md`](./docs/LAUNCH.md)
 - **Showing the product to operators**: [`docs/DEMO.md`](./docs/DEMO.md)
 - **Legal Pages Served by the App**: `/privacy` (Tanzania PDPA 2022) and `/terms` (Tanzania Tourism Act No. 29 of 2008)
 

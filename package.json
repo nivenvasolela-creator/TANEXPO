@@ -13,7 +13,9 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "bash scripts/test-all.sh"
+    "test": "bash scripts/test-all.sh",
+    "demo": "node scripts/demo.mjs",
+    "demo:public": "node scripts/demo.mjs --public"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
