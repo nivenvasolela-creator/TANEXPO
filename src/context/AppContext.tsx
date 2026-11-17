@@ -463,7 +463,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Public catalog fetch (safe for guests)
   const syncCatalog = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/catalog', {}, { redirectOn401: false });
+      let res = await apiFetch('/api/catalog', {}, { redirectOn401: false });
+      if (!res.ok) {
+        // One quick retry: a slow tunnel or mobile network often fails the first attempt.
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await apiFetch('/api/catalog', {}, { redirectOn401: false });
+      }
       if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data.providers)) setProviders(data.providers);

@@ -71,6 +71,8 @@ export interface Category {
   label: string;
   labelSw?: string;
   emoji: string;
+  /** Hosted photo for the category card, e.g. /photos/zanzibar-beach */
+  photo?: string;
   sub: string;
   description: string;
   popularDestinations: string[];

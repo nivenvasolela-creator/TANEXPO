@@ -29,6 +29,18 @@ export function photoProps(
   sizes: string,
   widths: number[] = [400, 640, 960, 1280]
 ): React.ImgHTMLAttributes<HTMLImageElement> {
+  // Our own hosted photos: /photos/<name> is served as <name>-640.webp and <name>-1280.webp.
+  if (/^\/photos\/[a-z0-9-]+$/.test(url)) {
+    return {
+      src: `${url}-640.webp`,
+      srcSet: `${url}-640.webp 640w, ${url}-1280.webp 1280w`,
+      sizes,
+      decoding: 'async',
+      onError: (e: React.SyntheticEvent<HTMLImageElement>) => {
+        e.currentTarget.style.display = 'none';
+      }
+    };
+  }
   const resizable = url.includes('images.unsplash.com');
   return {
     src: sized(url, widths[Math.min(1, widths.length - 1)]),

@@ -343,40 +343,42 @@ export const TouristHome: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-              selectedCategory === 'all'
-                ? 'bg-[#284435] text-white border-[#284435] shadow-md'
-                : 'bg-white text-[#1F2A24] border-[#E8DFC9] hover:border-[#284435] hover:bg-[#F8F5EE]'
-            }`}
-          >
-            <span className="text-2xl block mb-2">🌍</span>
-            <div className="font-bold text-sm leading-tight">{t('all.categories', 'All Types')}</div>
-            <div className={`text-[11px] mt-1 ${selectedCategory === 'all' ? 'text-[#C7D9CF]' : 'text-[#6B7A72]'}`}>
-              {providers.length} Providers
-            </div>
-          </button>
-
-          {categories.map((cat) => {
-            const count = providers.filter((p) => p.category === cat.id).length;
-            const isSelected = selectedCategory === cat.id;
-
+          {[
+            { id: 'all' as const, label: t('all.categories', 'All Types'), photo: '/photos/serengeti-plains', count: providers.length, all: true },
+            ...categories.map((cat) => ({
+              id: cat.id,
+              label: cat.label,
+              photo: cat.photo,
+              count: providers.filter((p) => p.category === cat.id).length,
+              all: false
+            }))
+          ].map((tile) => {
+            const isSelected = selectedCategory === tile.id;
             return (
               <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#284435] text-white border-[#284435] shadow-md'
-                    : 'bg-white text-[#1F2A24] border-[#E8DFC9] hover:border-[#284435] hover:bg-[#F8F5EE]'
+                key={tile.id}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => setSelectedCategory(tile.id)}
+                className={`group relative h-32 sm:h-36 overflow-hidden rounded-2xl text-left cursor-pointer bg-[#284435] transition-all ${
+                  isSelected ? 'ring-3 ring-[#E8B94A] ring-offset-2 ring-offset-[#FAF7F2] dark:ring-offset-[#0D1511] shadow-lg' : 'hover:shadow-lg'
                 }`}
               >
-                <span className="text-2xl block mb-2">{cat.emoji}</span>
-                <div className="font-bold text-sm leading-tight">{cat.label}</div>
-                <div className={`text-[11px] mt-1 truncate ${isSelected ? 'text-[#C7D9CF]' : 'text-[#6B7A72]'}`}>
-                  {count} {count === 1 ? 'Operator' : 'Operators'}
-                </div>
+                {tile.photo && (
+                  <img
+                    {...photoProps(tile.photo, '(min-width: 1024px) 16vw, (min-width: 640px) 33vw, 50vw')}
+                    alt=""
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                )}
+                <span className="absolute inset-0 bg-linear-to-t from-black/85 via-black/35 to-black/5" />
+                <span className="absolute left-3 right-3 bottom-3 text-white">
+                  <span className="block font-bold text-sm leading-tight drop-shadow-sm">{tile.label}</span>
+                  <span className="block text-[11px] mt-0.5 text-white/85">
+                    {tile.count} {tile.all ? (tile.count === 1 ? 'Provider' : 'Providers') : tile.count === 1 ? 'Operator' : 'Operators'}
+                  </span>
+                </span>
               </button>
             );
           })}

@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { TouristView } from './components/tourist/TouristView';
@@ -22,7 +22,13 @@ const ViewFallback: React.FC = () => (
   </div>
 );
 
+const PhotoCreditsModal = React.lazy(() =>
+  import('./components/legal/PhotoCreditsModal').then((m) => ({ default: m.PhotoCreditsModal }))
+);
+
 const MainLayout: React.FC = () => {
+  const [showPhotoCredits, setShowPhotoCredits] = useState(false);
+  const closePhotoCredits = React.useCallback(() => setShowPhotoCredits(false), []);
   const { currentView, touristTab, isOnboardingOpen, activeLegalDoc, language, openLegalDoc } = useApp();
 
   // Sync <html lang> and SEO robots directive for private/dashboard routes
@@ -131,6 +137,13 @@ const MainLayout: React.FC = () => {
               >
                 Privacy Policy (Draft)
               </a>
+              <button
+                type="button"
+                onClick={() => setShowPhotoCredits(true)}
+                className="min-h-[44px] inline-flex items-center hover:text-white underline cursor-pointer"
+              >
+                Photo credits
+              </button>
               <a
                 href="/terms"
                 onClick={(e) => {
@@ -148,6 +161,11 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
       </footer>
+      {showPhotoCredits && (
+        <Suspense fallback={null}>
+          <PhotoCreditsModal onClose={closePhotoCredits} />
+        </Suspense>
+      )}
     </div>
   );
 };
