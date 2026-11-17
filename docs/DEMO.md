@@ -30,5 +30,5 @@ What is real and what is not on this build:
 ## Before each demo
 
 - `npm test` passes on the commit you deployed.
-- You can sign in as admin (needed to verify an operator: their profile shows "Pending Review" until then).
+- You can sign in as admin. To verify an operator after checking their TALA licence: account menu (top right) > **Verify operators** > **Mark verified**. Until then they show "Pending Verification".
 - The demo site URL opens on mobile data, not just Wi-Fi.

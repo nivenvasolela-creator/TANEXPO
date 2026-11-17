@@ -40,7 +40,8 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - Payments stay simulated, and the UI says so: demo banners, no fake control-number instructions, no "licensed payment partner" claims while `PAYMENTS_MODE=simulated`.
 - Reviews: need the tourist's own Completed booking; a tourist's booking can only be completed after its trip date AND with a recorded payment; only the tourist (or admin) can record a simulated payment.
 - WhatsApp layer per section 2: Mode A alerts + commands, Mode B forward-to-lead, fixed reply to unlinked numbers, HMAC-verified webhook (production rejects everything without `WHATSAPP_APP_SECRET`), OTP linking, scheduler (Monday digest, reminders, quiet hours), templates outside the 24h window, dashboard preview simulator behind `ALLOW_WHATSAPP_SIMULATOR`.
-- Suites: 50 security, 26 integrity, 23 WhatsApp checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
+- Admin: account menu > **Verify operators** lists operators with their TALA licence and toggles verification (server re-checks the admin role).
+- Suites: 50 security, 27 integrity, 23 WhatsApp checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
 
 ## 5. Not verified / needs a human
 
