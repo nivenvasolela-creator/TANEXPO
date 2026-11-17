@@ -104,7 +104,7 @@ export const initialDestinations: DestinationPlace[] = [
     images: [
       {
         url: '/photos/ngorongoro-crater',
-        caption: 'Looking down into the Ngorongoro Crater from the rim',
+        caption: 'Cloud pouring over the rim of the Ngorongoro Crater',
         tag: 'Caldera Vista'
       },
       {
@@ -326,7 +326,7 @@ export const initialDestinations: DestinationPlace[] = [
       },
       {
         url: '/photos/eyasi-rift',
-        caption: 'Great Rift Valley escarpment rising above Lake Manyara',
+        caption: 'Acacia woodland below the Rift Valley escarpment at Lake Manyara',
         tag: 'Datoga Blacksmiths'
       }
     ],
@@ -397,7 +397,7 @@ export const initialDestinations: DestinationPlace[] = [
       },
       {
         url: '/photos/mafia-sandbank',
-        caption: 'Turquoise water and white sand around a coral island',
+        caption: 'Clear turquoise water around Mnemba Island',
         tag: 'Tidal Sandbanks'
       }
     ],

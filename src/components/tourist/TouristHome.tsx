@@ -430,7 +430,7 @@ export const TouristHome: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : null}
-                <div className={`absolute inset-0 bg-linear-to-t ${dest.heroGradient} opacity-85 group-hover:opacity-80 transition-opacity`} />
+                <div className={`absolute inset-0 transition-opacity ${dest.featuredImage ? 'bg-linear-to-t from-black/85 via-black/25 to-black/10' : `bg-linear-to-t ${dest.heroGradient} opacity-85`}`} />
                 <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
                   <div className="flex items-center justify-between text-[11px] text-[#BED0C5]">
                     <span className="font-medium bg-black/40 backdrop-blur-xs px-2.5 py-0.5 rounded-md border border-white/15">
