@@ -15,7 +15,7 @@ const SLOTS = {
   'serengeti-migration': { q: 'Serengeti wildebeest migration', must: /wildebeest|migration/i },
   'serengeti-balloon': { q: 'Serengeti hot air balloon', must: /balloon/i },
   'serengeti-plains': { q: 'Serengeti plains acacia', must: /serengeti/i },
-  'ngorongoro-crater': { q: 'Ngorongoro crater view', must: /ngorongoro/i },
+  'ngorongoro-crater': { q: 'Ngorongoro Crater rim view', must: /crater/i, avoid: /jackal|lion|rhino|zebra|buffalo|elephant|hyena|bird/i },
   'ngorongoro-elephant': { q: 'Ngorongoro elephant', must: /elephant/i },
   'ngorongoro-zebra': { q: 'Ngorongoro zebra', must: /zebra/i },
   'kilimanjaro-summit': { q: 'Mount Kilimanjaro', must: /kilimanjaro|kibo/i },
@@ -23,15 +23,15 @@ const SLOTS = {
   'kilimanjaro-barranco': { q: 'Kilimanjaro Barranco', must: /barranco|kilimanjaro/i },
   'zanzibar-dhow': { q: 'Zanzibar dhow', must: /dhow/i },
   'zanzibar-stonetown': { q: 'Stone Town Zanzibar', must: /stone town/i },
-  'zanzibar-beach': { q: 'Zanzibar beach Paje', must: /zanzibar|paje|nungwi|kendwa|jambiani/i },
+  'zanzibar-beach': { q: 'Nungwi beach Zanzibar', must: /nungwi|kendwa|paje|beach/i, avoid: /cow|cattle|people|market/i },
   'eyasi-lake': { q: 'Lake Eyasi', must: /eyasi/i },
   'eyasi-baobab': { q: 'Tarangire baobab', must: /baobab|tarangire/i },
-  'eyasi-rift': { q: 'Great Rift Valley Tanzania escarpment', must: /rift|manyara|escarpment/i },
+  'eyasi-rift': { q: 'Lake Manyara escarpment', must: /manyara/i },
   'mafia-whaleshark': { q: 'whale shark', must: /whale shark|rhincodon/i },
   'mafia-reef': { q: 'Mafia Island', must: /mafia/i },
-  'mafia-sandbank': { q: 'Zanzibar sandbank', must: /sandbank|sand bank|island/i },
+  'mafia-sandbank': { q: 'Mnemba Island Zanzibar', must: /mnemba|sandbank|atoll/i },
   'city-dar': { q: 'Dar es Salaam skyline', must: /dar es salaam/i },
-  'culture-maasai': { q: 'Maasai village Tanzania', must: /maasai|masai/i }
+  'culture-maasai': { q: 'Maasai boma Ngorongoro', must: /maasai|masai|boma/i, avoid: /craft|souvenir|carving|market|shop/i }
 };
 
 const api = async (params) => {
@@ -50,7 +50,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const credits = fs.existsSync(path.join(OUT, 'credits.json')) ? JSON.parse(fs.readFileSync(path.join(OUT, 'credits.json'), 'utf8')) : {};
 const only = process.argv.slice(2);
 
-for (const [slot, { q, must }] of Object.entries(SLOTS)) {
+for (const [slot, { q, must, avoid }] of Object.entries(SLOTS)) {
   if (only.length && !only.includes(slot)) continue;
   if (!only.length && credits[slot] && fs.existsSync(path.join(OUT, `${slot}-1280.webp`))) continue;
   const data = await api({
@@ -63,6 +63,7 @@ for (const [slot, { q, must }] of Object.entries(SLOTS)) {
     const ii = p.imageinfo?.[0];
     if (!ii || !/jpeg|png/.test(ii.mime) || ii.width < 1400 || ii.width < ii.height) continue;
     if (!must.test(p.title)) continue;
+    if (avoid && avoid.test(p.title)) continue;
     const md = ii.extmetadata || {};
     const licence = strip(md.LicenseShortName?.value);
     if (!OK_LICENCE.test(licence)) continue;
