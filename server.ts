@@ -57,7 +57,11 @@ async function startServer() {
               connectSrc: ["'self'", 'https:'],
               manifestSrc: ["'self'"],
               workerSrc: ["'self'"],
-              frameAncestors: getFrameAncestors()
+              frameAncestors: getFrameAncestors(),
+              // Helmet adds upgrade-insecure-requests by default. Over plain http (a laptop demo
+              // opened at its network address) it makes the browser fetch the app's scripts over
+              // https, which fails and leaves a blank page. Real hosts already force https.
+              upgradeInsecureRequests: null
             }
           }
         : false,
@@ -160,7 +164,7 @@ async function startServer() {
   });
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`TANEXPO server running on http://0.0.0.0:${PORT}`);
+    console.log(`TANEXPO server running on http://localhost:${PORT}`);
     startScheduler();
   });
 }

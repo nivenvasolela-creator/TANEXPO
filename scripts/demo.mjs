@@ -69,10 +69,11 @@ server.stdout.on('data', (chunk) => {
   const text = String(chunk);
   // Request logs are noisy; show only startup lines and warnings.
   for (const line of text.split('\n')) {
-    if (line && !line.startsWith('{"timestamp"')) console.log(line);
+    if (line && !line.startsWith('{"timestamp"') && !line.startsWith('TANEXPO server running')) console.log(line);
   }
   if (text.includes('TANEXPO server running')) {
     console.log(`\nOpen on this computer:  http://localhost:${port}`);
+    console.log('(Use exactly that address. Do not use 0.0.0.0.)');
     if (wantTunnel && !tunnel) startTunnel();
     else if (!wantTunnel) console.log('For a link you can open on a phone anywhere, stop this and run:  npm run demo:public\n');
   }
@@ -89,6 +90,12 @@ function startTunnel() {
     tunnel = null;
   });
   let shown = false;
+  setTimeout(() => {
+    if (!shown && tunnel) {
+      console.log('\nNo public link after 45 seconds. Cloudflare may be slow or blocked on this network.');
+      console.log('The demo still works on this computer. Stop it (Ctrl+C) and run npm run demo:public again to retry.\n');
+    }
+  }, 45000).unref();
   tunnel.stderr.on('data', (chunk) => {
     const m = String(chunk).match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
     if (m && !shown) {
