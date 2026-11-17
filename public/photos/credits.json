@@ -12,5 +12,26 @@
     "licence": "CC BY-SA 4.0",
     "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "source": "https://commons.wikimedia.org/wiki/File:Serengeti_wildebeest_migration_JF.jpg"
+  },
+  "serengeti-balloon": {
+    "title": "Serengeti Balloon",
+    "author": "Eric Kilby",
+    "licence": "CC BY-SA 2.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Serengeti_Balloon.jpg"
+  },
+  "serengeti-plains": {
+    "title": "Serengeti-Landscape-2012",
+    "author": "Bjørn Christian Tørrissen",
+    "licence": "CC BY-SA 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Serengeti-Landscape-2012.JPG"
+  },
+  "ngorongoro-crater": {
+    "title": "013 Black-backed jackal in the Ngorongoro Crater Photo by Giles Laurent",
+    "author": "Giles Laurent",
+    "licence": "CC BY-SA 4.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:013_Black-backed_jackal_in_the_Ngorongoro_Crater_Photo_by_Giles_Laurent.jpg"
   }
 }
