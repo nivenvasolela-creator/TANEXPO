@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 
-const OUT = path.resolve('public/photos');
+const OUT = path.resolve(process.env.PHOTOS_OUT || 'public/photos');
 const UA = 'Mozilla/5.0 (compatible; photo-import-script/1.0)';
 const OK_LICENCE = /^(cc0|public domain|pd|cc by(-sa)? [1-4]\.0|cc by(-sa)? 2\.5)/i;
 
