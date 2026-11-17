@@ -27,22 +27,22 @@ export const initialDestinations: DestinationPlace[] = [
     images: [
       {
         url: '/photos/serengeti-lions',
-        caption: 'Serengeti lion pride resting along granite kopjes in Seronera Valley',
+        caption: 'Lioness resting on a granite kopje above the Serengeti plains',
         tag: 'Predator Wildlife'
       },
       {
         url: '/photos/serengeti-migration',
-        caption: 'Great Migration: Thousands of wildebeests thundering across Mara River',
+        caption: 'Wildebeest splashing across a river during the Great Migration',
         tag: 'Great Migration'
       },
       {
         url: '/photos/serengeti-balloon',
-        caption: 'Sunrise hot air balloon flight drifting gently over acacia savanna canopy',
+        caption: 'Sunrise hot air balloon drifting low over the Serengeti',
         tag: 'Balloon Safari'
       },
       {
         url: '/photos/serengeti-plains',
-        caption: 'Acacia tree predator vantage point with cheetah surveying golden plains',
+        caption: 'Lone acacia on the open grassland plains of the Serengeti',
         tag: 'Savanna Landscapes'
       }
     ],
@@ -104,17 +104,17 @@ export const initialDestinations: DestinationPlace[] = [
     images: [
       {
         url: '/photos/ngorongoro-crater',
-        caption: 'Panoramic rim overlook peering down 600 meters onto the 260 km² volcanic caldera floor',
+        caption: 'Looking down into the Ngorongoro Crater from the rim',
         tag: 'Caldera Vista'
       },
       {
         url: '/photos/ngorongoro-elephant',
-        caption: 'Legendary big tusker bull elephant wandering through fever-tree forest swamp',
+        caption: 'Big tusker elephant in the green Ngorongoro highlands',
         tag: 'Big Tuskers'
       },
       {
         url: '/photos/ngorongoro-zebra',
-        caption: 'Burchell zebras and wildebeests gathered around Lake Magadi soda lake',
+        caption: 'Plains zebras on the Ngorongoro Crater floor',
         tag: 'Crater Floor'
       }
     ],
@@ -174,17 +174,17 @@ export const initialDestinations: DestinationPlace[] = [
     images: [
       {
         url: '/photos/kilimanjaro-summit',
-        caption: 'Glacial summit of Uhuru Peak (5,895m) bathed in morning golden light above the clouds',
+        caption: 'Snow-capped Kibo, the summit of Mount Kilimanjaro, above the clouds',
         tag: 'Roof of Africa'
       },
       {
         url: '/photos/kilimanjaro-trek',
-        caption: 'Alpine desert ridge crossing on the scenic Lemosho route approaching Lava Tower',
+        caption: 'Trekkers crossing the alpine desert toward Lava Tower',
         tag: 'Alpine Trek'
       },
       {
         url: '/photos/kilimanjaro-barranco',
-        caption: 'Sunrise over Barranco Wall and mountain base camp above sea of mist',
+        caption: 'Rainbow over the Barranco Wall and camp',
         tag: 'Barranco Camp'
       }
     ],
@@ -245,17 +245,17 @@ export const initialDestinations: DestinationPlace[] = [
     images: [
       {
         url: '/photos/zanzibar-dhow',
-        caption: 'Handcrafted wooden dhow sailing across crystal-clear turquoise waters of Kendwa',
+        caption: 'Traditional wooden dhow in shallow turquoise water off Zanzibar',
         tag: 'Dhow Sailing'
       },
       {
         url: '/photos/zanzibar-stonetown',
-        caption: 'Vibrant coral reef snorkeling and dolphin pods around Mnemba Atoll marine sanctuary',
+        caption: 'Dhow sailing at sunset off Stone Town',
         tag: 'Mnemba Atoll'
       },
       {
         url: '/photos/zanzibar-beach',
-        caption: 'Powdery white sands and coastal palm trees lining the tranquil Paje lagoon',
+        caption: 'White-sand beach on the Zanzibar coast',
         tag: 'Indian Ocean Beach'
       }
     ],
@@ -316,17 +316,17 @@ export const initialDestinations: DestinationPlace[] = [
     images: [
       {
         url: '/photos/eyasi-lake',
-        caption: 'Traditional bowmen and tracker elders sharing stories by morning embers',
+        caption: 'Egret skimming the water of Lake Eyasi',
         tag: 'Hadzabe Heritage'
       },
       {
         url: '/photos/eyasi-baobab',
-        caption: 'Acacia savanna valley and dramatic Great Rift Valley wall encircling Lake Eyasi',
+        caption: 'Ancient baobab tree in the northern Tanzanian savanna',
         tag: 'Rift Valley'
       },
       {
         url: '/photos/eyasi-rift',
-        caption: 'Datoga artisan blacksmiths heating brass and iron arrowheads on hand-pumped forges',
+        caption: 'Great Rift Valley escarpment rising above Lake Manyara',
         tag: 'Datoga Blacksmiths'
       }
     ],
@@ -387,17 +387,17 @@ export const initialDestinations: DestinationPlace[] = [
     images: [
       {
         url: '/photos/mafia-whaleshark',
-        caption: 'Gentle whale shark cruising calmly through plankton-rich waters of Kilindoni Bay',
+        caption: 'Whale shark feeding in plankton-rich water',
         tag: 'Whale Shark Encounter'
       },
       {
         url: '/photos/mafia-reef',
-        caption: 'Pristine untouched coral formations and reef biodiversity inside Chole Bay Marine Park',
+        caption: 'Palm-fringed beach on Mafia Island',
         tag: 'Coral Gardens'
       },
       {
         url: '/photos/mafia-sandbank',
-        caption: 'Disappearing tidal sandbanks in the Indian Ocean surrounded by crystalline turquoise waters',
+        caption: 'Turquoise water and white sand around a coral island',
         tag: 'Tidal Sandbanks'
       }
     ],
