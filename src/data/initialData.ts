@@ -8,6 +8,7 @@ export const categories: Category[] = [
     id: 'safari',
     label: 'Safari & Wildlife',
     emoji: '🦁',
+    photo: '/photos/serengeti-migration',
     sub: 'Serengeti, Ngorongoro, Tarangire, Manyara',
     description: 'Witness the Great Migration, big cats, and iconic crater safaris with certified local guides and custom 4x4 vehicles.',
     popularDestinations: ['Serengeti National Park', 'Ngorongoro Crater', 'Tarangire', 'Lake Manyara']
@@ -16,6 +17,7 @@ export const categories: Category[] = [
     id: 'beach',
     label: 'Beach & Zanzibar',
     emoji: '🏝️',
+    photo: '/photos/zanzibar-beach',
     sub: 'Stone Town, Nungwi, Paje, Kendwa',
     description: 'Turquoise Indian Ocean lagoons, traditional wooden dhow sunset cruises, spice tours, and world-class diving.',
     popularDestinations: ['Stone Town', 'Nungwi Beach', 'Paje Lagoon', 'Mnemba Atoll']
@@ -24,6 +26,7 @@ export const categories: Category[] = [
     id: 'mountain',
     label: 'Kilimanjaro & Treks',
     emoji: '🏔️',
+    photo: '/photos/kilimanjaro-summit',
     sub: 'Machame, Lemosho, Marangu, Mt. Meru',
     description: 'Summit the Roof of Africa (5,895m) led by licensed high-altitude mountain leaders and certified porters.',
     popularDestinations: ['Kilimanjaro National Park', 'Mount Meru', 'Usambara Mountains', 'Ol Doinyo Lengai']
@@ -32,6 +35,7 @@ export const categories: Category[] = [
     id: 'culture',
     label: 'Culture & Heritage',
     emoji: '🛖',
+    photo: '/photos/culture-maasai',
     sub: 'Maasai Bomas, Hadzabe, Chagga, Swahili',
     description: 'Authentic community-led cultural immersion, traditional crafts, hunter-gatherer walks, and ancestral storytelling.',
     popularDestinations: ['Ngorongoro Highlands', 'Lake Eyasi', 'Moshi Rural Villages', 'Bagamoyo']
@@ -40,6 +44,7 @@ export const categories: Category[] = [
     id: 'city',
     label: 'City & Culinary',
     emoji: '🌆',
+    photo: '/photos/city-dar',
     sub: 'Dar es Salaam, Arusha Town, Stone Town alleys',
     description: 'Bustling spice markets, Swahili seafood dinners, colonial historical architecture, and vibrant urban vibes.',
     popularDestinations: ['Kariakoo Market', 'Kivukoni Fish Market', 'Arusha Cultural Heritage', 'Zanzibar Forodhani']
@@ -48,6 +53,7 @@ export const categories: Category[] = [
     id: 'marine',
     label: 'Marine & Diving',
     emoji: '🐬',
+    photo: '/photos/mafia-whaleshark',
     sub: 'Mafia Island, Mnemba, Pemba channel',
     description: 'Swim with whale sharks in Mafia Island, pristine coral reefs, and untouched blue safari expeditions.',
     popularDestinations: ['Mafia Island Marine Park', 'Pemba Channel', 'Mnemba Reef', 'Chwaka Bay']

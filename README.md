@@ -4,9 +4,11 @@ TANEXPO is a two-sided tourism marketplace and provider operating system built f
 
 - **Traveler Experience**: Guest catalog discovery, destination guides & interactive Leaflet maps, operator comparison, bilingual UI (**English / Swahili**), dual currency (**TZS / USD**), quote requests, simulated sandbox checkout, booking vouchers, saved operators, and verified post-trip reviews.
 - **Operator OS**: Overview metrics & "Needs Reply" triage, inquiry leads pipeline, dynamic quote builder, booking management, financial ledgers, listings CRUD, review replies, TALA license & profile settings.
-- **WhatsApp Operator OS & AI Concierge**:
-  - **Mode A (Operator OS)**: Linked operators receive new lead alerts and reply directly from WhatsApp in English or Swahili (`LEADS`/`MAOMBI`, `ACCEPT`/`KUBALI`, `QUOTE`/`BEI`, `REPLY`/`JIBU`, `PAUSE`/`SIMAMISHA`, `RESUME`/`ENDELEA`, `HELP`/`MSAADA`).
-  - **Mode B (Tourist Concierge)**: Server-side `@google/genai` (`gemini-4-hydrogen`) extracts structured trip inquiries from natural-language English/Swahili WhatsApp messages, creates real leads in Postgres, and alerts the matched operator (with deterministic fallback when `GEMINI_API_KEY` is unset).
+- **WhatsApp for operators** (one TANEXPO business number, Meta Cloud API):
+  - **Alerts and commands**: linked operators get new-request alerts, reminders and a Monday digest, and answer with short commands in English or Swahili (`LEADS`/`MAOMBI`, `ACCEPT`/`KUBALI`, `QUOTE`/`BEI`, `REPLY`/`JIBU`, `LOST`/`FUTA`, `DIGEST`/`MUHTASARI`, `PAUSE`/`SIMAMISHA`, `RESUME`/`ENDELEA`).
+  - **Forward to save**: an operator forwards a customer's WhatsApp message to the TANEXPO number and it becomes a request in their pipeline. Details are extracted server-side (Gemini structured output, keyword fallback); the text is treated strictly as data.
+  - Numbers not linked to an operator get a fixed signpost reply only. There is no customer-facing WhatsApp chat.
+  - Until Meta approval, the dashboard's WhatsApp tab has a chat preview that behaves the same way without sending anything.
 
 ---
 
@@ -22,8 +24,7 @@ TANEXPO is a two-sided tourism marketplace and provider operating system built f
 ## Prerequisites & Lockfile Standard
 
 - **Node.js**: `>= 22` (see `engines` in `package.json`)
-- **Package Manager**: **npm** (`package-lock.json` is the single source of truth; `Dockerfile` and `.npmrc` run `npm ci`)
-- If your local workspace or CI environment still has a stale `bun.lock` from earlier tooling, standardize on `package-lock.json` via `npm ci`.
+- **Package Manager**: **npm**. `package-lock.json` is the only lockfile; the `Dockerfile` runs `npm ci`. If a tool regenerates `bun.lock`, delete it.
 
 ---
 
@@ -83,45 +84,41 @@ All runtime variables are documented in [`.env.example`](./.env.example). Key va
 | `SEED_DEMO_CATALOG` | Seed sample catalog on empty DB | Defaults to `false` in production, `true` in non-production |
 | `ALLOW_DEMO_RESET` | Enables `POST /api/reset` for admin | Keep `"false"` in production |
 | `ALLOW_FRAME_ANCESTORS` | Extra CSP `frame-ancestors` | Defaults to `'none'` in production |
-| `GEMINI_API_KEY` | Server-side Gemini API key | Required for AI parsing; falls back cleanly if unset |
-| `WHATSAPP_ENABLED` | `"true"` for Meta Cloud API, `"false"` for simulator | `"false"` (simulator mode) |
+| `GEMINI_API_KEY` | Server-side Gemini API key | Optional. Without it forwarded messages are read by a keyword parser |
+| `GEMINI_MODEL` | Gemini model for reading forwarded messages | `gemini-3.8-flash` |
+| `WHATSAPP_ENABLED` | `"true"` sends through Meta's Cloud API | `"false"`: nothing is sent |
 | `WHATSAPP_VERIFY_TOKEN` | Meta webhook verification token | Required when verifying webhook |
-| `WHATSAPP_APP_SECRET` | Meta App Secret (`X-Hub-Signature-256`) | Required in prod when `WHATSAPP_ENABLED=true` |
+| `WHATSAPP_APP_SECRET` | Meta App Secret (`X-Hub-Signature-256`) | In production the webhook rejects everything until this is set |
 | `WHATSAPP_PHONE_NUMBER_ID` | Meta WhatsApp Phone Number ID | Required for live outbound messages |
 | `WHATSAPP_ACCESS_TOKEN` | Meta System User access token | Required for live outbound messages |
-| `ALLOW_WHATSAPP_SIMULATOR` | Allow non-admin simulator calls in prod | Keep `"false"` in production |
+| `ALLOW_WHATSAPP_SIMULATOR` | Dashboard WhatsApp chat preview while WhatsApp is off | `"true"` on a demo deployment; off once real WhatsApp is live |
+| `WHATSAPP_QUIET_HOURS` | Hours with no business-initiated messages (Dar time) | `21-7` |
 
 ---
 
-## Verification & Automated Test Suites
-
-Run these verification suites against a clean production build (`NODE_ENV=production`) with an isolated temporary `PG_DATA_DIR`:
+## Tests
 
 ```bash
-# 1. Typecheck & build
 npx tsc --noEmit
 npm run build
-
-# 2. Security checks (47 assertions: RBAC, IDOR, auth, server-computed totals, session revocation)
-BASE_URL=http://127.0.0.1:3099/api bash scripts/security-test.sh
-
-# 3. Data integrity & compliance checks (25 assertions: phone normalization, contact gating, booking guards, backup, fail-fast DB)
-BASE_URL=http://127.0.0.1:3099/api PG_DATA_DIR="$TMP_PG/pg" \
-  ADMIN_SEED_EMAIL="admin@tanexpo.tz" ADMIN_SEED_PASSWORD="AdminStrongPassword123!" \
-  node scripts/integrity-test.mjs
-
-# 4. WhatsApp Operator OS & AI Concierge checks (13 assertions: OTP link, Mode A/B EN+SW, PII masking, dedupe, HMAC webhook)
-BASE_URL=http://127.0.0.1:3099/api \
-  ADMIN_SEED_EMAIL="admin@tanexpo.tz" ADMIN_SEED_PASSWORD="AdminStrongPassword123!" \
-  node scripts/whatsapp-test.mjs
+npm test
 ```
+
+`npm test` starts a fresh production-mode server with an empty database for each suite and runs:
+
+- `scripts/security-test.sh` (50 checks): roles, ownership, sessions, server-computed money, reviews.
+- `scripts/integrity-test.mjs` (27 checks): phone normalization, contact gating, booking guards, backups, database fail-fast.
+- `scripts/whatsapp-test.mjs` (23 checks): signed webhooks, linking, commands, forwarding, scheduler, log privacy.
+- `scripts/media-test.mjs` (10 checks): package photo/video uploads: ownership, type sniffing, size and count limits, safe serving, file cleanup.
 
 ---
 
 ## Documentation
 
 - **Production Deployment, Backups & Managed Postgres Migration**: [`DEPLOYMENT.md`](./DEPLOYMENT.md)
-- **Meta WhatsApp Cloud API & Operator OS Setup**: [`docs/WHATSAPP_SETUP.md`](./docs/WHATSAPP_SETUP.md)
+- **WhatsApp layer, Meta setup and templates**: [`docs/WHATSAPP_SETUP.md`](./docs/WHATSAPP_SETUP.md)
+- **Launch checklist with every account and link (start here)**: [`docs/LAUNCH.md`](./docs/LAUNCH.md)
+- **Showing the product to operators**: [`docs/DEMO.md`](./docs/DEMO.md)
 - **Legal Pages Served by the App**: `/privacy` (Tanzania PDPA 2022) and `/terms` (Tanzania Tourism Act No. 29 of 2008)
 
 ---
@@ -132,4 +129,4 @@ The following items are intentionally **not** implemented in this release:
 - Real mobile money (M-Pesa / Tigo Pesa / Airtel Money) or card payment gateway integrations and payment webhooks (`PAYMENTS_MODE=live` intentionally blocks simulated transactions until real rails are wired).
 - Automated migration code from embedded PGlite to hosted PostgreSQL (documented step-by-step in [`DEPLOYMENT.md`](./DEPLOYMENT.md)).
 - Native mobile applications (Flutter, React Native, Capacitor).
-- Meta WhatsApp Embedded Signup onboarding for connecting operators' own WhatsApp Business numbers.
+- Meta WhatsApp Embedded Signup (connecting operators' own numbers), customer-facing WhatsApp chat, and payments over WhatsApp.

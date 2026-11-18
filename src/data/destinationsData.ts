@@ -23,26 +23,26 @@ export const initialDestinations: DestinationPlace[] = [
     ],
     heroGradient: 'from-[#2A1D13] via-[#4A2F1B] to-[#1C2C24]',
     popularPackageHint: '3 to 5-day private 4x4 safari with bush lodge or mobile luxury tented camp',
-    featuredImage: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80',
+    featuredImage: '/photos/serengeti-lions',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Serengeti lion pride resting along granite kopjes in Seronera Valley',
+        url: '/photos/serengeti-lions',
+        caption: 'Lioness resting on a granite kopje above the Serengeti plains',
         tag: 'Predator Wildlife'
       },
       {
-        url: 'https://images.unsplash.com/photo-1547970810-dc739818816c?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Great Migration: Thousands of wildebeests thundering across Mara River',
+        url: '/photos/serengeti-migration',
+        caption: 'Wildebeest splashing across a river during the Great Migration',
         tag: 'Great Migration'
       },
       {
-        url: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Sunrise hot air balloon flight drifting gently over acacia savanna canopy',
+        url: '/photos/serengeti-balloon',
+        caption: 'Sunrise hot air balloon drifting low over the Serengeti',
         tag: 'Balloon Safari'
       },
       {
-        url: 'https://images.unsplash.com/photo-1561731216-c3a4d99437d5?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Acacia tree predator vantage point with cheetah surveying golden plains',
+        url: '/photos/serengeti-plains',
+        caption: 'Lone acacia on the open grassland plains of the Serengeti',
         tag: 'Savanna Landscapes'
       }
     ],
@@ -100,21 +100,21 @@ export const initialDestinations: DestinationPlace[] = [
     ],
     heroGradient: 'from-[#192B21] via-[#284435] to-[#142019]',
     popularPackageHint: 'Full-day crater floor descent combined with Serengeti or Tarangire',
-    featuredImage: 'https://images.unsplash.com/photo-1534177616072-ef7dc120449d?auto=format&fit=crop&w=1200&q=80',
+    featuredImage: '/photos/ngorongoro-crater',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1534177616072-ef7dc120449d?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Panoramic rim overlook peering down 600 meters onto the 260 km² volcanic caldera floor',
+        url: '/photos/ngorongoro-crater',
+        caption: 'Cloud pouring over the rim of the Ngorongoro Crater',
         tag: 'Caldera Vista'
       },
       {
-        url: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Legendary big tusker bull elephant wandering through fever-tree forest swamp',
+        url: '/photos/ngorongoro-elephant',
+        caption: 'Big tusker elephant in the green Ngorongoro highlands',
         tag: 'Big Tuskers'
       },
       {
-        url: 'https://images.unsplash.com/photo-1526095179574-86e545346ae6?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Burchell zebras and wildebeests gathered around Lake Magadi soda lake',
+        url: '/photos/ngorongoro-zebra',
+        caption: 'Plains zebras on the Ngorongoro Crater floor',
         tag: 'Crater Floor'
       }
     ],
@@ -170,21 +170,21 @@ export const initialDestinations: DestinationPlace[] = [
     ],
     heroGradient: 'from-[#1E293B] via-[#334155] to-[#1E3A2F]',
     popularPackageHint: '7-Day Lemosho or 6-Day Machame route with high summit success rate',
-    featuredImage: 'https://images.unsplash.com/photo-1609198092458-38a293c7ac4b?auto=format&fit=crop&w=1200&q=80',
+    featuredImage: '/photos/kilimanjaro-summit',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1609198092458-38a293c7ac4b?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Glacial summit of Uhuru Peak (5,895m) bathed in morning golden light above the clouds',
+        url: '/photos/kilimanjaro-summit',
+        caption: 'Snow-capped Kibo, the summit of Mount Kilimanjaro, above the clouds',
         tag: 'Roof of Africa'
       },
       {
-        url: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Alpine desert ridge crossing on the scenic Lemosho route approaching Lava Tower',
+        url: '/photos/kilimanjaro-trek',
+        caption: 'Trekkers crossing the alpine desert toward Lava Tower',
         tag: 'Alpine Trek'
       },
       {
-        url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Sunrise over Barranco Wall and mountain base camp above sea of mist',
+        url: '/photos/kilimanjaro-barranco',
+        caption: 'Rainbow over the Barranco Wall and camp',
         tag: 'Barranco Camp'
       }
     ],
@@ -241,21 +241,21 @@ export const initialDestinations: DestinationPlace[] = [
     ],
     heroGradient: 'from-[#0C3540] via-[#155E75] to-[#1A382B]',
     popularPackageHint: 'Full-day blue safari dhow cruise + Stone Town cultural walking immersion',
-    featuredImage: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80',
+    featuredImage: '/photos/zanzibar-dhow',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Handcrafted wooden dhow sailing across crystal-clear turquoise waters of Kendwa',
+        url: '/photos/zanzibar-dhow',
+        caption: 'Traditional wooden dhow in shallow turquoise water off Zanzibar',
         tag: 'Dhow Sailing'
       },
       {
-        url: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Vibrant coral reef snorkeling and dolphin pods around Mnemba Atoll marine sanctuary',
+        url: '/photos/zanzibar-stonetown',
+        caption: 'Dhow sailing at sunset off Stone Town',
         tag: 'Mnemba Atoll'
       },
       {
-        url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Powdery white sands and coastal palm trees lining the tranquil Paje lagoon',
+        url: '/photos/zanzibar-beach',
+        caption: 'White-sand beach on the Zanzibar coast',
         tag: 'Indian Ocean Beach'
       }
     ],
@@ -312,21 +312,21 @@ export const initialDestinations: DestinationPlace[] = [
     ],
     heroGradient: 'from-[#3A2818] via-[#593D22] to-[#25382B]',
     popularPackageHint: 'Early morning hunting & foraging cultural excursion from Karatu',
-    featuredImage: 'https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&w=1200&q=80',
+    featuredImage: '/photos/eyasi-lake',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Traditional bowmen and tracker elders sharing stories by morning embers',
+        url: '/photos/eyasi-lake',
+        caption: 'Egret skimming the water of Lake Eyasi',
         tag: 'Hadzabe Heritage'
       },
       {
-        url: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Acacia savanna valley and dramatic Great Rift Valley wall encircling Lake Eyasi',
+        url: '/photos/eyasi-baobab',
+        caption: 'Ancient baobab tree in the northern Tanzanian savanna',
         tag: 'Rift Valley'
       },
       {
-        url: 'https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Datoga artisan blacksmiths heating brass and iron arrowheads on hand-pumped forges',
+        url: '/photos/eyasi-rift',
+        caption: 'Acacia woodland below the Rift Valley escarpment at Lake Manyara',
         tag: 'Datoga Blacksmiths'
       }
     ],
@@ -383,21 +383,21 @@ export const initialDestinations: DestinationPlace[] = [
     ],
     heroGradient: 'from-[#0B253A] via-[#103D5D] to-[#133026]',
     popularPackageHint: 'Half-day whale shark snorkel expedition + Chole Bay reef dive',
-    featuredImage: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
+    featuredImage: '/photos/mafia-whaleshark',
     images: [
       {
-        url: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Gentle whale shark cruising calmly through plankton-rich waters of Kilindoni Bay',
+        url: '/photos/mafia-whaleshark',
+        caption: 'Whale shark feeding in plankton-rich water',
         tag: 'Whale Shark Encounter'
       },
       {
-        url: 'https://images.unsplash.com/photo-1582967788606-a171c1080cb0?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Pristine untouched coral formations and reef biodiversity inside Chole Bay Marine Park',
+        url: '/photos/mafia-reef',
+        caption: 'Palm-fringed beach on Mafia Island',
         tag: 'Coral Gardens'
       },
       {
-        url: 'https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?auto=format&fit=crop&w=1200&q=80',
-        caption: 'Disappearing tidal sandbanks in the Indian Ocean surrounded by crystalline turquoise waters',
+        url: '/photos/mafia-sandbank',
+        caption: 'Clear turquoise water around Mnemba Island',
         tag: 'Tidal Sandbanks'
       }
     ],

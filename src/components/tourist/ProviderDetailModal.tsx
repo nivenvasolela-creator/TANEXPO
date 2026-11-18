@@ -1,3 +1,4 @@
+import { MediaGallery } from '../shared/MediaGallery';
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useModalAccessibility } from '../../hooks/useModalAccessibility';
@@ -178,7 +179,8 @@ export const ProviderDetailModal: React.FC = () => {
                     key={pkg.id}
                     className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] p-5 shadow-xs hover:border-[#284435] dark:hover:border-[#3A5644] transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
                   >
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-2 flex-1 min-w-0 w-full">
+                      <MediaGallery media={pkg.media} title={pkg.title} className="mb-2" />
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[11px] font-semibold bg-[#FAF7F2] dark:bg-[#1A2820] text-[#6B7A72] dark:text-[#8DA195] border border-[#E8DFC9] dark:border-[#2A3E31] px-2.5 py-0.5 rounded-md flex items-center gap-1">
                           <Clock className="w-3 h-3 text-[#D97843]" />

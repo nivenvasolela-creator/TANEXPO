@@ -1,6 +1,8 @@
-import React, { useState, Suspense, lazy } from 'react';
+import { coverPhoto } from '../shared/MediaGallery';
+import { photoProps, PHOTO_SIZES } from '../../utils/images';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useApp } from '../../context/AppContext';
-import { CategoryId, Provider } from '../../types';
+import { Provider } from '../../types';
 import { 
   Search, 
   MapPin, 
@@ -10,10 +12,8 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Languages, 
-  Calendar,
   Sparkles,
   Truck,
-  Coins,
   SlidersHorizontal,
   X,
   Map,
@@ -26,7 +26,12 @@ const TanzaniaMap = lazy(() =>
 
 export const TouristHome: React.FC = () => {
   const { 
-    categories, 
+    categories,
+    setTouristTab,
+    homeCategory,
+    setHomeCategory,
+    catalogError,
+    retryCatalog,
     destinations,
     providers, 
     listings, 
@@ -49,7 +54,18 @@ export const TouristHome: React.FC = () => {
     t
   } = useApp();
 
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
+  // Shared with the Explore tab, whose "See operators" button sets it.
+  const selectedCategory = homeCategory;
+  const setSelectedCategory = setHomeCategory;
+
+  // Arriving from Explore with a category: jump to the operator list.
+  useEffect(() => {
+    if (homeCategory === 'all') return;
+    const t = window.setTimeout(() => document.getElementById('operators-directory')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    return () => window.clearTimeout(t);
+    // Only on arrival; later category taps on Home keep the user where they are.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
@@ -94,7 +110,29 @@ export const TouristHome: React.FC = () => {
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-[#D97843]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 bg-[#E8B94A]/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 max-w-3xl">
+        {/* Photo tiles fill the open side of the hero on wide screens */}
+        <div className="hidden xl:grid absolute z-10 right-12 top-12 bottom-32 w-[330px] 2xl:w-[400px] grid-cols-2 grid-rows-2 gap-3">
+          {destinations.filter((d) => d.featuredImage).slice(0, 3).map((dest, idx) => (
+            <button
+              key={dest.id}
+              type="button"
+              onClick={() => setSelectedDestination(dest)}
+              className={`group relative overflow-hidden rounded-2xl border border-white/15 shadow-lg cursor-pointer text-left bg-linear-to-br ${dest.heroGradient} ${idx === 0 ? 'row-span-2' : ''}`}
+            >
+              <img
+                {...photoProps(dest.featuredImage!, PHOTO_SIZES.heroTile, [400, 800])}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <span className="absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-transparent" />
+              <span className="absolute left-3 right-3 bottom-3 font-serif text-sm font-bold text-white leading-tight">
+                {dest.name}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="relative z-10 max-w-3xl xl:max-w-[60%]">
           {isDomesticTourist ? (
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-4 border border-emerald-400/30">
               <span className="text-base">🇹🇿</span>
@@ -126,7 +164,7 @@ export const TouristHome: React.FC = () => {
             {isDomesticTourist ? (
               'Explore resident-tier park fees, weekend safari escapes, family coastal getaways, and local transport deals with official TZS transparent rates.'
             ) : isInternationalTourist ? (
-              'Connect directly with TALA-registered safari guides, Kilimanjaro expedition leaders, and Zanzibar dhow captains with zero foreign markups and licensed payment partner settlement.'
+              'Connect directly with TALA-registered safari guides, Kilimanjaro expedition leaders, and Zanzibar dhow captains with zero foreign markups.'
             ) : (
               t('hero.subtitle', 'Connect directly with TALA-registered safari guides, Kilimanjaro leaders, and Zanzibar dhow captains. No foreign markups. Custom itineraries quoted directly in official Tanzanian Shillings.')
             )}
@@ -242,13 +280,12 @@ export const TouristHome: React.FC = () => {
             </div>
             <button
               onClick={() => {
-                setViewMode('map');
-                const elem = document.getElementById('operators-directory');
-                if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+                setTouristTab('map');
+                window.scrollTo({ top: 0 });
               }}
-              className="px-3.5 py-1.5 rounded-lg bg-[#E8B94A] hover:bg-[#D4A335] text-[#1E332A] text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0"
+              className="min-h-[40px] px-3.5 py-1.5 rounded-lg bg-[#E8B94A] hover:bg-[#D4A335] text-[#1E332A] text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0"
             >
-              <span>{viewMode === 'map' ? 'Map View Active' : 'Open Tanzania Map'}</span>
+              <span>Open Tanzania Map</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -262,10 +299,23 @@ export const TouristHome: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>100% Verified TALA Tourism Licenses & Licensed Payment Processing</span>
+            <span>Operators show as verified only after their TALA licence is checked</span>
           </div>
         </div>
       </section>
+
+      {catalogError && providers.length === 0 && (
+        <div role="alert" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-sm text-amber-900 dark:text-amber-200">
+          <span>We couldn't load the operators. Check your connection and try again.</span>
+          <button
+            type="button"
+            onClick={() => void retryCatalog()}
+            className="min-h-[44px] px-5 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-sm font-bold cursor-pointer shrink-0"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Persona Callout Banner */}
       {isGuest ? (
@@ -320,139 +370,71 @@ export const TouristHome: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-              selectedCategory === 'all'
-                ? 'bg-[#284435] text-white border-[#284435] shadow-md'
-                : 'bg-white text-[#1F2A24] border-[#E8DFC9] hover:border-[#284435] hover:bg-[#F8F5EE]'
-            }`}
-          >
-            <span className="text-2xl block mb-2">🌍</span>
-            <div className="font-bold text-sm leading-tight">{t('all.categories', 'All Types')}</div>
-            <div className={`text-[11px] mt-1 ${selectedCategory === 'all' ? 'text-[#C7D9CF]' : 'text-[#6B7A72]'}`}>
-              {providers.length} Providers
-            </div>
-          </button>
-
-          {categories.map((cat) => {
-            const count = providers.filter((p) => p.category === cat.id).length;
-            const isSelected = selectedCategory === cat.id;
-
+          {[
+            { id: 'all' as const, label: t('all.categories', 'All Types'), photo: '/photos/serengeti-plains', count: providers.length, all: true },
+            ...categories.map((cat) => ({
+              id: cat.id,
+              label: cat.label,
+              photo: cat.photo,
+              count: providers.filter((p) => p.category === cat.id).length,
+              all: false
+            }))
+          ].map((tile) => {
+            const isSelected = selectedCategory === tile.id;
             return (
               <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#284435] text-white border-[#284435] shadow-md'
-                    : 'bg-white text-[#1F2A24] border-[#E8DFC9] hover:border-[#284435] hover:bg-[#F8F5EE]'
+                key={tile.id}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => setSelectedCategory(tile.id)}
+                className={`group relative h-32 sm:h-36 overflow-hidden rounded-2xl text-left cursor-pointer bg-[#284435] transition-all ${
+                  isSelected ? 'ring-3 ring-[#E8B94A] ring-offset-2 ring-offset-[#FAF7F2] dark:ring-offset-[#0D1511] shadow-lg' : 'hover:shadow-lg'
                 }`}
               >
-                <span className="text-2xl block mb-2">{cat.emoji}</span>
-                <div className="font-bold text-sm leading-tight">{cat.label}</div>
-                <div className={`text-[11px] mt-1 truncate ${isSelected ? 'text-[#C7D9CF]' : 'text-[#6B7A72]'}`}>
-                  {count} {count === 1 ? 'Operator' : 'Operators'}
-                </div>
+                {tile.photo && (
+                  <img
+                    {...photoProps(tile.photo, '(min-width: 1024px) 16vw, (min-width: 640px) 33vw, 50vw')}
+                    alt=""
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                )}
+                <span className="absolute inset-0 bg-linear-to-t from-black/85 via-black/35 to-black/5" />
+                <span className="absolute left-3 right-3 bottom-3 text-white">
+                  <span className="block font-bold text-sm leading-tight drop-shadow-sm">{tile.label}</span>
+                  <span className="block text-[11px] mt-0.5 text-white/85">
+                    {tile.count} {tile.all ? (tile.count === 1 ? 'Provider' : 'Providers') : tile.count === 1 ? 'Operator' : 'Operators'}
+                  </span>
+                </span>
               </button>
             );
           })}
         </div>
       </section>
 
-      {/* Destination Place Guides Section */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-serif text-2xl font-bold text-[#284435]">
-              {t('destinations.title', 'Tanzania Destination Guides')}
-            </h2>
-            <p className="text-sm text-[#6B7A72]">
-              {t('destinations.sub', 'Explore iconic national parks, mountain peaks, and marine reserves with typical costs')}
-            </p>
-          </div>
-        </div>
-
-        {!catalogLoaded ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true" aria-label="Loading destination guides">
-            {[0, 1, 2].map((idx) => (
-              <div
-                key={idx}
-                className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] overflow-hidden shadow-xs"
-              >
-                <div className="h-44 bg-[#EDE5D5] dark:bg-[#1A2820]" />
-                <div className="p-4 space-y-3">
-                  <div className="h-3.5 w-2/3 rounded bg-[#F3EFE6] dark:bg-[#1A2820]" />
-                  <div className="h-3 w-1/2 rounded bg-[#FAF7F2] dark:bg-[#101914]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {destinations.map((dest) => (
-            <div
-              key={dest.id}
-              onClick={() => setSelectedDestination(dest)}
-              className="bg-white rounded-2xl border border-[#E8DFC9] overflow-hidden shadow-xs hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div className="relative h-44 overflow-hidden">
-                {dest.featuredImage ? (
-                  <img 
-                    src={dest.featuredImage} 
-                    alt={dest.name} 
-                    loading="lazy"
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : null}
-                <div className={`absolute inset-0 bg-linear-to-t ${dest.heroGradient} opacity-85 group-hover:opacity-80 transition-opacity`} />
-                <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
-                  <div className="flex items-center justify-between text-[11px] text-[#BED0C5]">
-                    <span className="font-medium bg-black/40 backdrop-blur-xs px-2.5 py-0.5 rounded-md border border-white/15">
-                      {dest.region}
-                    </span>
-                    <span className="text-[#E8B94A] font-semibold bg-black/40 px-2 py-0.5 rounded-md">Photo Guide</span>
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-xl font-bold group-hover:text-[#E8B94A] transition-colors leading-snug">
-                      {dest.name}
-                    </h3>
-                    <p className="text-xs text-[#E5EFE9] line-clamp-1 opacity-90 mt-0.5">
-                      {dest.tagline}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-3">
-                <div className="flex items-center justify-between text-xs text-[#4D5E55]">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-[#D97843]" />
-                    <span className="text-[11px] truncate max-w-[170px]">{dest.bestTimeToVisit.split('(')[0]}</span>
-                  </div>
-                  <div className="flex items-center gap-1 font-semibold text-[#284435]">
-                    <Coins className="w-3.5 h-3.5 text-[#E8B94A]" />
-                    <span className="text-[11px]">TZS Range</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-[#F0EBE0] flex items-center justify-between">
-                  <span className="text-[11px] text-[#6B7A72] font-medium">
-                    {dest.highlights[0]}
-                  </span>
-                  <span className="text-xs font-bold text-[#284435] group-hover:text-[#D97843] flex items-center gap-1">
-                    <span>Explore Guide</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </span>
-                </div>
-              </div>
-            </div>
+      {/* Places now live in the Explore tab; a short invitation keeps Home about operators */}
+      <button
+        type="button"
+        onClick={() => setTouristTab('places')}
+        className="w-full group relative overflow-hidden rounded-3xl text-left cursor-pointer bg-[#284435] min-h-[150px] flex items-end"
+      >
+        <span className="absolute inset-0 flex">
+          {destinations.filter((d) => d.featuredImage).slice(0, 3).map((d) => (
+            <img key={d.id} {...photoProps(d.featuredImage!, '33vw', [640])} alt="" loading="lazy" className="w-1/3 h-full object-cover group-hover:scale-105 transition-transform duration-700" />
           ))}
-        </div>
-        )}
-      </section>
+        </span>
+        <span className="absolute inset-0 bg-linear-to-r from-black/80 via-black/55 to-black/20" />
+        <span className="relative p-5 sm:p-7 flex items-end justify-between gap-4 w-full">
+          <span>
+            <span className="block text-xs font-bold uppercase tracking-wider text-[#E8B94A]">Not sure where to go?</span>
+            <span className="block font-serif text-2xl sm:text-3xl font-bold text-white">Explore places in Tanzania</span>
+            <span className="block text-sm text-white/80">Parks, mountains and islands, with the best months to visit</span>
+          </span>
+          <span className="shrink-0 w-11 h-11 rounded-full bg-white text-[#284435] flex items-center justify-center">
+            <ArrowRight className="w-5 h-5" />
+          </span>
+        </span>
+      </button>
 
       {/* Featured Providers Section */}
       <section id="operators-directory" className="space-y-6">
@@ -554,31 +536,6 @@ export const TouristHome: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Interactive Map Teaser Banner in Grid View */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#284435] via-[#1E332A] to-[#17261F] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm border border-[#2E4537]">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#D97843]/20 border border-[#D97843]/40 flex items-center justify-center text-[#E8B94A] shrink-0">
-                  <Map className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-white flex items-center gap-2">
-                    <span>Tanzania Safari Circuit & AFCON 2027 Spatial Map</span>
-                    <span className="text-[10px] font-sans font-bold bg-[#E8B94A] text-[#1E332A] px-1.5 py-0.2 rounded-full">Interactive</span>
-                  </h4>
-                  <p className="text-xs text-[#BED0C5] mt-0.5">
-                    Explore operators plotted across Serengeti, Kilimanjaro, Zanzibar, and AFCON host stadiums with live route planning.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setViewMode('map')}
-                className="shrink-0 px-4 py-2 bg-[#D97843] hover:bg-[#C26330] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors flex items-center gap-1.5"
-              >
-                <span>Launch Interactive Map</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
         {!catalogLoaded ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true" aria-label="Loading verified operators">
             {[0, 1, 2].map((idx) => (
@@ -648,6 +605,19 @@ export const TouristHome: React.FC = () => {
                     isCompared ? 'border-[#284435] ring-2 ring-[#284435]/20' : 'border-[#E8DFC9]'
                   }`}
                 >
+                  {(() => {
+                    const cover = providerListings.map((l) => coverPhoto(l.media)).find(Boolean);
+                    return cover ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedProvider(provider)}
+                        aria-label={`See ${provider.name}`}
+                        className="block w-full h-44 overflow-hidden bg-[#284435] cursor-pointer"
+                      >
+                        <img src={cover} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      </button>
+                    ) : null;
+                  })()}
                   <div className="p-6">
                     {/* Header: Location, Wishlist & Compare Check */}
                     <div className="flex items-start justify-between gap-3 mb-3">

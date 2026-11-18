@@ -68,17 +68,101 @@ body {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
-/* Liquid Glass surface — applied strictly to navigation chrome & modals */
+/* Liquid Glass: only on floating chrome (top bar, tab bar, sheets, map controls).
+   Content stays on solid surfaces. A top highlight and soft depth shadow give the
+   "lens" feel; low-end devices and reduced-transparency users get solid fills. */
 .glass {
-  background-color: var(--surface-elevated);
-  border-color: var(--border-subtle);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
+  background-color: rgba(255, 255, 255, 0.6);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.18));
+  border-color: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.25),
+    0 10px 30px -14px rgba(25, 44, 35, 0.35);
 }
 
-@supports not (backdrop-filter: blur(1px)) {
+html.dark .glass {
+  background-color: rgba(21, 32, 25, 0.62);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01));
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 12px 34px -14px rgba(0, 0, 0, 0.7);
+}
+
+/* Top bar: a hairline instead of a heavy border */
+.glass-bar {
+  border-color: rgba(31, 42, 36, 0.08);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.5), 0 6px 24px -18px rgba(25, 44, 35, 0.35);
+}
+html.dark .glass-bar {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Floating tab bar capsule, above the home indicator */
+.bottom-floating {
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.glass-capsule {
+  padding: 0.3rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.3),
+    0 18px 40px -16px rgba(25, 44, 35, 0.45),
+    0 2px 6px rgba(25, 44, 35, 0.08);
+}
+html.dark .glass-capsule {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 18px 40px -16px rgba(0, 0, 0, 0.8);
+}
+.glass-capsule > div {
+  padding: 0 !important;
+}
+
+/* Active tab: a raised glass lens */
+.tab-lens {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.7));
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 4px 14px -6px rgba(25, 44, 35, 0.45);
+}
+html.dark .tab-lens {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 4px 14px -6px rgba(0, 0, 0, 0.7);
+}
+
+/* Warm light behind the content (cheap: two fixed gradients, no blur) */
+body {
+  background-image:
+    radial-gradient(1100px 520px at 85% -10%, rgba(232, 185, 74, 0.13), transparent 60%),
+    radial-gradient(900px 480px at -10% 10%, rgba(40, 68, 53, 0.08), transparent 60%);
+  background-attachment: fixed;
+}
+html.dark body {
+  background-image:
+    radial-gradient(1100px 520px at 85% -10%, rgba(232, 185, 74, 0.07), transparent 60%),
+    radial-gradient(900px 480px at -10% 10%, rgba(63, 122, 90, 0.12), transparent 60%);
+}
+
+/* Gentle press feedback on touch */
+button:not(:disabled),
+a[href] {
+  -webkit-tap-highlight-color: transparent;
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 160ms;
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass {
     background-color: var(--surface);
+    background-image: none;
   }
 }
 
@@ -88,6 +172,10 @@ html.perf-lite [class*="backdrop-blur"] {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   background-color: var(--surface) !important;
+  background-image: none !important;
+}
+html.perf-lite body {
+  background-image: none;
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -96,6 +184,7 @@ html.perf-lite [class*="backdrop-blur"] {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     background-color: var(--surface) !important;
+    background-image: none !important;
   }
 }
 

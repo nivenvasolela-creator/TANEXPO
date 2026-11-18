@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { providerCoordinates } from '../../data/placeCoordinates';
 import { Provider, CategoryId } from '../../types';
 import {
   AFCON_2027_VENUES,
@@ -306,8 +307,12 @@ export const TanzaniaMap: React.FC<TanzaniaMapProps> = ({
     }
 
     filteredProviders.forEach(provider => {
+      // Pin the operator in their own town; skip operators whose town is unknown
+      // rather than placing them somewhere wrong.
+      const townCoords = providerCoordinates(provider);
+      if (!townCoords) return;
       const coordInfo = PROVIDER_COORDINATES[provider.id] || {
-        coordinates: [-6.369 + (Math.random() * 2 - 1), 34.888 + (Math.random() * 2 - 1)] as [number, number],
+        coordinates: townCoords,
         city: provider.location,
         nearAfcon: false,
         nearestVenue: 'Regional Transfer'

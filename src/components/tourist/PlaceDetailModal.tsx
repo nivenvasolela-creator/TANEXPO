@@ -1,3 +1,4 @@
+import { photoProps, PHOTO_SIZES } from '../../utils/images';
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useModalAccessibility } from '../../hooks/useModalAccessibility';
@@ -253,9 +254,9 @@ export const PlaceDetailModal: React.FC = () => {
                       <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 relative bg-black/20">
                         {thumb ? (
                           <img 
-                            src={thumb} 
+                            {...photoProps(thumb, PHOTO_SIZES.thumb, [96, 160])}
                             alt={dest.name} 
-                            referrerPolicy="no-referrer"
+                            loading="lazy"
                             className="w-full h-full object-cover" 
                           />
                         ) : (
@@ -304,9 +305,8 @@ export const PlaceDetailModal: React.FC = () => {
                   <div className="relative h-64 sm:h-72 md:h-80 w-full group">
                     {activePhoto && (
                       <img 
-                        src={activePhoto.url} 
+                        {...photoProps(activePhoto.url, PHOTO_SIZES.hero, [640, 960, 1280, 1920])}
                         alt={activePhoto.caption || selectedDestination.name}
-                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover" 
                       />
                     )}
@@ -466,9 +466,8 @@ export const PlaceDetailModal: React.FC = () => {
                 <div className="relative bg-[#19261F] text-white rounded-3xl overflow-hidden shadow-md">
                   <div className="relative h-72 sm:h-96 md:h-[440px] w-full flex items-center justify-center group">
                     <img 
-                      src={activePhoto.url} 
+                      {...photoProps(activePhoto.url, PHOTO_SIZES.hero, [640, 960, 1280, 1920])}
                       alt={activePhoto.caption || selectedDestination.name}
-                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover transition-all duration-500" 
                     />
                     <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
@@ -538,11 +537,9 @@ export const PlaceDetailModal: React.FC = () => {
                         }`}
                       >
                         <img 
-                          src={img.url} 
+                          {...photoProps(img.url, PHOTO_SIZES.thumb, [160, 320])}
                           alt={img.caption} 
                           loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
                           className="w-full h-full object-cover" 
                         />
                       </button>
@@ -579,11 +576,9 @@ export const PlaceDetailModal: React.FC = () => {
                       >
                         <div className="h-44 rounded-xl overflow-hidden relative mb-2.5 bg-black/10">
                           <img 
-                            src={img.url} 
+                            {...photoProps(img.url, PHOTO_SIZES.card)}
                             alt={img.caption} 
                             loading="lazy"
-                            decoding="async"
-                            referrerPolicy="no-referrer"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
                           />
                           {img.tag && (

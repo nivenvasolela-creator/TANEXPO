@@ -2,11 +2,12 @@ import express, { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import helmet from 'helmet';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import { apiRouter } from './server/api.js';
 import { getDb } from './server/db.js';
 import { getPaymentsMode } from './server/config.js';
 import { bookingIntegrityGuard } from './server/guards.js';
+import { startScheduler } from './server/scheduler.js';
+import { mediaStatic } from './server/media.js';
 
 function getFrameAncestors(): string[] {
   if (process.env.NODE_ENV === 'production') {
@@ -57,11 +58,18 @@ async function startServer() {
               connectSrc: ["'self'", 'https:'],
               manifestSrc: ["'self'"],
               workerSrc: ["'self'"],
-              frameAncestors: getFrameAncestors()
+              frameAncestors: getFrameAncestors(),
+              // Helmet adds upgrade-insecure-requests by default. Over plain http (a laptop demo
+              // opened at its network address) it makes the browser fetch the app's scripts over
+              // https, which fails and leaves a blank page. Real hosts already force https.
+              upgradeInsecureRequests: null
             }
           }
         : false,
       crossOriginEmbedderPolicy: false,
+      // Send only our domain (never page paths) with outgoing requests; OpenStreetMap's tile
+      // usage policy asks for a referer.
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
       xFrameOptions: false
     })
   );
@@ -125,8 +133,13 @@ async function startServer() {
   // API routes FIRST
   app.use('/api', apiRouter);
 
+  // Package photos and videos uploaded by operators
+  app.use('/media', mediaStatic());
+
   // Vite middleware for development
   if (!isProd) {
+    // Loaded lazily: vite is a devDependency and is absent from production installs.
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true, host: '0.0.0.0', port: PORT },
       appType: 'spa'
@@ -154,11 +167,16 @@ async function startServer() {
       })
     );
     if (res.headersSent) return;
+    if (err?.type === 'entity.too.large') {
+      res.status(413).json({ error: 'That file is too large.', requestId });
+      return;
+    }
     res.status(500).json({ error: 'Internal server error', requestId });
   });
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`TANEXPO server running on http://0.0.0.0:${PORT}`);
+    console.log(`TANEXPO server running on http://localhost:${PORT}`);
+    startScheduler();
   });
 }
 

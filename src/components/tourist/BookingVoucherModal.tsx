@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 export const BookingVoucherModal: React.FC = () => {
-  const { activeVoucher, setActiveVoucher, providers, formatPrice } = useApp();
+  const { activeVoucher, setActiveVoucher, providers, formatPrice, paymentsMode } = useApp();
   const dialogRef = useModalAccessibility(Boolean(activeVoucher), () => setActiveVoucher(null));
 
   if (!activeVoucher) return null;
@@ -127,7 +127,7 @@ export const BookingVoucherModal: React.FC = () => {
                 </div>
                 <div>
                   <span className="font-medium text-[#284435] dark:text-[#EDF3EF]">Direct Guide Line:</span>{' '}
-                  {provider.phone || 'Available after confirmed booking'}
+                  {provider.phone || 'Not listed yet. Message the operator from My Requests.'}
                 </div>
               </div>
             )}
@@ -146,13 +146,13 @@ export const BookingVoucherModal: React.FC = () => {
 
             <div className="flex justify-between text-[#6B7A72] dark:text-[#8DA195]">
               <span>Payment Rails & Settlement:</span>
-              <span className="font-semibold text-emerald-700 dark:text-emerald-400">Licensed Payment Rails / Verified</span>
+              <span className="font-semibold text-emerald-700 dark:text-emerald-400">{paymentsMode === 'simulated' ? 'Demo payment' : 'Licensed Payment Rails / Verified'}</span>
             </div>
 
             <div className="pt-3 border-t border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between text-xs text-[#6B7A72] dark:text-[#8DA195]">
               <div className="flex items-center gap-1.5 text-[11px] text-[#284435] dark:text-emerald-400">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Payment processed via licensed partner; operator settlement initiated.</span>
+                <span>{paymentsMode === 'simulated' ? 'Demo booking: no money has been charged or moved.' : 'Payment processed via licensed partner; operator settlement initiated.'}</span>
               </div>
               <QrCode className="w-8 h-8 text-[#284435]/40 dark:text-[#8DA195]/40" />
             </div>

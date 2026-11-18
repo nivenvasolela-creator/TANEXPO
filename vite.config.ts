@@ -108,15 +108,26 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
+          // Destination photos load when viewed (then cached below), not all up front.
+          globIgnores: ['photos/**'],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//],
           runtimeCaching: [
+            {
+              urlPattern: ({ url }) => url.pathname.startsWith('/photos/'),
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'tanexpo-photos',
+                expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [200] }
+              }
+            },
             {
               urlPattern: ({ url }) => url.pathname === '/api/catalog' || url.pathname === '/api/config',
               handler: 'NetworkFirst',
               options: {
                 cacheName: 'tanexpo-public-catalog',
-                networkTimeoutSeconds: 4,
+                networkTimeoutSeconds: 15,
                 expiration: {
                   maxEntries: 10,
                   maxAgeSeconds: 60 * 60 * 24,

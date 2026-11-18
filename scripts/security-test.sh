@@ -201,6 +201,17 @@ assert_status "Provider B cannot edit Provider A booking" "403" "$RESP_STATUS" "
 parse_res "$(req POST /reviews "$TOURIST_TOKEN" "{\"providerId\":${PROV_A_PID},\"rating\":5,\"comment\":\"Great!\",\"bookingRef\":\"${BOOKING_A_REF}\"}")"
 assert_status "Review rejected for Upcoming booking" "400" "$RESP_STATUS" "$RESP_BODY"
 
+# A booking cannot be completed (and so reviewed) until the traveler's payment is recorded,
+# and the operator cannot record that payment themselves.
+parse_res "$(req PUT "/bookings/${BOOKING_A_ID}" "$PROV_A_TOKEN" "{\"status\":\"Completed\"}")"
+assert_status "Unpaid booking cannot be marked Completed" "409" "$RESP_STATUS" "$RESP_BODY"
+
+parse_res "$(req POST /transactions "$PROV_A_TOKEN" "{\"bookingId\":${BOOKING_A_ID},\"paymentRail\":\"M-Pesa\"}")"
+assert_status "Provider cannot record payment on own booking" "403" "$RESP_STATUS" "$RESP_BODY"
+
+parse_res "$(req POST /transactions "$TOURIST_TOKEN" "{\"bookingId\":${BOOKING_A_ID},\"paymentRail\":\"M-Pesa\"}")"
+assert_status "Tourist records payment for own booking" "201" "$RESP_STATUS" "$RESP_BODY"
+
 # Provider A marks booking Completed, then Tourist can submit 1 review (2nd rejected with 409)
 parse_res "$(req PUT "/bookings/${BOOKING_A_ID}" "$PROV_A_TOKEN" "{\"status\":\"Completed\"}")"
 assert_status "Provider A marks booking Completed" "200" "$RESP_STATUS" "$RESP_BODY"

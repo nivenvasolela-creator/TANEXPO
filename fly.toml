@@ -1,0 +1,44 @@
+# Fly.io config for the TANEXPO demo: one machine with a persistent volume.
+# First time:
+#   fly launch --copy-config --no-deploy        (choose a unique app name)
+#   fly volumes create tanexpo_data --region jnb --size 5   (database + package photos/videos)
+#   fly secrets set ADMIN_SEED_EMAIL=... ADMIN_SEED_PASSWORD=...
+#   fly deploy --ha=false
+app = "tanexpo-demo"
+primary_region = "jnb"       # Johannesburg, the closest Fly region to Tanzania
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3000"
+  PG_DATA_DIR = "/data/pg"
+  PAYMENTS_MODE = "simulated"
+  SEED_DEMO_CATALOG = "true"
+  ALLOW_WHATSAPP_SIMULATOR = "true"
+  WHATSAPP_ENABLED = "false"
+
+[mounts]
+  source = "tanexpo_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Kept running: the reminder scheduler lives in this process, and the database is single-process.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1

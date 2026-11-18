@@ -71,6 +71,8 @@ export interface Category {
   label: string;
   labelSw?: string;
   emoji: string;
+  /** Hosted photo for the category card, e.g. /photos/zanzibar-beach */
+  photo?: string;
   sub: string;
   description: string;
   popularDestinations: string[];
@@ -149,6 +151,17 @@ export interface ListingPackage {
   category: CategoryId;
   active: boolean;
   maxGroupSize?: number;
+  /** Operator-uploaded photos and videos; the first photo is the cover. */
+  media?: ListingMedia[];
+}
+
+export interface ListingMedia {
+  id: string;
+  kind: 'image' | 'video';
+  url: string;
+  mime: string;
+  bytes: number;
+  createdAt: string;
 }
 
 export type LeadStatus = 'New' | 'Contacted' | 'Negotiating' | 'Booked' | 'Lost';
@@ -194,6 +207,8 @@ export interface Lead {
   createdAt: string;
   lastUpdated?: string;
   messages?: LeadMessage[];
+  /** 'whatsapp_forward': the operator forwarded a customer's WhatsApp message to TANEXPO. */
+  sourceChannel?: 'whatsapp_forward';
 }
 
 export interface Booking {

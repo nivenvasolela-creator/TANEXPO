@@ -103,6 +103,16 @@ interface AppContextType {
 
   // Runtime Config & Loading State
   catalogLoaded: boolean;
+  /** Category filter on the Home operator list (set from Explore's "See operators"). */
+  homeCategory: CategoryId | 'all';
+  setHomeCategory: (c: CategoryId | 'all') => void;
+  /** Item the Map tab should open on, e.g. "destination:serengeti". */
+  mapFocus: string | null;
+  setMapFocus: (key: string | null) => void;
+  /** True when the operator list could not be loaded (shown to the user with a Retry button). */
+  catalogError: boolean;
+  retryCatalog: () => Promise<void>;
+  refreshData: () => Promise<void>;
   paymentsMode: 'simulated' | 'live';
   seedDemoCatalog: boolean;
 
@@ -121,10 +131,10 @@ interface AppContextType {
   // Navigation & View State
   currentView: 'tourist' | 'provider';
   setCurrentView: (view: 'tourist' | 'provider') => void;
-  touristTab: 'explore' | 'requests' | 'saved' | 'compliance';
-  setTouristTab: (tab: 'explore' | 'requests' | 'saved' | 'compliance') => void;
-  providerTab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile';
-  setProviderTab: (tab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile') => void;
+  touristTab: 'explore' | 'places' | 'map' | 'requests' | 'saved' | 'compliance';
+  setTouristTab: (tab: 'explore' | 'places' | 'map' | 'requests' | 'saved' | 'compliance') => void;
+  providerTab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp';
+  setProviderTab: (tab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp') => void;
   activeProviderId: number;
   setActiveProviderId: (id: number) => void;
   showUSDApprox: boolean;
@@ -182,7 +192,9 @@ interface AppContextType {
     paymentRail: Transaction['paymentRail'],
     accountOrPhone: string
   ) => Promise<Booking | null>;
-  saveListing: (listingData: Omit<ListingPackage, 'id'> & { id?: number }) => void;
+  saveListing: (listingData: Omit<ListingPackage, 'id'> & { id?: number }) => Promise<ListingPackage | null>;
+  /** Put an updated package (for example after a photo upload) into the local list. */
+  replaceListing: (listing: ListingPackage) => void;
   deleteListing: (listingId: number) => void;
   addReviewResponse: (reviewId: number, response: string) => void;
   addReview: (review: Omit<Review, 'id' | 'date'>) => Promise<{ ok: boolean; error?: string }>;
@@ -206,6 +218,21 @@ const STORAGE_KEYS = {
   INTRO_SEEN: 'tanexpo_intro_seen_v3',
   AUTH_TOKEN: 'tanexpo_auth_token'
 };
+
+/**
+ * The service worker keeps the last catalog response for offline use. A signed-in traveler's
+ * catalog can include contact details of operators they booked, so the copy is dropped
+ * whenever the signed-in user changes.
+ */
+function clearCachedCatalog(): void {
+  try {
+    if (typeof caches !== 'undefined') {
+      void caches.delete('tanexpo-public-catalog').catch(() => {});
+    }
+  } catch {
+    // Cache Storage unavailable (private mode, old browser): nothing to clear.
+  }
+}
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Language
@@ -326,9 +353,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return 'tourist';
   });
 
-  const [touristTab, setTouristTab] = useState<'explore' | 'requests' | 'saved' | 'compliance'>('explore');
+  const [touristTab, setTouristTab] = useState<'explore' | 'places' | 'map' | 'requests' | 'saved' | 'compliance'>('explore');
   const [providerTab, setProviderTab] = useState<
-    'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile'
+    'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp'
   >('overview');
   const [activeProviderId, setActiveProviderId] = useState<number>(() => {
     if (currentUser?.providerProfile?.providerId) {
@@ -340,6 +367,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Modals / active selections
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+  const [homeCategory, setHomeCategory] = useState<CategoryId | 'all'>('all');
+  const [mapFocus, setMapFocus] = useState<string | null>(null);
+  const [catalogError, setCatalogError] = useState(false);
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
   const [inquiryPackage, setInquiryPackage] = useState<{ provider: Provider; listing: ListingPackage } | null>(null);
   const [activeVoucher, setActiveVoucher] = useState<Booking | null>(null);
@@ -390,6 +420,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     (redirectToLogin = true) => {
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+      clearCachedCatalog();
       setCurrentUser(null);
       clearPrivateState();
       setCurrentView('tourist');
@@ -446,15 +477,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Public catalog fetch (safe for guests)
   const syncCatalog = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/catalog', {}, { redirectOn401: false });
-      if (!res.ok) return;
+      let res = await apiFetch('/api/catalog', {}, { redirectOn401: false });
+      if (!res.ok) {
+        // One quick retry: a slow tunnel or mobile network often fails the first attempt.
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await apiFetch('/api/catalog', {}, { redirectOn401: false });
+      }
+      if (!res.ok) {
+        setCatalogError(true);
+        setCatalogLoaded(true);
+        return;
+      }
       const data = await res.json();
+      setCatalogError(false);
       if (Array.isArray(data.providers)) setProviders(data.providers);
       if (Array.isArray(data.listings)) setListings(data.listings);
       if (Array.isArray(data.reviews)) setReviews(data.reviews);
       setCatalogLoaded(true);
     } catch (err) {
       console.warn('Catalog fetch error:', err);
+      setCatalogError(true);
       setCatalogLoaded(true);
     }
   }, [apiFetch]);
@@ -787,6 +829,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }).catch(() => {});
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     }
+    clearCachedCatalog();
     setCurrentUser(null);
     localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
     clearPrivateState();
@@ -1075,22 +1118,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return processPaymentConfirmation(leadId, 'CRDB Bank', 'Direct Provider Confirmation');
   };
 
-  const saveListing = (listingData: Omit<ListingPackage, 'id'> & { id?: number }) => {
-    apiFetch('/api/listings', {
-      method: 'POST',
-      body: JSON.stringify(listingData)
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((result) => {
-        if (result?.listing) {
-          const saved: ListingPackage = result.listing;
-          setListings((prev) => {
-            const exists = prev.some((l) => l.id === saved.id);
-            return exists ? prev.map((l) => (l.id === saved.id ? saved : l)) : [saved, ...prev];
-          });
-        }
-      })
-      .catch((e) => console.warn('Backend save listing error:', e));
+  const replaceListing = useCallback((saved: ListingPackage) => {
+    setListings((prev) => {
+      const exists = prev.some((l) => l.id === saved.id);
+      return exists ? prev.map((l) => (l.id === saved.id ? saved : l)) : [saved, ...prev];
+    });
+  }, []);
+
+  const saveListing = async (
+    listingData: Omit<ListingPackage, 'id'> & { id?: number }
+  ): Promise<ListingPackage | null> => {
+    try {
+      const res = await apiFetch('/api/listings', {
+        method: 'POST',
+        body: JSON.stringify(listingData)
+      });
+      const result = res.ok ? await res.json() : null;
+      if (result?.listing) {
+        replaceListing(result.listing);
+        return result.listing as ListingPackage;
+      }
+      return null;
+    } catch (e) {
+      console.warn('Backend save listing error:', e);
+      return null;
+    }
   };
 
   const deleteListing = (listingId: number) => {
@@ -1275,6 +1327,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentView,
         touristTab,
         setTouristTab,
+        refreshData: syncAll,
+        catalogError,
+        homeCategory,
+        setHomeCategory,
+        mapFocus,
+        setMapFocus,
+        retryCatalog: syncCatalog,
         providerTab,
         setProviderTab,
         activeProviderId,
@@ -1314,6 +1373,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sendMessageOnLead,
         processPaymentConfirmation,
         saveListing,
+        replaceListing,
         deleteListing,
         addReviewResponse,
         addReview,

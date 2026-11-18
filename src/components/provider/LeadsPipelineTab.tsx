@@ -89,14 +89,14 @@ export const LeadsPipelineTab: React.FC = () => {
       </div>
 
       {/* Kanban Board Container: horizontal snap-scroll on mobile/tablet, 5-column grid on desktop */}
-      <div className="flex lg:grid lg:grid-cols-5 gap-4 overflow-x-auto snap-x snap-mandatory pb-3 min-h-[520px] items-start">
+      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory lg:snap-none pb-3 min-h-[520px] items-start">
         {columns.map((col) => {
           const colLeads = filteredLeads.filter((l) => l.status === col.status);
 
           return (
             <div
               key={col.status}
-              className={`w-[84vw] sm:w-[320px] lg:w-auto shrink-0 snap-start rounded-2xl border ${col.color} p-3 flex flex-col gap-3 min-h-[460px] shadow-xs`}
+              className={`w-[84vw] sm:w-[320px] 2xl:w-[340px] shrink-0 snap-start rounded-2xl border ${col.color} p-3 flex flex-col gap-3 min-h-[460px] shadow-xs`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/10">
@@ -137,6 +137,11 @@ export const LeadsPipelineTab: React.FC = () => {
                           <p className="text-[11px] font-medium text-[#D97843] truncate">
                             {lead.listingTitle}
                           </p>
+                          {lead.sourceChannel === 'whatsapp_forward' && (
+                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+                              Forwarded from WhatsApp
+                            </span>
+                          )}
                         </div>
 
                         {/* Details row: Date, Travelers, Budget */}
@@ -149,10 +154,12 @@ export const LeadsPipelineTab: React.FC = () => {
                             <Users className="w-3 h-3 text-[#284435] dark:text-emerald-400" />
                             <span>Group: <strong>{lead.groupSize} Guests</strong></span>
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <Phone className="w-3 h-3 text-[#6B7A72] dark:text-[#8DA195]" />
-                            <span className="truncate">{lead.touristContact}</span>
-                          </div>
+                          {lead.touristContact && (
+                            <div className="flex items-center gap-1.5">
+                              <Phone className="w-3 h-3 text-[#6B7A72] dark:text-[#8DA195]" />
+                              <span className="truncate">{lead.touristContact}</span>
+                            </div>
+                          )}
                           {lead.budgetTZS && (
                             <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400">
                               <DollarSign className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />
@@ -185,7 +192,7 @@ export const LeadsPipelineTab: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setOpenChatLeadId(isChatOpen ? null : lead.id)}
-                            className="w-full flex items-center justify-between text-[11px] font-bold text-[#284435] dark:text-emerald-400 hover:text-[#D97843] py-1 cursor-pointer"
+                            className="w-full min-h-[40px] flex items-center justify-between text-xs font-bold text-[#284435] dark:text-emerald-400 hover:text-[#D97843] py-1 cursor-pointer"
                           >
                             <span className="flex items-center gap-1">
                               <MessageCircle className="w-3 h-3 text-[#D97843]" />
@@ -216,7 +223,7 @@ export const LeadsPipelineTab: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => updateLeadStatus(lead.id, 'Contacted')}
-                                className="flex-1 min-h-[38px] py-1.5 px-2 bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                className="flex-1 whitespace-nowrap min-h-[40px] py-1.5 px-3 bg-[#284435] dark:bg-emerald-800 hover:bg-[#1E332A] dark:hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors"
                               >
                                 <span>Mark Contacted</span>
                                 <ArrowRight className="w-3 h-3" />
@@ -227,7 +234,7 @@ export const LeadsPipelineTab: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setQuoteBuilderLead(lead)}
-                                className="flex-1 min-h-[38px] py-1.5 px-2 bg-[#D97843] hover:bg-[#C26735] text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                                className="flex-1 whitespace-nowrap min-h-[40px] py-1.5 px-3 bg-[#D97843] hover:bg-[#C26735] text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
                               >
                                 <Send className="w-3 h-3" />
                                 <span>{lead.quote ? 'Revise Quote' : 'Build Quote'}</span>
@@ -239,7 +246,7 @@ export const LeadsPipelineTab: React.FC = () => {
                                 type="button"
                                 onClick={() => markLeadBookedDirect(lead.id)}
                                 aria-label="Mark as Booked and Confirmed"
-                                className="min-h-[38px] min-w-[38px] flex items-center justify-center p-1.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-lg border border-emerald-200 dark:border-emerald-800 cursor-pointer transition-colors"
+                                className="min-h-[40px] min-w-[40px] flex items-center justify-center p-1.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-lg border border-emerald-200 dark:border-emerald-800 cursor-pointer transition-colors"
                                 title="Mark as Booked & Confirmed"
                               >
                                 <Check className="w-3.5 h-3.5" />
@@ -251,7 +258,7 @@ export const LeadsPipelineTab: React.FC = () => {
                                 type="button"
                                 onClick={() => updateLeadStatus(lead.id, 'Lost')}
                                 aria-label="Mark as Lost or Cancelled"
-                                className="min-h-[38px] min-w-[38px] flex items-center justify-center p-1.5 bg-zinc-50 dark:bg-[#101914] hover:bg-red-50 dark:hover:bg-red-950/40 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 rounded-lg border border-zinc-200 dark:border-[#23352A] cursor-pointer transition-colors"
+                                className="min-h-[40px] min-w-[40px] flex items-center justify-center p-1.5 bg-zinc-50 dark:bg-[#101914] hover:bg-red-50 dark:hover:bg-red-950/40 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 rounded-lg border border-zinc-200 dark:border-[#23352A] cursor-pointer transition-colors"
                                 title="Mark as Lost / Cancelled"
                               >
                                 <X className="w-3.5 h-3.5" />

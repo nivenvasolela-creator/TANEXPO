@@ -32,3 +32,50 @@ export function getDarHour(date: Date = new Date()): number {
   const hourPart = parts.find((p) => p.type === 'hour')?.value ?? '12';
   return Number(hourPart) % 24;
 }
+
+/**
+ * The dashboard WhatsApp preview/simulator. Only meaningful while the real Meta connection is
+ * off; in production it must be switched on explicitly (demo deployments).
+ */
+export function isWhatsAppSimulatorAllowed(): boolean {
+  if (isWhatsAppEnabled()) return false;
+  if (process.env.NODE_ENV !== 'production') return true;
+  return process.env.ALLOW_WHATSAPP_SIMULATOR === 'true';
+}
+
+export function getGeminiModel(): string {
+  return process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash';
+}
+
+export function getDarDateStr(offsetDays = 0, from: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Dar_es_Salaam',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date(from.getTime() + offsetDays * 86400000));
+}
+
+/** 0 = Sunday ... 6 = Saturday, in Africa/Dar_es_Salaam. */
+export function getDarWeekday(date: Date = new Date()): number {
+  const name = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Africa/Dar_es_Salaam',
+    weekday: 'short'
+  }).format(date);
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(name);
+}
+
+/**
+ * Quiet hours for business-initiated WhatsApp messages, Dar es Salaam time.
+ * WHATSAPP_QUIET_HOURS="21-7" (default) or "off".
+ */
+export function isDarQuietHours(date: Date = new Date()): boolean {
+  const raw = (process.env.WHATSAPP_QUIET_HOURS || '21-7').trim().toLowerCase();
+  if (raw === 'off') return false;
+  const m = raw.match(/^(\d{1,2})-(\d{1,2})$/);
+  const start = m ? Number(m[1]) % 24 : 21;
+  const end = m ? Number(m[2]) % 24 : 7;
+  const hour = getDarHour(date);
+  if (start === end) return false;
+  return start > end ? hour >= start || hour < end : hour >= start && hour < end;
+}

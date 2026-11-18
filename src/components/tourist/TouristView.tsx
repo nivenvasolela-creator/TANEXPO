@@ -1,17 +1,25 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Compass,
   Bell,
   Heart,
-  Scale,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Map as MapIcon,
+  Home,
+  Mountain
 } from 'lucide-react';
 import { TouristHome } from './TouristHome';
 import { ErrorBoundary } from '../ErrorBoundary';
 
 const MyRequestsView = lazy(() =>
   import('./MyRequestsView').then((m) => ({ default: m.MyRequestsView }))
+);
+const PlacesExplore = lazy(() =>
+  import('./PlacesExplore').then((m) => ({ default: m.PlacesExplore }))
+);
+const TouristMapView = lazy(() =>
+  import('./TouristMapView').then((m) => ({ default: m.TouristMapView }))
 );
 const SavedProvidersView = lazy(() =>
   import('./SavedProvidersView').then((m) => ({ default: m.SavedProvidersView }))
@@ -65,6 +73,11 @@ export const TouristView: React.FC = () => {
     t
   } = useApp();
 
+  // A new tab starts at the top instead of keeping the previous tab's scroll position.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [touristTab]);
+
   const negotiatingCount = leads.filter((l) => l.status === 'Negotiating').length;
   const requestsCount = leads.length;
   const savedCount = savedProviderIds.length;
@@ -83,8 +96,34 @@ export const TouristView: React.FC = () => {
                 : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
             }`}
           >
+            <Home className="w-4 h-4" />
+            <span>{t('nav.home', 'Home')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('places')}
+            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              touristTab === 'places'
+                ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
+                : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
+            }`}
+          >
             <Compass className="w-4 h-4" />
-            <span>{t('explore.tours', 'Explore Tours & Guides')}</span>
+            <span>{t('nav.explore', 'Explore')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('map')}
+            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              touristTab === 'map'
+                ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
+                : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
+            }`}
+          >
+            <MapIcon className="w-4 h-4" />
+            <span>{t('nav.map', 'Map')}</span>
           </button>
 
           <button
@@ -125,18 +164,6 @@ export const TouristView: React.FC = () => {
             <span>{t('saved', 'Saved')} ({savedCount})</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setTouristTab('compliance')}
-            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              touristTab === 'compliance'
-                ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
-                : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
-            }`}
-          >
-            <Scale className="w-4 h-4" />
-            <span>{t('laws', 'TZS & Licensing Laws')}</span>
-          </button>
         </div>
 
         {comparedProviderIds.length > 0 && (
@@ -155,6 +182,8 @@ export const TouristView: React.FC = () => {
       <ErrorBoundary fallbackTitle="View failed to load">
         <Suspense fallback={<TabFallback />}>
           {touristTab === 'explore' && <TouristHome />}
+          {touristTab === 'places' && <PlacesExplore />}
+          {touristTab === 'map' && <TouristMapView />}
           {touristTab === 'requests' && <MyRequestsView />}
           {touristTab === 'saved' && <SavedProvidersView />}
           {touristTab === 'compliance' && <ComplianceInfoView />}
@@ -164,28 +193,54 @@ export const TouristView: React.FC = () => {
       {/* Mobile Bottom Navigation Bar */}
       <nav
         aria-label="Tourist mobile navigation"
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 glass border-t border-[#E7DFD3] dark:border-[#23352A] safe-bottom"
+        className="md:hidden fixed inset-x-3 bottom-floating z-30 glass glass-capsule rounded-[30px] border"
       >
-        <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
+        <div className="grid grid-cols-5 gap-1 px-1.5 py-1.5">
           <button
             type="button"
             onClick={() => setTouristTab('explore')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
               touristTab === 'explore'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
-            <Compass className="w-4 h-4" />
+            <Home className="w-4 h-4" />
+            <span>{t('nav.home', 'Home')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('places')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
+              touristTab === 'places'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <Mountain className="w-4 h-4" />
             <span>{t('nav.explore', 'Explore')}</span>
           </button>
 
           <button
             type="button"
+            onClick={() => setTouristTab('map')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
+              touristTab === 'map'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <MapIcon className="w-4 h-4" />
+            <span>{t('nav.map', 'Map')}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setTouristTab('requests')}
-            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
               touristTab === 'requests'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -203,9 +258,9 @@ export const TouristView: React.FC = () => {
           <button
             type="button"
             onClick={() => setTouristTab('saved')}
-            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
               touristTab === 'saved'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -220,18 +275,6 @@ export const TouristView: React.FC = () => {
             <span>{t('saved', 'Saved')}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setTouristTab('compliance')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
-              touristTab === 'compliance'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
-                : 'text-[#6B7A72] dark:text-[#8DA195]'
-            }`}
-          >
-            <Scale className="w-4 h-4" />
-            <span>{t('nav.laws', 'Laws')}</span>
-          </button>
         </div>
       </nav>
 

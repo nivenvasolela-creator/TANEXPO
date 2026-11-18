@@ -1,7 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useApp } from '../context/AppContext';
 import { useModalAccessibility } from '../hooks/useModalAccessibility';
 import { PWAInstallButton } from './pwa/PWAControls';
+
+const AdminVerifyModal = lazy(() =>
+  import('./admin/AdminVerifyModal').then((m) => ({ default: m.AdminVerifyModal }))
+);
 import { 
   Compass, 
   Briefcase, 
@@ -50,6 +54,8 @@ export const Header: React.FC = () => {
   } = useApp();
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isAdminVerifyOpen, setIsAdminVerifyOpen] = useState(false);
+  const closeAdminVerify = useCallback(() => setIsAdminVerifyOpen(false), []);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -96,7 +102,13 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 glass border-b border-[#E7DFD3] dark:border-[#23352A] shadow-2xs transition-colors">
+    <>
+    {isAdminVerifyOpen && currentUser?.role === 'admin' && (
+      <Suspense fallback={null}>
+        <AdminVerifyModal onClose={closeAdminVerify} />
+      </Suspense>
+    )}
+    <header className="sticky top-0 z-40 glass glass-bar border-b transition-colors">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand & Workspace Indicator */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -336,11 +348,27 @@ export const Header: React.FC = () => {
                     <p className="font-bold text-[#1C2C24] dark:text-[#EDF3EF] truncate">{currentUser.name}</p>
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{currentUser.email || currentUser.phone || 'Active Session'}</p>
                     <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                      {currentUser.role === 'provider' 
+                      {currentUser.role === 'admin'
+                        ? 'Admin'
+                        : currentUser.role === 'provider'
                         ? 'Tour Operator' 
                         : (isDomesticTourist ? 'Domestic Tourist' : 'International Tourist')}
                     </span>
                   </div>
+
+                  {currentUser.role === 'admin' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setIsAdminVerifyOpen(true);
+                      }}
+                      className="w-full min-h-[40px] text-left px-3.5 py-2 hover:bg-zinc-50 dark:hover:bg-[#1A2820] text-[#284435] dark:text-emerald-300 font-bold flex items-center gap-2 cursor-pointer"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>Verify operators</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -475,5 +503,6 @@ export const Header: React.FC = () => {
         </div>
       )}
     </header>
+    </>
   );
 };
