@@ -151,6 +151,17 @@ export interface ListingPackage {
   category: CategoryId;
   active: boolean;
   maxGroupSize?: number;
+  /** Operator-uploaded photos and videos; the first photo is the cover. */
+  media?: ListingMedia[];
+}
+
+export interface ListingMedia {
+  id: string;
+  kind: 'image' | 'video';
+  url: string;
+  mime: string;
+  bytes: number;
+  createdAt: string;
 }
 
 export type LeadStatus = 'New' | 'Contacted' | 'Negotiating' | 'Booked' | 'Lost';

@@ -24,6 +24,7 @@ import {
 import { normalizePhone } from './phone.js';
 import { whatsappRouter, notifyOperatorNewLead } from './whatsapp.js';
 import { runScheduledJobs } from './scheduler.js';
+import { mediaRouter, removeListingMediaFiles } from './media.js';
 import {
   initialProviders,
   initialListings,
@@ -1405,7 +1406,7 @@ apiRouter.delete(
       const authUser = req.authUser!;
       const db = await getDb();
       const existingRes = await db.query<any>(
-        'SELECT provider_id FROM listings WHERE id = $1',
+        'SELECT provider_id, data FROM listings WHERE id = $1',
         [id]
       );
       if (!existingRes.rows.length) {
@@ -1421,6 +1422,7 @@ apiRouter.delete(
       }
 
       await db.query('DELETE FROM listings WHERE id = $1', [id]);
+      removeListingMediaFiles(existingRes.rows[0].data);
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: 'Failed to delete listing' });
@@ -2651,6 +2653,7 @@ apiRouter.post(
   }
 );
 
+apiRouter.use(mediaRouter);
 apiRouter.use('/whatsapp', whatsappRouter);
 
 apiRouter.use((_req: Request, res: Response) => {

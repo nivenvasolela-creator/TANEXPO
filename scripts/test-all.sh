@@ -46,6 +46,7 @@ run_suite() {
 run_suite security bash scripts/security-test.sh
 run_suite integrity node scripts/integrity-test.mjs
 run_suite whatsapp node scripts/whatsapp-test.mjs
+run_suite media node scripts/media-test.mjs
 
 rm -rf "$WORK"
 if [ "$FAILED" = "0" ]; then echo "ALL SUITES PASSED"; else echo "SOME SUITES FAILED"; fi

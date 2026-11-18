@@ -1,3 +1,4 @@
+import { coverPhoto } from '../shared/MediaGallery';
 import { photoProps, PHOTO_SIZES } from '../../utils/images';
 import React, { useState, Suspense, lazy } from 'react';
 import { useApp } from '../../context/AppContext';
@@ -686,6 +687,19 @@ export const TouristHome: React.FC = () => {
                     isCompared ? 'border-[#284435] ring-2 ring-[#284435]/20' : 'border-[#E8DFC9]'
                   }`}
                 >
+                  {(() => {
+                    const cover = providerListings.map((l) => coverPhoto(l.media)).find(Boolean);
+                    return cover ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedProvider(provider)}
+                        aria-label={`See ${provider.name}`}
+                        className="block w-full h-44 overflow-hidden bg-[#284435] cursor-pointer"
+                      >
+                        <img src={cover} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      </button>
+                    ) : null;
+                  })()}
                   <div className="p-6">
                     {/* Header: Location, Wishlist & Compare Check */}
                     <div className="flex items-start justify-between gap-3 mb-3">

@@ -74,6 +74,10 @@ fly deploy --ha=false
 
 `fly.toml` holds the rest (Johannesburg region, volume at `/data`, health check, one always-on machine).
 
+### Photos and videos
+
+Operators' package photos and videos are stored next to the database, in `/data/media`, so they live on the same persistent disk (override with `MEDIA_DIR`). Size the disk for them: up to 12 photos (about 0.5 MB each after phone-side resizing) and 3 videos (up to 40 MB each) per package. The configs ask for 5 GB. The admin backup export covers the database only; back up `/data/media` with a disk snapshot.
+
 ### What must stay true on any host
 
 - One instance only, never autoscaled, with a persistent disk mounted at `/data` and `PG_DATA_DIR=/data/pg`.

@@ -186,7 +186,9 @@ interface AppContextType {
     paymentRail: Transaction['paymentRail'],
     accountOrPhone: string
   ) => Promise<Booking | null>;
-  saveListing: (listingData: Omit<ListingPackage, 'id'> & { id?: number }) => void;
+  saveListing: (listingData: Omit<ListingPackage, 'id'> & { id?: number }) => Promise<ListingPackage | null>;
+  /** Put an updated package (for example after a photo upload) into the local list. */
+  replaceListing: (listing: ListingPackage) => void;
   deleteListing: (listingId: number) => void;
   addReviewResponse: (reviewId: number, response: string) => void;
   addReview: (review: Omit<Review, 'id' | 'date'>) => Promise<{ ok: boolean; error?: string }>;
@@ -1108,22 +1110,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return processPaymentConfirmation(leadId, 'CRDB Bank', 'Direct Provider Confirmation');
   };
 
-  const saveListing = (listingData: Omit<ListingPackage, 'id'> & { id?: number }) => {
-    apiFetch('/api/listings', {
-      method: 'POST',
-      body: JSON.stringify(listingData)
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((result) => {
-        if (result?.listing) {
-          const saved: ListingPackage = result.listing;
-          setListings((prev) => {
-            const exists = prev.some((l) => l.id === saved.id);
-            return exists ? prev.map((l) => (l.id === saved.id ? saved : l)) : [saved, ...prev];
-          });
-        }
-      })
-      .catch((e) => console.warn('Backend save listing error:', e));
+  const replaceListing = useCallback((saved: ListingPackage) => {
+    setListings((prev) => {
+      const exists = prev.some((l) => l.id === saved.id);
+      return exists ? prev.map((l) => (l.id === saved.id ? saved : l)) : [saved, ...prev];
+    });
+  }, []);
+
+  const saveListing = async (
+    listingData: Omit<ListingPackage, 'id'> & { id?: number }
+  ): Promise<ListingPackage | null> => {
+    try {
+      const res = await apiFetch('/api/listings', {
+        method: 'POST',
+        body: JSON.stringify(listingData)
+      });
+      const result = res.ok ? await res.json() : null;
+      if (result?.listing) {
+        replaceListing(result.listing);
+        return result.listing as ListingPackage;
+      }
+      return null;
+    } catch (e) {
+      console.warn('Backend save listing error:', e);
+      return null;
+    }
   };
 
   const deleteListing = (listingId: number) => {
@@ -1350,6 +1361,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sendMessageOnLead,
         processPaymentConfirmation,
         saveListing,
+        replaceListing,
         deleteListing,
         addReviewResponse,
         addReview,

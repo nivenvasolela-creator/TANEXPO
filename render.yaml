@@ -14,7 +14,7 @@ services:
     disk:
       name: tanexpo-data
       mountPath: /data
-      sizeGB: 1
+      sizeGB: 5            # database plus operators' package photos and videos
     envVars:
       - key: NODE_ENV
         value: production

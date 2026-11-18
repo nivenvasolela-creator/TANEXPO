@@ -107,8 +107,9 @@ npm test
 `npm test` starts a fresh production-mode server with an empty database for each suite and runs:
 
 - `scripts/security-test.sh` (50 checks): roles, ownership, sessions, server-computed money, reviews.
-- `scripts/integrity-test.mjs` (26 checks): phone normalization, contact gating, booking guards, backups, database fail-fast.
+- `scripts/integrity-test.mjs` (27 checks): phone normalization, contact gating, booking guards, backups, database fail-fast.
 - `scripts/whatsapp-test.mjs` (23 checks): signed webhooks, linking, commands, forwarding, scheduler, log privacy.
+- `scripts/media-test.mjs` (10 checks): package photo/video uploads: ownership, type sniffing, size and count limits, safe serving, file cleanup.
 
 ---
 

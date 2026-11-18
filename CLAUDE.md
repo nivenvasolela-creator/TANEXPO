@@ -43,8 +43,9 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - Tourist **Map** tab: Leaflet with free OpenStreetMap / Esri satellite / OpenTopoMap tiles, photo pins, category filters, Google Maps directions, and "Near me" (browser location, never sent to the server). Details and tile-usage limits: `docs/MAPS.md`.
 - Real destination photos from Wikimedia Commons, hosted in `public/photos` (credits in `public/photos/credits.json`, shown via the footer "Photo credits" link). Re-import with `node scripts/import-photos.mjs <slot>`.
 - UI: Liquid Glass (`.glass`, `.glass-capsule`, `.tab-lens` in `src/index.css`) only on floating chrome: top bar, floating capsule tab bars (tourist and operator), map controls. Solid fallbacks under `perf-lite` and `prefers-reduced-transparency`. Tab changes scroll to top.
+- Package photos and videos: operators upload in the package editor (`ListingMediaManager`; photos resized and stripped of GPS on the phone, upload progress, cover photo). Server `server/media.ts`: owner-only, type sniffed from file bytes (JPEG/PNG/WebP, MP4/WebM/MOV), 8 MB photo / 40 MB video, 12 photos + 3 videos per package, stored in `MEDIA_DIR` (default next to PG_DATA_DIR) and served from `/media` with nosniff + sandbox CSP. Travelers see a swipeable gallery and full-screen viewer (`shared/MediaGallery.tsx`) and cover photos on operator cards.
 - Admin: account menu > **Verify operators** lists operators with their TALA licence and toggles verification (server re-checks the admin role).
-- Suites: 50 security, 27 integrity, 23 WhatsApp checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
+- Suites: 50 security, 27 integrity, 23 WhatsApp, 10 media checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
 
 ## 5. Not verified / needs a human
 

@@ -7,6 +7,7 @@ import { getDb } from './server/db.js';
 import { getPaymentsMode } from './server/config.js';
 import { bookingIntegrityGuard } from './server/guards.js';
 import { startScheduler } from './server/scheduler.js';
+import { mediaStatic } from './server/media.js';
 
 function getFrameAncestors(): string[] {
   if (process.env.NODE_ENV === 'production') {
@@ -132,6 +133,9 @@ async function startServer() {
   // API routes FIRST
   app.use('/api', apiRouter);
 
+  // Package photos and videos uploaded by operators
+  app.use('/media', mediaStatic());
+
   // Vite middleware for development
   if (!isProd) {
     // Loaded lazily: vite is a devDependency and is absent from production installs.
@@ -163,6 +167,10 @@ async function startServer() {
       })
     );
     if (res.headersSent) return;
+    if (err?.type === 'entity.too.large') {
+      res.status(413).json({ error: 'That file is too large.', requestId });
+      return;
+    }
     res.status(500).json({ error: 'Internal server error', requestId });
   });
 

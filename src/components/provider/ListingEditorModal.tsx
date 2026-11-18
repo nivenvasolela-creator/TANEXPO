@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useModalAccessibility } from '../../hooks/useModalAccessibility';
 import { CategoryId } from '../../types';
-import { X, Save, Plus, Trash2, PackagePlus } from 'lucide-react';
+import { X, Save, Plus, Trash2, PackagePlus, CheckCircle2 } from 'lucide-react';
+import { ListingMediaManager } from './ListingMediaManager';
 
 export const ListingEditorModal: React.FC = () => {
   const { 
@@ -12,8 +13,15 @@ export const ListingEditorModal: React.FC = () => {
     setIsNewListingModalOpen, 
     activeProviderId, 
     saveListing, 
-    categories 
+    categories,
+    listings
   } = useApp();
+
+  // The live copy, so uploaded photos appear as soon as they are saved.
+  const currentListing = editingListing ? listings.find((l) => l.id === editingListing.id) || editingListing : null;
+  const [justCreated, setJustCreated] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const isOpen = isNewListingModalOpen || editingListing !== null;
 
@@ -60,6 +68,8 @@ export const ListingEditorModal: React.FC = () => {
   const handleClose = () => {
     setEditingListing(null);
     setIsNewListingModalOpen(false);
+    setJustCreated(false);
+    setSaveError('');
   };
 
   const dialogRef = useModalAccessibility(isOpen, handleClose);
@@ -76,11 +86,13 @@ export const ListingEditorModal: React.FC = () => {
     setInclusions(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || priceTZS <= 0) return;
+    if (!title || priceTZS <= 0 || saving) return;
+    setSaving(true);
+    setSaveError('');
 
-    saveListing({
+    const saved = await saveListing({
       id: editingListing ? editingListing.id : undefined,
       providerId: activeProviderId,
       title,
@@ -93,7 +105,19 @@ export const ListingEditorModal: React.FC = () => {
       active: true,
       maxGroupSize: Number(maxGroupSize)
     });
+    setSaving(false);
 
+    if (!saved) {
+      setSaveError('Could not save the package. Check your connection and try again.');
+      return;
+    }
+    if (!editingListing) {
+      // New package: stay open on it so photos and videos can be added straight away.
+      setIsNewListingModalOpen(false);
+      setEditingListing(saved);
+      setJustCreated(true);
+      return;
+    }
     handleClose();
   };
 
@@ -137,6 +161,21 @@ export const ListingEditorModal: React.FC = () => {
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 space-y-4 flex-1 overflow-y-auto">
+          {justCreated && (
+            <p role="status" className="flex items-start gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-sm text-emerald-900 dark:text-emerald-200">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              Package saved. Now add photos and videos so travelers can see it.
+            </p>
+          )}
+
+          {currentListing ? (
+            <ListingMediaManager listing={currentListing} />
+          ) : (
+            <p className="p-3 rounded-xl bg-[#FAF7F2] dark:bg-[#152019] border border-dashed border-[#D9CEBF] dark:border-[#2E4537] text-xs text-[#6B7A72] dark:text-[#8DA195]">
+              Save the package first, then you can add photos and videos.
+            </p>
+          )}
+
           {/* Title */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-[#284435]">Package Title *</label>
@@ -277,6 +316,11 @@ export const ListingEditorModal: React.FC = () => {
           </div>
 
           {/* Submit */}
+          {saveError && (
+            <p role="alert" className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs text-red-800 dark:text-red-300">
+              {saveError}
+            </p>
+          )}
           <div className="pt-4 border-t border-[#E8DFC9] flex justify-end gap-2">
             <button
               type="button"
@@ -287,10 +331,11 @@ export const ListingEditorModal: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="min-h-[44px] px-5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+              disabled={saving}
+              className="min-h-[44px] px-5 py-2 rounded-xl bg-[#284435] hover:bg-[#1E332A] disabled:opacity-60 text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <Save className="w-4 h-4" />
-              <span>Save Package</span>
+              <span>{saving ? 'Saving…' : justCreated ? 'Done' : 'Save Package'}</span>
             </button>
           </div>
         </form>
