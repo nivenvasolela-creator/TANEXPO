@@ -5,13 +5,17 @@ import {
   Bell,
   Heart,
   Scale,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Map as MapIcon
 } from 'lucide-react';
 import { TouristHome } from './TouristHome';
 import { ErrorBoundary } from '../ErrorBoundary';
 
 const MyRequestsView = lazy(() =>
   import('./MyRequestsView').then((m) => ({ default: m.MyRequestsView }))
+);
+const TouristMapView = lazy(() =>
+  import('./TouristMapView').then((m) => ({ default: m.TouristMapView }))
 );
 const SavedProvidersView = lazy(() =>
   import('./SavedProvidersView').then((m) => ({ default: m.SavedProvidersView }))
@@ -89,6 +93,19 @@ export const TouristView: React.FC = () => {
 
           <button
             type="button"
+            onClick={() => setTouristTab('map')}
+            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              touristTab === 'map'
+                ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
+                : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
+            }`}
+          >
+            <MapIcon className="w-4 h-4" />
+            <span>{t('nav.map', 'Map')}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setTouristTab('requests')}
             className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               touristTab === 'requests'
@@ -155,6 +172,7 @@ export const TouristView: React.FC = () => {
       <ErrorBoundary fallbackTitle="View failed to load">
         <Suspense fallback={<TabFallback />}>
           {touristTab === 'explore' && <TouristHome />}
+          {touristTab === 'map' && <TouristMapView />}
           {touristTab === 'requests' && <MyRequestsView />}
           {touristTab === 'saved' && <SavedProvidersView />}
           {touristTab === 'compliance' && <ComplianceInfoView />}
@@ -166,7 +184,7 @@ export const TouristView: React.FC = () => {
         aria-label="Tourist mobile navigation"
         className="md:hidden fixed bottom-0 inset-x-0 z-30 glass border-t border-[#E7DFD3] dark:border-[#23352A] safe-bottom"
       >
-        <div className="grid grid-cols-4 gap-1 px-2 py-1.5">
+        <div className="grid grid-cols-5 gap-1 px-1.5 py-1.5">
           <button
             type="button"
             onClick={() => setTouristTab('explore')}
@@ -178,6 +196,19 @@ export const TouristView: React.FC = () => {
           >
             <Compass className="w-4 h-4" />
             <span>{t('nav.explore', 'Explore')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('map')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+              touristTab === 'map'
+                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <MapIcon className="w-4 h-4" />
+            <span>{t('nav.map', 'Map')}</span>
           </button>
 
           <button

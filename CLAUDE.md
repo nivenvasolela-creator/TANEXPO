@@ -31,7 +31,7 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - Features: tourist side (home, place/provider pages, compare, booking request, checkout, voucher, my requests, saved, reviews, compliance info). Provider side (overview, leads pipeline, WhatsApp tab, bookings, financials, listings editor, quote builder, reviews, profile/verification). English + Swahili, TZS + USD, legal pages (drafts), account deletion, admin backup export.
 - Much of the code was generated through **Google AI Studio (Gemini)**. Two AI Studio apps exist: **FORGE** (a different project, never touch) and **TANEXPO**. Gemini's own reports and tests describe its own work; verify by running.
 - Build/test: `npm ci`, `npx tsc --noEmit`, `npm run build`, `npm test` (runs all three suites, each against a fresh production-mode server). npm is the only lockfile.
-- Docs: `docs/LAUNCH.md` (launch checklist with links), `README.md`, `DEPLOYMENT.md`, `docs/WHATSAPP_SETUP.md`, `docs/DEMO.md`. Local demo: `npm run build && npm run demo` (or `npm run demo:public` for a Cloudflare Tunnel link; settings in the uncommitted `.env.demo`).
+- Docs: `docs/MAPS.md`, `docs/LAUNCH.md` (launch checklist with links), `README.md`, `DEPLOYMENT.md`, `docs/WHATSAPP_SETUP.md`, `docs/DEMO.md`. Local demo: `npm run build && npm run demo` (or `npm run demo:public` for a Cloudflare Tunnel link; settings in the uncommitted `.env.demo`).
 
 ## 4. What is done (verified by running, 2026-11-16)
 
@@ -40,6 +40,8 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - Payments stay simulated, and the UI says so: demo banners, no fake control-number instructions, no "licensed payment partner" claims while `PAYMENTS_MODE=simulated`.
 - Reviews: need the tourist's own Completed booking; a tourist's booking can only be completed after its trip date AND with a recorded payment; only the tourist (or admin) can record a simulated payment.
 - WhatsApp layer per section 2: Mode A alerts + commands, Mode B forward-to-lead, fixed reply to unlinked numbers, HMAC-verified webhook (production rejects everything without `WHATSAPP_APP_SECRET`), OTP linking, scheduler (Monday digest, reminders, quiet hours), templates outside the 24h window, dashboard preview simulator behind `ALLOW_WHATSAPP_SIMULATOR`.
+- Tourist **Map** tab: Leaflet with free OpenStreetMap / Esri satellite / OpenTopoMap tiles, photo pins, category filters, Google Maps directions, and "Near me" (browser location, never sent to the server). Details and tile-usage limits: `docs/MAPS.md`.
+- Real destination photos from Wikimedia Commons, hosted in `public/photos` (credits in `public/photos/credits.json`, shown via the footer "Photo credits" link). Re-import with `node scripts/import-photos.mjs <slot>`.
 - Admin: account menu > **Verify operators** lists operators with their TALA licence and toggles verification (server re-checks the admin role).
 - Suites: 50 security, 27 integrity, 23 WhatsApp checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
 

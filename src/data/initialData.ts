@@ -44,7 +44,7 @@ export const categories: Category[] = [
     id: 'city',
     label: 'City & Culinary',
     emoji: '🌆',
-    photo: '/photos/zanzibar-stonetown', // TODO: switch to /photos/city-dar once fetched (node scripts/import-photos.mjs city-dar)
+    photo: '/photos/city-dar',
     sub: 'Dar es Salaam, Arusha Town, Stone Town alleys',
     description: 'Bustling spice markets, Swahili seafood dinners, colonial historical architecture, and vibrant urban vibes.',
     popularDestinations: ['Kariakoo Market', 'Kivukoni Fish Market', 'Arusha Cultural Heritage', 'Zanzibar Forodhani']

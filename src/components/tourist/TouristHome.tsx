@@ -27,7 +27,10 @@ const TanzaniaMap = lazy(() =>
 
 export const TouristHome: React.FC = () => {
   const { 
-    categories, 
+    categories,
+    setTouristTab,
+    catalogError,
+    retryCatalog,
     destinations,
     providers, 
     listings, 
@@ -265,13 +268,12 @@ export const TouristHome: React.FC = () => {
             </div>
             <button
               onClick={() => {
-                setViewMode('map');
-                const elem = document.getElementById('operators-directory');
-                if (elem) elem.scrollIntoView({ behavior: 'smooth' });
+                setTouristTab('map');
+                window.scrollTo({ top: 0 });
               }}
               className="min-h-[40px] px-3.5 py-1.5 rounded-lg bg-[#E8B94A] hover:bg-[#D4A335] text-[#1E332A] text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5 shrink-0"
             >
-              <span>{viewMode === 'map' ? 'Map View Active' : 'Open Tanzania Map'}</span>
+              <span>Open Tanzania Map</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -289,6 +291,19 @@ export const TouristHome: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {catalogError && providers.length === 0 && (
+        <div role="alert" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-sm text-amber-900 dark:text-amber-200">
+          <span>We couldn't load the operators. Check your connection and try again.</span>
+          <button
+            type="button"
+            onClick={() => void retryCatalog()}
+            className="min-h-[44px] px-5 rounded-xl bg-[#284435] hover:bg-[#1E332A] text-white text-sm font-bold cursor-pointer shrink-0"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Persona Callout Banner */}
       {isGuest ? (

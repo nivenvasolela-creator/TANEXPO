@@ -103,6 +103,9 @@ interface AppContextType {
 
   // Runtime Config & Loading State
   catalogLoaded: boolean;
+  /** True when the operator list could not be loaded (shown to the user with a Retry button). */
+  catalogError: boolean;
+  retryCatalog: () => Promise<void>;
   refreshData: () => Promise<void>;
   paymentsMode: 'simulated' | 'live';
   seedDemoCatalog: boolean;
@@ -122,8 +125,8 @@ interface AppContextType {
   // Navigation & View State
   currentView: 'tourist' | 'provider';
   setCurrentView: (view: 'tourist' | 'provider') => void;
-  touristTab: 'explore' | 'requests' | 'saved' | 'compliance';
-  setTouristTab: (tab: 'explore' | 'requests' | 'saved' | 'compliance') => void;
+  touristTab: 'explore' | 'map' | 'requests' | 'saved' | 'compliance';
+  setTouristTab: (tab: 'explore' | 'map' | 'requests' | 'saved' | 'compliance') => void;
   providerTab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp';
   setProviderTab: (tab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp') => void;
   activeProviderId: number;
@@ -342,7 +345,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return 'tourist';
   });
 
-  const [touristTab, setTouristTab] = useState<'explore' | 'requests' | 'saved' | 'compliance'>('explore');
+  const [touristTab, setTouristTab] = useState<'explore' | 'map' | 'requests' | 'saved' | 'compliance'>('explore');
   const [providerTab, setProviderTab] = useState<
     'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp'
   >('overview');
@@ -356,6 +359,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Modals / active selections
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+  const [catalogError, setCatalogError] = useState(false);
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
   const [inquiryPackage, setInquiryPackage] = useState<{ provider: Provider; listing: ListingPackage } | null>(null);
   const [activeVoucher, setActiveVoucher] = useState<Booking | null>(null);
@@ -469,14 +473,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await new Promise((r) => setTimeout(r, 1500));
         res = await apiFetch('/api/catalog', {}, { redirectOn401: false });
       }
-      if (!res.ok) return;
+      if (!res.ok) {
+        setCatalogError(true);
+        setCatalogLoaded(true);
+        return;
+      }
       const data = await res.json();
+      setCatalogError(false);
       if (Array.isArray(data.providers)) setProviders(data.providers);
       if (Array.isArray(data.listings)) setListings(data.listings);
       if (Array.isArray(data.reviews)) setReviews(data.reviews);
       setCatalogLoaded(true);
     } catch (err) {
       console.warn('Catalog fetch error:', err);
+      setCatalogError(true);
       setCatalogLoaded(true);
     }
   }, [apiFetch]);
@@ -1299,6 +1309,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         touristTab,
         setTouristTab,
         refreshData: syncAll,
+        catalogError,
+        retryCatalog: syncCatalog,
         providerTab,
         setProviderTab,
         activeProviderId,

@@ -58,7 +58,9 @@ for (const [slot, { q, must, avoid }] of Object.entries(SLOTS)) {
     prop: 'imageinfo', iiprop: 'url|size|extmetadata|mime', iiurlwidth: '1600'
   });
   const pages = Object.values(data.query?.pages || {}).sort((a, b) => a.index - b.index);
+  // Try matching candidates in order; if Wikimedia refuses one download, move on to the next.
   let chosen = null;
+  let buf = null;
   for (const p of pages) {
     const ii = p.imageinfo?.[0];
     if (!ii || !/jpeg|png/.test(ii.mime) || ii.width < 1400 || ii.width < ii.height) continue;
@@ -67,13 +69,17 @@ for (const [slot, { q, must, avoid }] of Object.entries(SLOTS)) {
     const md = ii.extmetadata || {};
     const licence = strip(md.LicenseShortName?.value);
     if (!OK_LICENCE.test(licence)) continue;
+    const img = await fetch(ii.thumburl || ii.url, { headers: { 'User-Agent': UA } });
+    if (!img.ok) {
+      console.log(`  skip ${slot}: download ${img.status} for ${p.title.slice(0, 50)}`);
+      await new Promise((r) => setTimeout(r, 8000));
+      continue;
+    }
+    buf = Buffer.from(await img.arrayBuffer());
     chosen = { p, ii, licence, author: strip(md.Artist?.value) || 'Unknown', licenceUrl: md.LicenseUrl?.value || '' };
     break;
   }
-  if (!chosen) { console.log(`MISS ${slot}`); continue; }
-  const img = await fetch(chosen.ii.thumburl || chosen.ii.url, { headers: { 'User-Agent': UA } });
-  if (!img.ok) { console.log(`DOWNLOAD FAILED ${slot} ${img.status}`); continue; }
-  const buf = Buffer.from(await img.arrayBuffer());
+  if (!chosen || !buf) { console.log(`MISS ${slot}`); continue; }
   for (const w of [640, 1280]) {
     await sharp(buf).rotate().resize({ width: w, height: Math.round(w * 0.66), fit: 'cover', position: 'attention' })
       .webp({ quality: w === 640 ? 62 : 68 }).toFile(path.join(OUT, `${slot}-${w}.webp`));

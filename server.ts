@@ -66,6 +66,9 @@ async function startServer() {
           }
         : false,
       crossOriginEmbedderPolicy: false,
+      // Send only our domain (never page paths) with outgoing requests; OpenStreetMap's tile
+      // usage policy asks for a referer.
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
       xFrameOptions: false
     })
   );
