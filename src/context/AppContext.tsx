@@ -179,6 +179,7 @@ interface AppContextType {
     date: string;
     groupSize: number;
     budgetTZS?: string;
+    pickupLocation?: string;
     message?: string;
   }) => Promise<Lead | null>;
   updateLeadStatus: (leadId: number, status: LeadStatus) => void;
@@ -986,6 +987,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     date: string;
     groupSize: number;
     budgetTZS?: string;
+    pickupLocation?: string;
     message?: string;
   }): Promise<Lead | null> => {
     try {

@@ -16,7 +16,8 @@ import {
   ExternalLink,
   MessageCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  MapPin
 } from 'lucide-react';
 import { MessageThread } from '../shared/MessageThread';
 
@@ -164,6 +165,12 @@ export const LeadsPipelineTab: React.FC = () => {
                             <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-400">
                               <DollarSign className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />
                               <span>Target: <strong>{lead.budgetTZS}</strong></span>
+                            </div>
+                          )}
+                          {lead.pickupLocation && (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="w-3 h-3 text-[#D97843]" />
+                              <span className="truncate">Pickup: <strong>{lead.pickupLocation}</strong></span>
                             </div>
                           )}
                         </div>
