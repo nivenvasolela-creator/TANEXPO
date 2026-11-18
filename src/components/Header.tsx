@@ -108,7 +108,7 @@ export const Header: React.FC = () => {
         <AdminVerifyModal onClose={closeAdminVerify} />
       </Suspense>
     )}
-    <header className="sticky top-0 z-40 glass border-b border-[#E7DFD3] dark:border-[#23352A] shadow-2xs transition-colors">
+    <header className="sticky top-0 z-40 glass glass-bar border-b transition-colors">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand & Workspace Indicator */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   Compass,
@@ -68,6 +68,11 @@ export const TouristView: React.FC = () => {
     reviewingBooking,
     t
   } = useApp();
+
+  // A new tab starts at the top instead of keeping the previous tab's scroll position.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [touristTab]);
 
   const negotiatingCount = leads.filter((l) => l.status === 'Negotiating').length;
   const requestsCount = leads.length;
@@ -182,15 +187,15 @@ export const TouristView: React.FC = () => {
       {/* Mobile Bottom Navigation Bar */}
       <nav
         aria-label="Tourist mobile navigation"
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 glass border-t border-[#E7DFD3] dark:border-[#23352A] safe-bottom"
+        className="md:hidden fixed inset-x-3 bottom-floating z-30 glass glass-capsule rounded-[30px] border"
       >
         <div className="grid grid-cols-5 gap-1 px-1.5 py-1.5">
           <button
             type="button"
             onClick={() => setTouristTab('explore')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
               touristTab === 'explore'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -201,9 +206,9 @@ export const TouristView: React.FC = () => {
           <button
             type="button"
             onClick={() => setTouristTab('map')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
               touristTab === 'map'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -214,9 +219,9 @@ export const TouristView: React.FC = () => {
           <button
             type="button"
             onClick={() => setTouristTab('requests')}
-            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
               touristTab === 'requests'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -234,9 +239,9 @@ export const TouristView: React.FC = () => {
           <button
             type="button"
             onClick={() => setTouristTab('saved')}
-            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`relative min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
               touristTab === 'saved'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -254,9 +259,9 @@ export const TouristView: React.FC = () => {
           <button
             type="button"
             onClick={() => setTouristTab('compliance')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
               touristTab === 'compliance'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >

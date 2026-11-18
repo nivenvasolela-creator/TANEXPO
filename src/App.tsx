@@ -66,7 +66,7 @@ const MainLayout: React.FC = () => {
     <div className="min-h-[100dvh] bg-[#FAF7F2] dark:bg-[#0D1511] text-[#1F2A24] dark:text-[#EDF3EF] flex flex-col font-sans transition-colors selection:bg-[#D97843]/20 selection:text-[#284435] dark:selection:text-[#E8B94A]">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-20 md:pb-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-28 md:pb-8">
         <ErrorBoundary fallbackTitle="We hit a snag loading this view">
           <Suspense fallback={<ViewFallback />}>
             {currentView === 'tourist' ? <TouristView /> : <ProviderDashboard />}
@@ -95,7 +95,7 @@ const MainLayout: React.FC = () => {
       {/* Floating Theme Toggle */}
 
       {/* Footer */}
-      <footer className="bg-[#1C2C24] dark:bg-[#0A100D] text-[#E4DFD5] border-t border-[#2A3F33] dark:border-[#1A2820] py-10 pb-24 md:pb-10 mt-12 transition-colors">
+      <footer className="bg-[#1C2C24] dark:bg-[#0A100D] text-[#E4DFD5] border-t border-[#2A3F33] dark:border-[#1A2820] py-10 pb-32 md:pb-10 mt-12 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b border-white/10">
             <div className="space-y-1">

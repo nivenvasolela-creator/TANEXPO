@@ -42,6 +42,7 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - WhatsApp layer per section 2: Mode A alerts + commands, Mode B forward-to-lead, fixed reply to unlinked numbers, HMAC-verified webhook (production rejects everything without `WHATSAPP_APP_SECRET`), OTP linking, scheduler (Monday digest, reminders, quiet hours), templates outside the 24h window, dashboard preview simulator behind `ALLOW_WHATSAPP_SIMULATOR`.
 - Tourist **Map** tab: Leaflet with free OpenStreetMap / Esri satellite / OpenTopoMap tiles, photo pins, category filters, Google Maps directions, and "Near me" (browser location, never sent to the server). Details and tile-usage limits: `docs/MAPS.md`.
 - Real destination photos from Wikimedia Commons, hosted in `public/photos` (credits in `public/photos/credits.json`, shown via the footer "Photo credits" link). Re-import with `node scripts/import-photos.mjs <slot>`.
+- UI: Liquid Glass (`.glass`, `.glass-capsule`, `.tab-lens` in `src/index.css`) only on floating chrome: top bar, floating capsule tab bars (tourist and operator), map controls. Solid fallbacks under `perf-lite` and `prefers-reduced-transparency`. Tab changes scroll to top.
 - Admin: account menu > **Verify operators** lists operators with their TALA licence and toggles verification (server re-checks the admin role).
 - Suites: 50 security, 27 integrity, 23 WhatsApp checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
 

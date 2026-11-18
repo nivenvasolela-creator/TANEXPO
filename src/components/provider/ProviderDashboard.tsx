@@ -73,6 +73,11 @@ export const ProviderDashboard: React.FC = () => {
   });
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // A new section starts at the top instead of keeping the previous one's scroll position.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [providerTab]);
+
   useEffect(() => {
     localStorage.setItem('tanexpo_provider_sidebar_collapsed', isCollapsed ? 'true' : 'false');
   }, [isCollapsed]);
@@ -127,7 +132,7 @@ export const ProviderDashboard: React.FC = () => {
   };
 
   return (
-    <div className="pb-20">
+    <div className="pb-28 lg:pb-20">
       {/* Mobile Top Header for Sidebar Toggle */}
       <div className="lg:hidden mb-4 flex items-center justify-between bg-white dark:bg-[#152019] p-3.5 rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] shadow-2xs transition-colors">
         <div className="flex items-center gap-2">
@@ -368,15 +373,15 @@ export const ProviderDashboard: React.FC = () => {
       {/* Mobile Bottom Navigation Bar */}
       <nav
         aria-label="Operator mobile navigation"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-30 glass border-t border-[#E7DFD3] dark:border-[#23352A] safe-bottom"
+        className="lg:hidden fixed inset-x-3 bottom-floating z-30 glass glass-capsule rounded-[30px] border"
       >
         <div className="grid grid-cols-5 gap-1 px-1.5 py-1.5">
           <button
             type="button"
             onClick={() => handleTabClick('overview')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-bold transition-all cursor-pointer ${
               providerTab === 'overview'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -387,9 +392,9 @@ export const ProviderDashboard: React.FC = () => {
           <button
             type="button"
             onClick={() => handleTabClick('leads')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-bold transition-all cursor-pointer ${
               providerTab === 'leads'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -407,9 +412,9 @@ export const ProviderDashboard: React.FC = () => {
           <button
             type="button"
             onClick={() => handleTabClick('whatsapp')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-bold transition-all cursor-pointer ${
               providerTab === 'whatsapp'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -420,9 +425,9 @@ export const ProviderDashboard: React.FC = () => {
           <button
             type="button"
             onClick={() => handleTabClick('bookings')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-bold transition-all cursor-pointer ${
               providerTab === 'bookings'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
@@ -434,9 +439,9 @@ export const ProviderDashboard: React.FC = () => {
             type="button"
             onClick={() => setIsMobileOpen(true)}
             aria-label="More operator sections"
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-colors cursor-pointer ${
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[10px] font-bold transition-all cursor-pointer ${
               providerTab === 'listings' || providerTab === 'financials' || providerTab === 'reviews' || providerTab === 'profile'
-                ? 'text-[#284435] dark:text-[#E8B94A] bg-[#284435]/10 dark:bg-white/10'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
