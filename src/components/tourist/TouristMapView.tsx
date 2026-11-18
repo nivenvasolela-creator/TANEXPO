@@ -299,8 +299,9 @@ export const TouristMapView: React.FC = () => {
 
   const selectedDistance = selected && myCoords ? distanceKm(myCoords, selected.coords) : null;
 
+  // `isolate` keeps the map and its controls (z 400-600) from drawing over dialogs (z-50).
   return (
-    <section aria-label="Map of Tanzania" className="relative -mx-3 sm:mx-0">
+    <section aria-label="Map of Tanzania" className="relative isolate -mx-3 sm:mx-0">
       <div className="relative h-[calc(100dvh-150px)] md:h-[calc(100dvh-210px)] min-h-[440px] sm:rounded-3xl overflow-hidden border-y sm:border border-[#E8DFC9] dark:border-[#23352A] bg-[#DCE6DF]">
         <div ref={mapEl} className="absolute inset-0 z-0" />
 

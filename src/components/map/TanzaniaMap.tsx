@@ -456,7 +456,7 @@ export const TanzaniaMap: React.FC<TanzaniaMapProps> = ({
   };
 
   return (
-    <div className={`relative flex flex-col rounded-2xl overflow-hidden border border-[#D9CEBF] dark:border-[#284435] bg-white dark:bg-[#152019] shadow-lg ${className}`}>
+    <div className={`relative isolate flex flex-col rounded-2xl overflow-hidden border border-[#D9CEBF] dark:border-[#284435] bg-white dark:bg-[#152019] shadow-lg ${className}`}>
       
       {/* Top Map Control Bar */}
       <div className="p-3 sm:p-4 bg-[#FAF7F2] dark:bg-[#121B15] border-b border-[#E7DFD3] dark:border-[#23352A] flex flex-wrap items-center justify-between gap-3 text-xs">

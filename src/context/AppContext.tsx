@@ -336,7 +336,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const seen = localStorage.getItem(STORAGE_KEYS.INTRO_SEEN);
     const session = localStorage.getItem(STORAGE_KEYS.USER_SESSION);
-    return !seen && !session;
+    // A signed-in user (token present) never gets the first-run intro over their screen.
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    return !seen && !session && !token;
   });
 
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro_1');
