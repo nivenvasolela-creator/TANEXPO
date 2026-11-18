@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
+import { streetTiles } from '../../utils/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { LocateFixed, Navigation, Layers, X, MapPin, ShieldCheck, Star, Loader2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -99,7 +100,7 @@ function operatorIcon(item: Extract<Item, { kind: 'operator' }>, selected: boole
 }
 
 export const TouristMapView: React.FC = () => {
-  const { destinations, providers, categories, setSelectedDestination, setSelectedProvider, catalogLoaded, mapFocus, setMapFocus } = useApp();
+  const { destinations, providers, categories, setSelectedDestination, setSelectedProvider, catalogLoaded, mapFocus, setMapFocus, geoapifyKey } = useApp();
 
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -181,14 +182,14 @@ export const TouristMapView: React.FC = () => {
     const map = mapRef.current;
     if (!map) return;
     if (tileRef.current) map.removeLayer(tileRef.current);
-    const b = BASEMAPS[basemap];
+    const b = basemap === 'map' ? streetTiles(geoapifyKey) : BASEMAPS[basemap];
     tileRef.current = L.tileLayer(b.url, {
       attribution: b.attribution,
       maxZoom: b.maxZoom,
       subdomains: 'abc'
     }).addTo(map);
     tileRef.current.bringToBack();
-  }, [basemap]);
+  }, [basemap, geoapifyKey]);
 
   // First time pins are available, zoom to them (northern circuit + coast) instead of the whole region.
   useEffect(() => {

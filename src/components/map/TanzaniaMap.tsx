@@ -1,4 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useApp } from '../../context/AppContext';
+import { streetTiles } from '../../utils/mapTiles';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { providerCoordinates } from '../../data/placeCoordinates';
@@ -50,7 +52,19 @@ export const TanzaniaMap: React.FC<TanzaniaMapProps> = ({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const afconCirclesLayerRef = useRef<L.LayerGroup | null>(null);
 
-  const [currentProviderId, setCurrentProviderId] = useState<string>('carto_voyager');
+  const { geoapifyKey } = useApp();
+  // With a Geoapify key, its hosted street map comes first and is the default.
+  const mapProviders: MapTileProvider[] = useMemo(
+    () =>
+      geoapifyKey
+        ? [{ id: 'geoapify', name: 'Geoapify', label: 'Street map (Geoapify)', ...streetTiles(geoapifyKey) }, ...MAP_PROVIDERS]
+        : MAP_PROVIDERS,
+    [geoapifyKey]
+  );
+  const [currentProviderId, setCurrentProviderId] = useState<string>(geoapifyKey ? 'geoapify' : 'carto_voyager');
+  useEffect(() => {
+    if (geoapifyKey) setCurrentProviderId((id) => (id === 'carto_voyager' ? 'geoapify' : id));
+  }, [geoapifyKey]);
   const [showHubs, setShowHubs] = useState<boolean>(true);
   const [showAfconVenues, setShowAfconVenues] = useState<boolean>(true);
   const [localNearAfcon, setLocalNearAfcon] = useState<boolean>(nearAfconOnly);
@@ -112,7 +126,7 @@ export const TanzaniaMap: React.FC<TanzaniaMapProps> = ({
     L.control.zoom({ position: 'topright' }).addTo(map);
 
     // Initial tile layer
-    const activeProvider = MAP_PROVIDERS.find(p => p.id === currentProviderId) || MAP_PROVIDERS[0];
+    const activeProvider = mapProviders.find(p => p.id === currentProviderId) || mapProviders[0];
     const tileLayer = L.tileLayer(activeProvider.url, {
       attribution: activeProvider.attribution,
       subdomains: activeProvider.subdomains || ['a', 'b', 'c'],
@@ -140,7 +154,7 @@ export const TanzaniaMap: React.FC<TanzaniaMapProps> = ({
   // 2. Swappable Tile Provider Logic
   useEffect(() => {
     if (!mapInstanceRef.current) return;
-    const provider = MAP_PROVIDERS.find(p => p.id === currentProviderId) || MAP_PROVIDERS[0];
+    const provider = mapProviders.find(p => p.id === currentProviderId) || mapProviders[0];
 
     if (tileLayerRef.current) {
       mapInstanceRef.current.removeLayer(tileLayerRef.current);
@@ -156,7 +170,7 @@ export const TanzaniaMap: React.FC<TanzaniaMapProps> = ({
     newTileLayer.bringToBack();
     tileLayerRef.current = newTileLayer;
     setMapStatus(`Layer: ${provider.label}`);
-  }, [currentProviderId]);
+  }, [currentProviderId, mapProviders]);
 
   // 3. Render Markers & Layers
   useEffect(() => {
@@ -514,7 +528,7 @@ export const TanzaniaMap: React.FC<TanzaniaMapProps> = ({
               onChange={(e) => setCurrentProviderId(e.target.value)}
               className="bg-transparent text-xs text-zinc-800 dark:text-zinc-200 font-medium focus:outline-hidden cursor-pointer"
             >
-              {MAP_PROVIDERS.map((provider) => (
+              {mapProviders.map((provider) => (
                 <option key={provider.id} value={provider.id} className="text-zinc-900 bg-white">
                   {provider.label}
                 </option>

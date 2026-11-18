@@ -19,7 +19,8 @@ import {
   getPaymentsMode,
   isSeedDemoCatalogEnabled,
   isWhatsAppEnabled,
-  getDarTodayStr
+  getDarTodayStr,
+  getGeoapifyKey
 } from './config.js';
 import { normalizePhone } from './phone.js';
 import { whatsappRouter, notifyOperatorNewLead } from './whatsapp.js';
@@ -657,7 +658,8 @@ apiRouter.get('/config', (_req: Request, res: Response) => {
   res.json({
     paymentsMode: getPaymentsMode(),
     seedDemoCatalog: isSeedDemoCatalogEnabled(),
-    whatsappEnabled: isWhatsAppEnabled()
+    whatsappEnabled: isWhatsAppEnabled(),
+    geoapifyKey: getGeoapifyKey()
   });
 });
 

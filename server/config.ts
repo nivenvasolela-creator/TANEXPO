@@ -79,3 +79,13 @@ export function isDarQuietHours(date: Date = new Date()): boolean {
   if (start === end) return false;
   return start > end ? hour >= start || hour < end : hour >= start && hour < end;
 }
+
+/**
+ * Geoapify map tiles key (optional). Map tile keys are public by design: every tile URL the
+ * browser loads carries it. Restrict it to your domain in the Geoapify dashboard. Without a key the
+ * maps use the free OpenStreetMap-based tiles, which are fine for demos but not for heavy traffic.
+ */
+export function getGeoapifyKey(): string | null {
+  const key = process.env.GEOAPIFY_API_KEY?.trim() || '';
+  return /^[A-Za-z0-9]{20,64}$/.test(key) ? key : null;
+}

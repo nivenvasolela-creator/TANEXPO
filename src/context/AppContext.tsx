@@ -115,6 +115,8 @@ interface AppContextType {
   refreshData: () => Promise<void>;
   paymentsMode: 'simulated' | 'live';
   seedDemoCatalog: boolean;
+  /** Public Geoapify tiles key from the server, or null to use the free OpenStreetMap tiles. */
+  geoapifyKey: string | null;
 
   // State
   categories: Category[];
@@ -268,6 +270,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [catalogLoaded, setCatalogLoaded] = useState<boolean>(false);
   const [paymentsMode, setPaymentsMode] = useState<'simulated' | 'live'>('simulated');
   const [seedDemoCatalog, setSeedDemoCatalog] = useState<boolean>(false);
+  const [geoapifyKey, setGeoapifyKey] = useState<string | null>(null);
 
   // Private role-scoped state (populated only after authenticated fetches)
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -472,6 +475,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (typeof data.seedDemoCatalog === 'boolean') {
         setSeedDemoCatalog(data.seedDemoCatalog);
       }
+      setGeoapifyKey(typeof data.geoapifyKey === 'string' && data.geoapifyKey ? data.geoapifyKey : null);
     } catch {
       // ignore non-fatal config error
     }
@@ -1317,6 +1321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         catalogLoaded,
         paymentsMode,
         seedDemoCatalog,
+        geoapifyKey,
         categories,
         destinations,
         providers,

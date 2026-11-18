@@ -138,7 +138,7 @@ export default defineConfig(() => {
               },
             },
             {
-              urlPattern: /^https:\/\/.*\.(?:tile\.openstreetmap\.org|basemaps\.cartocdn\.com|arcgisonline\.com)\/.*/i,
+              urlPattern: /^https:\/\/.*\.(?:tile\.openstreetmap\.org|basemaps\.cartocdn\.com|arcgisonline\.com|maps\.geoapify\.com)\/.*/i,
               handler: 'CacheFirst',
               options: {
                 cacheName: 'tanexpo-map-tiles',
