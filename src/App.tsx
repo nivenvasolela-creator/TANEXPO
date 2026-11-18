@@ -29,7 +29,7 @@ const PhotoCreditsModal = React.lazy(() =>
 const MainLayout: React.FC = () => {
   const [showPhotoCredits, setShowPhotoCredits] = useState(false);
   const closePhotoCredits = React.useCallback(() => setShowPhotoCredits(false), []);
-  const { currentView, touristTab, isOnboardingOpen, activeLegalDoc, language, openLegalDoc } = useApp();
+  const { currentView, touristTab, setTouristTab, isOnboardingOpen, activeLegalDoc, language, openLegalDoc } = useApp();
 
   // Sync <html lang> and SEO robots directive for private/dashboard routes
   useEffect(() => {
@@ -137,6 +137,18 @@ const MainLayout: React.FC = () => {
               >
                 Privacy Policy (Draft)
               </a>
+              {currentView === 'tourist' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTouristTab('compliance');
+                    window.scrollTo({ top: 0 });
+                  }}
+                  className="min-h-[44px] inline-flex items-center hover:text-white underline cursor-pointer"
+                >
+                  Travel rules (TZS & licences)
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setShowPhotoCredits(true)}

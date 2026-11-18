@@ -99,7 +99,7 @@ function operatorIcon(item: Extract<Item, { kind: 'operator' }>, selected: boole
 }
 
 export const TouristMapView: React.FC = () => {
-  const { destinations, providers, categories, setSelectedDestination, setSelectedProvider, catalogLoaded } = useApp();
+  const { destinations, providers, categories, setSelectedDestination, setSelectedProvider, catalogLoaded, mapFocus, setMapFocus } = useApp();
 
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -198,9 +198,18 @@ export const TouristMapView: React.FC = () => {
     const raf = requestAnimationFrame(() => {
       fittedToPins.current = true;
       map.invalidateSize();
+      // Opened from Explore's "Map" button: start on that place, selected.
+      const focusItem = mapFocus ? items.find((i) => `${i.kind}:${i.id}` === mapFocus) : null;
+      if (focusItem) {
+        setMapFocus(null);
+        setSelectedKey(`${focusItem.kind}:${focusItem.id}`);
+        map.setView(focusItem.coords, 9, { animate: false });
+        return;
+      }
       map.fitBounds(L.latLngBounds(items.map((i) => i.coords)), { paddingTopLeft: [20, 105], paddingBottomRight: [20, 40], maxZoom: 8, animate: false });
     });
     return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, catalogLoaded]);
 
   // Markers

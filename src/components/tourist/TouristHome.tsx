@@ -1,8 +1,8 @@
 import { coverPhoto } from '../shared/MediaGallery';
 import { photoProps, PHOTO_SIZES } from '../../utils/images';
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useApp } from '../../context/AppContext';
-import { CategoryId, Provider } from '../../types';
+import { Provider } from '../../types';
 import { 
   Search, 
   MapPin, 
@@ -12,10 +12,8 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Languages, 
-  Calendar,
   Sparkles,
   Truck,
-  Coins,
   SlidersHorizontal,
   X,
   Map,
@@ -30,6 +28,8 @@ export const TouristHome: React.FC = () => {
   const { 
     categories,
     setTouristTab,
+    homeCategory,
+    setHomeCategory,
     catalogError,
     retryCatalog,
     destinations,
@@ -54,7 +54,18 @@ export const TouristHome: React.FC = () => {
     t
   } = useApp();
 
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
+  // Shared with the Explore tab, whose "See operators" button sets it.
+  const selectedCategory = homeCategory;
+  const setSelectedCategory = setHomeCategory;
+
+  // Arriving from Explore with a category: jump to the operator list.
+  useEffect(() => {
+    if (homeCategory === 'all') return;
+    const t = window.setTimeout(() => document.getElementById('operators-directory')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    return () => window.clearTimeout(t);
+    // Only on arrival; later category taps on Home keep the user where they are.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
@@ -401,97 +412,29 @@ export const TouristHome: React.FC = () => {
         </div>
       </section>
 
-      {/* Destination Place Guides Section */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-serif text-2xl font-bold text-[#284435]">
-              {t('destinations.title', 'Tanzania Destination Guides')}
-            </h2>
-            <p className="text-sm text-[#6B7A72]">
-              {t('destinations.sub', 'Explore iconic national parks, mountain peaks, and marine reserves with typical costs')}
-            </p>
-          </div>
-        </div>
-
-        {!catalogLoaded ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" aria-busy="true" aria-label="Loading destination guides">
-            {[0, 1, 2].map((idx) => (
-              <div
-                key={idx}
-                className="bg-white dark:bg-[#152019] rounded-2xl border border-[#E8DFC9] dark:border-[#23352A] overflow-hidden shadow-xs"
-              >
-                <div className="h-44 bg-[#EDE5D5] dark:bg-[#1A2820]" />
-                <div className="p-4 space-y-3">
-                  <div className="h-3.5 w-2/3 rounded bg-[#F3EFE6] dark:bg-[#1A2820]" />
-                  <div className="h-3 w-1/2 rounded bg-[#FAF7F2] dark:bg-[#101914]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {destinations.map((dest) => (
-            <div
-              key={dest.id}
-              onClick={() => setSelectedDestination(dest)}
-              className="bg-white rounded-2xl border border-[#E8DFC9] overflow-hidden shadow-xs hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div className="relative h-44 overflow-hidden">
-                {dest.featuredImage ? (
-                  <img 
-                    {...photoProps(dest.featuredImage, PHOTO_SIZES.card)}
-                    alt={dest.name} 
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : null}
-                <div className={`absolute inset-0 transition-opacity ${dest.featuredImage ? 'bg-linear-to-t from-black/85 via-black/25 to-black/10' : `bg-linear-to-t ${dest.heroGradient} opacity-85`}`} />
-                <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
-                  <div className="flex items-center justify-between text-[11px] text-[#BED0C5]">
-                    <span className="font-medium bg-black/40 backdrop-blur-xs px-2.5 py-0.5 rounded-md border border-white/15">
-                      {dest.region}
-                    </span>
-                    <span className="text-[#E8B94A] font-semibold bg-black/40 px-2 py-0.5 rounded-md">Photo Guide</span>
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-xl font-bold group-hover:text-[#E8B94A] transition-colors leading-snug">
-                      {dest.name}
-                    </h3>
-                    <p className="text-xs text-[#E5EFE9] line-clamp-1 opacity-90 mt-0.5">
-                      {dest.tagline}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-3">
-                <div className="flex items-center justify-between text-xs text-[#4D5E55]">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-[#D97843]" />
-                    <span className="text-[11px] truncate max-w-[170px]">{dest.bestTimeToVisit.split('(')[0]}</span>
-                  </div>
-                  <div className="flex items-center gap-1 font-semibold text-[#284435]">
-                    <Coins className="w-3.5 h-3.5 text-[#E8B94A]" />
-                    <span className="text-[11px]">TZS Range</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-[#F0EBE0] flex items-center justify-between">
-                  <span className="text-[11px] text-[#6B7A72] font-medium">
-                    {dest.highlights[0]}
-                  </span>
-                  <span className="text-xs font-bold text-[#284435] group-hover:text-[#D97843] flex items-center gap-1">
-                    <span>Explore Guide</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </span>
-                </div>
-              </div>
-            </div>
+      {/* Places now live in the Explore tab; a short invitation keeps Home about operators */}
+      <button
+        type="button"
+        onClick={() => setTouristTab('places')}
+        className="w-full group relative overflow-hidden rounded-3xl text-left cursor-pointer bg-[#284435] min-h-[150px] flex items-end"
+      >
+        <span className="absolute inset-0 flex">
+          {destinations.filter((d) => d.featuredImage).slice(0, 3).map((d) => (
+            <img key={d.id} {...photoProps(d.featuredImage!, '33vw', [640])} alt="" loading="lazy" className="w-1/3 h-full object-cover group-hover:scale-105 transition-transform duration-700" />
           ))}
-        </div>
-        )}
-      </section>
+        </span>
+        <span className="absolute inset-0 bg-linear-to-r from-black/80 via-black/55 to-black/20" />
+        <span className="relative p-5 sm:p-7 flex items-end justify-between gap-4 w-full">
+          <span>
+            <span className="block text-xs font-bold uppercase tracking-wider text-[#E8B94A]">Not sure where to go?</span>
+            <span className="block font-serif text-2xl sm:text-3xl font-bold text-white">Explore places in Tanzania</span>
+            <span className="block text-sm text-white/80">Parks, mountains and islands, with the best months to visit</span>
+          </span>
+          <span className="shrink-0 w-11 h-11 rounded-full bg-white text-[#284435] flex items-center justify-center">
+            <ArrowRight className="w-5 h-5" />
+          </span>
+        </span>
+      </button>
 
       {/* Featured Providers Section */}
       <section id="operators-directory" className="space-y-6">
@@ -593,31 +536,6 @@ export const TouristHome: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Interactive Map Teaser Banner in Grid View */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#284435] via-[#1E332A] to-[#17261F] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm border border-[#2E4537]">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#D97843]/20 border border-[#D97843]/40 flex items-center justify-center text-[#E8B94A] shrink-0">
-                  <Map className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-white flex items-center gap-2">
-                    <span>Tanzania Safari Circuit & AFCON 2027 Spatial Map</span>
-                    <span className="text-[10px] font-sans font-bold bg-[#E8B94A] text-[#1E332A] px-1.5 py-0.2 rounded-full">Interactive</span>
-                  </h4>
-                  <p className="text-xs text-[#BED0C5] mt-0.5">
-                    Explore operators plotted across Serengeti, Kilimanjaro, Zanzibar, and AFCON host stadiums with live route planning.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setViewMode('map')}
-                className="shrink-0 px-4 py-2 bg-[#D97843] hover:bg-[#C26330] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors flex items-center gap-1.5"
-              >
-                <span>Launch Interactive Map</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
         {!catalogLoaded ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true" aria-label="Loading verified operators">
             {[0, 1, 2].map((idx) => (

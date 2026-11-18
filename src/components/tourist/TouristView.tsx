@@ -4,15 +4,19 @@ import {
   Compass,
   Bell,
   Heart,
-  Scale,
   SlidersHorizontal,
-  Map as MapIcon
+  Map as MapIcon,
+  Home,
+  Mountain
 } from 'lucide-react';
 import { TouristHome } from './TouristHome';
 import { ErrorBoundary } from '../ErrorBoundary';
 
 const MyRequestsView = lazy(() =>
   import('./MyRequestsView').then((m) => ({ default: m.MyRequestsView }))
+);
+const PlacesExplore = lazy(() =>
+  import('./PlacesExplore').then((m) => ({ default: m.PlacesExplore }))
 );
 const TouristMapView = lazy(() =>
   import('./TouristMapView').then((m) => ({ default: m.TouristMapView }))
@@ -92,8 +96,21 @@ export const TouristView: React.FC = () => {
                 : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
             }`}
           >
+            <Home className="w-4 h-4" />
+            <span>{t('nav.home', 'Home')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('places')}
+            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              touristTab === 'places'
+                ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
+                : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
+            }`}
+          >
             <Compass className="w-4 h-4" />
-            <span>{t('explore.tours', 'Explore Tours & Guides')}</span>
+            <span>{t('nav.explore', 'Explore')}</span>
           </button>
 
           <button
@@ -147,18 +164,6 @@ export const TouristView: React.FC = () => {
             <span>{t('saved', 'Saved')} ({savedCount})</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setTouristTab('compliance')}
-            className={`min-h-[40px] flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              touristTab === 'compliance'
-                ? 'bg-[#284435] dark:bg-[#1F3327] text-white shadow-xs border border-transparent dark:border-[#2E4537]'
-                : 'text-[#6B7A72] dark:text-[#8DA195] hover:text-[#1F2A24] dark:hover:text-[#EDF3EF] hover:bg-white dark:hover:bg-[#152019]'
-            }`}
-          >
-            <Scale className="w-4 h-4" />
-            <span>{t('laws', 'TZS & Licensing Laws')}</span>
-          </button>
         </div>
 
         {comparedProviderIds.length > 0 && (
@@ -177,6 +182,7 @@ export const TouristView: React.FC = () => {
       <ErrorBoundary fallbackTitle="View failed to load">
         <Suspense fallback={<TabFallback />}>
           {touristTab === 'explore' && <TouristHome />}
+          {touristTab === 'places' && <PlacesExplore />}
           {touristTab === 'map' && <TouristMapView />}
           {touristTab === 'requests' && <MyRequestsView />}
           {touristTab === 'saved' && <SavedProvidersView />}
@@ -199,7 +205,20 @@ export const TouristView: React.FC = () => {
                 : 'text-[#6B7A72] dark:text-[#8DA195]'
             }`}
           >
-            <Compass className="w-4 h-4" />
+            <Home className="w-4 h-4" />
+            <span>{t('nav.home', 'Home')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTouristTab('places')}
+            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
+              touristTab === 'places'
+                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
+                : 'text-[#6B7A72] dark:text-[#8DA195]'
+            }`}
+          >
+            <Mountain className="w-4 h-4" />
             <span>{t('nav.explore', 'Explore')}</span>
           </button>
 
@@ -256,18 +275,6 @@ export const TouristView: React.FC = () => {
             <span>{t('saved', 'Saved')}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setTouristTab('compliance')}
-            className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 rounded-[22px] text-[11px] font-bold transition-all cursor-pointer ${
-              touristTab === 'compliance'
-                ? 'text-[#1C2C24] dark:text-[#F3E2B3] tab-lens'
-                : 'text-[#6B7A72] dark:text-[#8DA195]'
-            }`}
-          >
-            <Scale className="w-4 h-4" />
-            <span>{t('nav.laws', 'Laws')}</span>
-          </button>
         </div>
       </nav>
 

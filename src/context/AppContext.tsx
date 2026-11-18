@@ -103,6 +103,12 @@ interface AppContextType {
 
   // Runtime Config & Loading State
   catalogLoaded: boolean;
+  /** Category filter on the Home operator list (set from Explore's "See operators"). */
+  homeCategory: CategoryId | 'all';
+  setHomeCategory: (c: CategoryId | 'all') => void;
+  /** Item the Map tab should open on, e.g. "destination:serengeti". */
+  mapFocus: string | null;
+  setMapFocus: (key: string | null) => void;
   /** True when the operator list could not be loaded (shown to the user with a Retry button). */
   catalogError: boolean;
   retryCatalog: () => Promise<void>;
@@ -125,8 +131,8 @@ interface AppContextType {
   // Navigation & View State
   currentView: 'tourist' | 'provider';
   setCurrentView: (view: 'tourist' | 'provider') => void;
-  touristTab: 'explore' | 'map' | 'requests' | 'saved' | 'compliance';
-  setTouristTab: (tab: 'explore' | 'map' | 'requests' | 'saved' | 'compliance') => void;
+  touristTab: 'explore' | 'places' | 'map' | 'requests' | 'saved' | 'compliance';
+  setTouristTab: (tab: 'explore' | 'places' | 'map' | 'requests' | 'saved' | 'compliance') => void;
   providerTab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp';
   setProviderTab: (tab: 'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp') => void;
   activeProviderId: number;
@@ -347,7 +353,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return 'tourist';
   });
 
-  const [touristTab, setTouristTab] = useState<'explore' | 'map' | 'requests' | 'saved' | 'compliance'>('explore');
+  const [touristTab, setTouristTab] = useState<'explore' | 'places' | 'map' | 'requests' | 'saved' | 'compliance'>('explore');
   const [providerTab, setProviderTab] = useState<
     'overview' | 'leads' | 'listings' | 'bookings' | 'financials' | 'reviews' | 'profile' | 'whatsapp'
   >('overview');
@@ -361,6 +367,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Modals / active selections
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+  const [homeCategory, setHomeCategory] = useState<CategoryId | 'all'>('all');
+  const [mapFocus, setMapFocus] = useState<string | null>(null);
   const [catalogError, setCatalogError] = useState(false);
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
   const [inquiryPackage, setInquiryPackage] = useState<{ provider: Provider; listing: ListingPackage } | null>(null);
@@ -1321,6 +1329,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTouristTab,
         refreshData: syncAll,
         catalogError,
+        homeCategory,
+        setHomeCategory,
+        mapFocus,
+        setMapFocus,
         retryCatalog: syncCatalog,
         providerTab,
         setProviderTab,
