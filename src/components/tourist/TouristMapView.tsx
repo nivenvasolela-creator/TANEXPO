@@ -463,19 +463,20 @@ export const TouristMapView: React.FC = () => {
         )}
 
         {/* List toggle */}
+        {/* Sits above the map credit line, which the tile providers require to stay visible. */}
         {!selected && (
           <button
             type="button"
             onClick={() => setListOpen((v) => !v)}
             aria-expanded={listOpen}
-            className="absolute left-3 bottom-3 z-[500] min-h-[44px] px-4 rounded-full bg-[#284435] text-white text-sm font-bold shadow-lg cursor-pointer"
+            className="absolute left-3 bottom-12 z-[500] min-h-[44px] px-4 rounded-full bg-[#284435] text-white text-sm font-bold shadow-lg cursor-pointer"
           >
             {listOpen ? 'Hide list' : myCoords ? `Nearest to you (${visible.length})` : `List (${visible.length})`}
           </button>
         )}
 
         {listOpen && !selected && (
-          <div className="absolute inset-x-3 bottom-16 z-[550] sm:right-auto sm:w-[380px] max-h-[55%] overflow-y-auto bg-white dark:bg-[#152019] rounded-3xl shadow-2xl border border-[#E8DFC9] dark:border-[#23352A]">
+          <div className="absolute inset-x-3 bottom-[6.75rem] z-[550] sm:right-auto sm:w-[380px] max-h-[55%] overflow-y-auto bg-white dark:bg-[#152019] rounded-3xl shadow-2xl border border-[#E8DFC9] dark:border-[#23352A]">
             <ul className="divide-y divide-[#F0EBE0] dark:divide-[#23352A]">
               {sorted.length === 0 && (
                 <li className="p-4 text-sm text-[#6B7A72] dark:text-[#8DA195]">Nothing here for this filter yet.</li>
