@@ -19,7 +19,8 @@ import {
   getPaymentsMode,
   isSeedDemoCatalogEnabled,
   isWhatsAppEnabled,
-  getDarTodayStr
+  getDarTodayStr,
+  getGeoapifyKey
 } from './config.js';
 import { normalizePhone } from './phone.js';
 import { whatsappRouter, notifyOperatorNewLead } from './whatsapp.js';
@@ -657,7 +658,8 @@ apiRouter.get('/config', (_req: Request, res: Response) => {
   res.json({
     paymentsMode: getPaymentsMode(),
     seedDemoCatalog: isSeedDemoCatalogEnabled(),
-    whatsappEnabled: isWhatsAppEnabled()
+    whatsappEnabled: isWhatsAppEnabled(),
+    geoapifyKey: getGeoapifyKey()
   });
 });
 
@@ -1533,8 +1535,12 @@ apiRouter.post(
         res.status(400).json({ error: 'groupSize must be an integer between 1 and 100' });
         return;
       }
-      if (!isOptionalString(body.budgetTZS, 80) || !isOptionalString(body.message, 2000)) {
-        res.status(400).json({ error: 'Budget or message exceeds maximum length' });
+      if (
+        !isOptionalString(body.budgetTZS, 80) ||
+        !isOptionalString(body.pickupLocation, 160) ||
+        !isOptionalString(body.message, 2000)
+      ) {
+        res.status(400).json({ error: 'Budget, pickup location or message exceeds maximum length' });
         return;
       }
 
@@ -1585,6 +1591,9 @@ apiRouter.post(
         groupSize,
         ...(typeof body.budgetTZS === 'string' && body.budgetTZS.trim()
           ? { budgetTZS: body.budgetTZS.trim() }
+          : {}),
+        ...(typeof body.pickupLocation === 'string' && body.pickupLocation.trim()
+          ? { pickupLocation: body.pickupLocation.trim() }
           : {}),
         ...(typeof body.message === 'string' && body.message.trim()
           ? { message: body.message.trim() }

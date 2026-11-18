@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
+import { streetTiles } from '../../utils/mapTiles';
 import 'leaflet/dist/leaflet.css';
 import { LocateFixed, Navigation, Layers, X, MapPin, ShieldCheck, Star, Loader2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -99,7 +100,7 @@ function operatorIcon(item: Extract<Item, { kind: 'operator' }>, selected: boole
 }
 
 export const TouristMapView: React.FC = () => {
-  const { destinations, providers, categories, setSelectedDestination, setSelectedProvider, catalogLoaded, mapFocus, setMapFocus } = useApp();
+  const { destinations, providers, categories, setSelectedDestination, setSelectedProvider, catalogLoaded, mapFocus, setMapFocus, geoapifyKey } = useApp();
 
   const mapEl = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -181,14 +182,14 @@ export const TouristMapView: React.FC = () => {
     const map = mapRef.current;
     if (!map) return;
     if (tileRef.current) map.removeLayer(tileRef.current);
-    const b = BASEMAPS[basemap];
+    const b = basemap === 'map' ? streetTiles(geoapifyKey) : BASEMAPS[basemap];
     tileRef.current = L.tileLayer(b.url, {
       attribution: b.attribution,
       maxZoom: b.maxZoom,
       subdomains: 'abc'
     }).addTo(map);
     tileRef.current.bringToBack();
-  }, [basemap]);
+  }, [basemap, geoapifyKey]);
 
   // First time pins are available, zoom to them (northern circuit + coast) instead of the whole region.
   useEffect(() => {
@@ -299,8 +300,9 @@ export const TouristMapView: React.FC = () => {
 
   const selectedDistance = selected && myCoords ? distanceKm(myCoords, selected.coords) : null;
 
+  // `isolate` keeps the map and its controls (z 400-600) from drawing over dialogs (z-50).
   return (
-    <section aria-label="Map of Tanzania" className="relative -mx-3 sm:mx-0">
+    <section aria-label="Map of Tanzania" className="relative isolate -mx-3 sm:mx-0">
       <div className="relative h-[calc(100dvh-150px)] md:h-[calc(100dvh-210px)] min-h-[440px] sm:rounded-3xl overflow-hidden border-y sm:border border-[#E8DFC9] dark:border-[#23352A] bg-[#DCE6DF]">
         <div ref={mapEl} className="absolute inset-0 z-0" />
 
@@ -461,19 +463,20 @@ export const TouristMapView: React.FC = () => {
         )}
 
         {/* List toggle */}
+        {/* Sits above the map credit line, which the tile providers require to stay visible. */}
         {!selected && (
           <button
             type="button"
             onClick={() => setListOpen((v) => !v)}
             aria-expanded={listOpen}
-            className="absolute left-3 bottom-3 z-[500] min-h-[44px] px-4 rounded-full bg-[#284435] text-white text-sm font-bold shadow-lg cursor-pointer"
+            className="absolute left-3 bottom-12 z-[500] min-h-[44px] px-4 rounded-full bg-[#284435] text-white text-sm font-bold shadow-lg cursor-pointer"
           >
             {listOpen ? 'Hide list' : myCoords ? `Nearest to you (${visible.length})` : `List (${visible.length})`}
           </button>
         )}
 
         {listOpen && !selected && (
-          <div className="absolute inset-x-3 bottom-16 z-[550] sm:right-auto sm:w-[380px] max-h-[55%] overflow-y-auto bg-white dark:bg-[#152019] rounded-3xl shadow-2xl border border-[#E8DFC9] dark:border-[#23352A]">
+          <div className="absolute inset-x-3 bottom-[6.75rem] z-[550] sm:right-auto sm:w-[380px] max-h-[55%] overflow-y-auto bg-white dark:bg-[#152019] rounded-3xl shadow-2xl border border-[#E8DFC9] dark:border-[#23352A]">
             <ul className="divide-y divide-[#F0EBE0] dark:divide-[#23352A]">
               {sorted.length === 0 && (
                 <li className="p-4 text-sm text-[#6B7A72] dark:text-[#8DA195]">Nothing here for this filter yet.</li>

@@ -387,15 +387,20 @@ export async function notifyOperatorNewLead(providerId: number, lead: any): Prom
           `New request #${lead.id} on TANEXPO\n` +
             `${lead.touristName} · ${lead.groupSize} guests\n` +
             `${lead.listingTitle}\n` +
-            `Date: ${prettyDate(String(lead.date), lang)}\n\n` +
-            `Reply:\n` +
+            `Date: ${prettyDate(String(lead.date), lang)}\n` +
+            (lead.budgetTZS ? `Budget: ${lead.budgetTZS}\n` : '') +
+            (lead.pickupLocation ? `Pickup: ${lead.pickupLocation}\n` : '') +
+            `\nReply:\n` +
             `ACCEPT ${lead.id}\n` +
             `QUOTE ${lead.id} <amount TZS> [note]\n` +
             `REPLY ${lead.id} <message>`,
           `Ombi jipya #${lead.id} kwenye TANEXPO\n` +
             `${lead.touristName} · wageni ${lead.groupSize}\n` +
             `${lead.listingTitle}\n` +
-            `Tarehe: ${prettyDate(String(lead.date), lang)}\n\n` +
+            `Tarehe: ${prettyDate(String(lead.date), lang)}\n` +
+            (lead.budgetTZS ? `Bajeti: ${lead.budgetTZS}\n` : '') +
+            (lead.pickupLocation ? `Kuchukuliwa: ${lead.pickupLocation}\n` : '') +
+            `\n` +
             `Jibu:\n` +
             `KUBALI ${lead.id}\n` +
             `BEI ${lead.id} <kiasi TZS> [maelezo]\n` +

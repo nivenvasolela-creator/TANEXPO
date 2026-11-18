@@ -306,7 +306,11 @@ export const TouristHome: React.FC = () => {
 
       {catalogError && providers.length === 0 && (
         <div role="alert" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-sm text-amber-900 dark:text-amber-200">
-          <span>We couldn't load the operators. Check your connection and try again.</span>
+          <span>
+            {typeof navigator !== 'undefined' && !navigator.onLine
+              ? "You're offline. Connect to the internet, then tap Retry."
+              : "Can't reach the TANEXPO server right now. If you opened a demo link, the demo may have stopped or moved to a new link: ask for the latest one."}
+          </span>
           <button
             type="button"
             onClick={() => void retryCatalog()}

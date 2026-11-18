@@ -38,3 +38,5 @@ services:
         sync: false            # the https://....onrender.com address, once you know it
       - key: GEMINI_API_KEY
         sync: false            # optional; leave empty to use the keyword parser
+      - key: GEOAPIFY_API_KEY
+        sync: false            # optional; Geoapify map tiles (free plan allows commercial use). Empty = OpenStreetMap tiles

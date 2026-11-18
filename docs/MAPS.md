@@ -21,3 +21,23 @@ When traffic grows past a demo, switch the `BASEMAPS` URLs in `TouristMapView.ts
 - Asked for only when the visitor taps **Near me**, and only works on `https` (or `localhost`).
 - The position is used in the browser to draw the blue dot and sort the list by distance. It is never sent to the TANEXPO server.
 - Distances are straight-line, not road distance.
+
+## Production tiles: Geoapify (optional)
+
+OpenStreetMap's public tile server is fine for demos but its usage policy rules out heavy
+production traffic. For launch, set `GEOAPIFY_API_KEY` on the server:
+
+1. Sign up at https://myprojects.geoapify.com (no credit card) and create a project.
+2. Copy its API key. Under the key's settings, restrict it to your site's domain (for example
+   `tanexpo.onrender.com`). Map keys are public by design: every tile URL the browser loads shows it.
+3. Set `GEOAPIFY_API_KEY` in Render (Environment) or with `fly secrets set GEOAPIFY_API_KEY=...`, then redeploy.
+
+Both maps then use Geoapify's "OSM Bright" street map (sharper tiles on high-density phone
+screens) with the required "Powered by Geoapify" credit. Satellite and Terrain stay as they are.
+The free plan is 3,000 credits a day; check Geoapify's pricing page for how map tiles count against credits.
+
+Why not MapLibre GL (vector maps) yet: it needs WebGL and adds roughly 800 KB of JavaScript, which
+is slow on the cheap Android phones most users have. Leaflet with raster tiles stays fast. Revisit
+when custom map styling matters more than load time. Address search (Nominatim, about 1 request a
+second, no autocomplete) and routing (OSRM or GraphHopper) are separate services; "Directions"
+currently opens Google Maps, which already handles routing on the phone.

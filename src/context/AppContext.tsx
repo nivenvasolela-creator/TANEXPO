@@ -115,6 +115,8 @@ interface AppContextType {
   refreshData: () => Promise<void>;
   paymentsMode: 'simulated' | 'live';
   seedDemoCatalog: boolean;
+  /** Public Geoapify tiles key from the server, or null to use the free OpenStreetMap tiles. */
+  geoapifyKey: string | null;
 
   // State
   categories: Category[];
@@ -179,6 +181,7 @@ interface AppContextType {
     date: string;
     groupSize: number;
     budgetTZS?: string;
+    pickupLocation?: string;
     message?: string;
   }) => Promise<Lead | null>;
   updateLeadStatus: (leadId: number, status: LeadStatus) => void;
@@ -267,6 +270,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [catalogLoaded, setCatalogLoaded] = useState<boolean>(false);
   const [paymentsMode, setPaymentsMode] = useState<'simulated' | 'live'>('simulated');
   const [seedDemoCatalog, setSeedDemoCatalog] = useState<boolean>(false);
+  const [geoapifyKey, setGeoapifyKey] = useState<string | null>(null);
 
   // Private role-scoped state (populated only after authenticated fetches)
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -335,7 +339,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const seen = localStorage.getItem(STORAGE_KEYS.INTRO_SEEN);
     const session = localStorage.getItem(STORAGE_KEYS.USER_SESSION);
-    return !seen && !session;
+    // A signed-in user (token present) never gets the first-run intro over their screen.
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    return !seen && !session && !token;
   });
 
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro_1');
@@ -469,6 +475,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (typeof data.seedDemoCatalog === 'boolean') {
         setSeedDemoCatalog(data.seedDemoCatalog);
       }
+      setGeoapifyKey(typeof data.geoapifyKey === 'string' && data.geoapifyKey ? data.geoapifyKey : null);
     } catch {
       // ignore non-fatal config error
     }
@@ -986,6 +993,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     date: string;
     groupSize: number;
     budgetTZS?: string;
+    pickupLocation?: string;
     message?: string;
   }): Promise<Lead | null> => {
     try {
@@ -1313,6 +1321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         catalogLoaded,
         paymentsMode,
         seedDemoCatalog,
+        geoapifyKey,
         categories,
         destinations,
         providers,

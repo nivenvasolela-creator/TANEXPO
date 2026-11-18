@@ -201,6 +201,8 @@ export interface Lead {
   date: string;
   groupSize: number;
   budgetTZS?: string;
+  /** Where the operator should collect the travelers (airport, hotel, address). */
+  pickupLocation?: string;
   message?: string;
   status: LeadStatus;
   quote?: Quote | null;

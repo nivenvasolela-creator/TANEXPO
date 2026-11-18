@@ -132,6 +132,16 @@ export const QuoteBuilderModal: React.FC = () => {
             <span>•</span>
             <span>Travelers: <strong>{quoteBuilderLead.groupSize} Guests</strong></span>
           </div>
+          {(quoteBuilderLead.pickupLocation || quoteBuilderLead.budgetTZS) && (
+            <div className="w-full flex flex-wrap gap-x-4 gap-y-1">
+              {quoteBuilderLead.pickupLocation && (
+                <span>Pickup: <strong>{quoteBuilderLead.pickupLocation}</strong></span>
+              )}
+              {quoteBuilderLead.budgetTZS && (
+                <span>Traveler budget: <strong>{quoteBuilderLead.budgetTZS}</strong></span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Quote Form */}

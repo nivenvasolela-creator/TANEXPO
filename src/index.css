@@ -147,6 +147,12 @@ html.dark body {
     radial-gradient(900px 480px at -10% 10%, rgba(63, 122, 90, 0.12), transparent 60%);
 }
 
+/* Quick taps on buttons must not trigger the browser's double-tap zoom (the page jumps and the
+   next tap lands somewhere else). Pinch-zoom still works. The map sets its own touch handling. */
+html {
+  touch-action: manipulation;
+}
+
 /* Gentle press feedback on touch */
 button:not(:disabled),
 a[href] {

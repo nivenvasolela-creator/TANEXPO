@@ -1,13 +1,12 @@
 // Runs the TANEXPO demo on this computer, with the demo settings switched on.
 //
-//   npm run build          (once, and again after pulling new code)
 //   npm run demo           -> http://localhost:3000 on this computer
 //   npm run demo:public    -> also opens a public https://....trycloudflare.com link
 //                             (needs cloudflared installed; see docs/LAUNCH.md)
 //
 // Settings live in .env.demo next to package.json (created on first run, never committed).
 // The database is kept in .data/demo-pg, so operators and leads survive a restart.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,9 +17,34 @@ const envFile = path.join(root, '.env.demo');
 const serverFile = path.join(root, 'dist', 'server.cjs');
 const wantTunnel = process.argv.includes('--public');
 
-if (!fs.existsSync(serverFile)) {
-  console.error('The app is not built yet. Run:  npm run build');
-  process.exit(1);
+// Newest modification time of any source file the build depends on.
+function newestSource() {
+  let newest = 0;
+  const walk = (p) => {
+    let st;
+    try {
+      st = fs.statSync(p);
+    } catch {
+      return;
+    }
+    if (st.isDirectory()) {
+      for (const name of fs.readdirSync(p)) walk(path.join(p, name));
+    } else if (st.mtimeMs > newest) newest = st.mtimeMs;
+  };
+  for (const p of ['src', 'server', 'public', 'server.ts', 'index.html', 'package.json', 'vite.config.ts']) walk(path.join(root, p));
+  return newest;
+}
+
+// Rebuild when there is no build yet, or the code changed since the last one (e.g. after git pull).
+// Without this, the demo silently serves an old version of the app.
+const builtAt = fs.existsSync(serverFile) ? fs.statSync(serverFile).mtimeMs : 0;
+if (!builtAt || newestSource() > builtAt) {
+  console.log(builtAt ? '\nThe code changed since the last build. Rebuilding (about a minute)...\n' : '\nBuilding the app (about a minute)...\n');
+  const r = spawnSync('npm', ['run', 'build'], { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' });
+  if (r.status !== 0 || !fs.existsSync(serverFile)) {
+    console.error('\nThe build failed. Run  npm ci  and then  npm run demo  again.');
+    process.exit(1);
+  }
 }
 
 if (!fs.existsSync(envFile)) {

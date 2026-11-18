@@ -12,8 +12,40 @@ import {
   User, 
   ShieldCheck, 
   CheckCircle2, 
-  ArrowRight
+  ArrowRight,
+  MapPin,
+  RotateCcw
 } from 'lucide-react';
+
+/** Common pickup points, offered as suggestions. Travelers can type anything. */
+const PICKUP_SUGGESTIONS = [
+  'Kilimanjaro International Airport (JRO)',
+  'Arusha Airport (ARK)',
+  'My hotel in Arusha',
+  'My hotel in Moshi',
+  'Julius Nyerere International Airport, Dar es Salaam (DAR)',
+  'My hotel in Dar es Salaam',
+  'Abeid Amani Karume Airport, Zanzibar (ZNZ)',
+  'My hotel in Zanzibar'
+];
+
+/**
+ * Estimated trip cost from the package's listed price and pricing unit. It is only a starting
+ * point for the traveler's budget: the operator still sends the real quote and the server decides money.
+ */
+export function estimateTripTZS(priceTZS: number, unit: string, travelers: number): number {
+  const n = Math.max(1, Math.floor(travelers) || 1);
+  const u = unit.toLowerCase();
+  if (u.includes('vehicle')) {
+    const seats = Number(u.match(/up to (\d+)/)?.[1]) || 6;
+    return priceTZS * Math.ceil(n / seats);
+  }
+  if (u.includes('couple')) return priceTZS * Math.ceil(n / 2);
+  if (u.includes('person') || u.includes('pax') || u.includes('traveler')) return priceTZS * n;
+  return priceTZS; // per group / per trip
+}
+
+const formatTZS = (n: number) => n.toLocaleString('en-US');
 
 export const BookingRequestModal: React.FC = () => {
   const { 
@@ -28,25 +60,39 @@ export const BookingRequestModal: React.FC = () => {
     isGuest
   } = useApp();
 
-  const [name, setName] = useState(currentUser?.name || '');
-  const [contact, setContact] = useState(currentUser?.email || currentUser?.phone || '');
+  // A guest's placeholder profile ("Guest Traveler") must not end up on the operator's lead.
+  const realUser = currentUser && currentUser.role !== 'guest' ? currentUser : null;
+  const [name, setName] = useState(realUser?.name || '');
+  const [contact, setContact] = useState(realUser?.email || realUser?.phone || '');
   const [date, setDate] = useState('');
   const [groupSize, setGroupSize] = useState(2);
   const [budgetTZS, setBudgetTZS] = useState('');
+  // Until the traveler types their own budget, it follows the package price x group size.
+  const [budgetEdited, setBudgetEdited] = useState(false);
+  const [pickup, setPickup] = useState('');
   const [message, setMessage] = useState('');
   const [submittedLeadId, setSubmittedLeadId] = useState<number | null>(null);
 
   const dialogRef = useModalAccessibility(Boolean(inquiryPackage), () => setInquiryPackage(null));
 
-  // Sync if user logs in while modal is open
+  // Fill in the account's name and contact when the traveler signs in while the form is open,
+  // without overwriting anything they typed themselves.
   React.useEffect(() => {
-    if (currentUser && !name) {
-      setName(currentUser.name);
-      setContact(currentUser.email || currentUser?.phone || '');
-    }
-  }, [currentUser]);
+    if (!realUser) return;
+    if (!name.trim()) setName(realUser.name);
+    if (!contact.trim()) setContact(realUser.email || realUser.phone || '');
+  }, [realUser?.id]);
 
-  if (!inquiryPackage) return null;
+  const listingForEstimate = inquiryPackage?.listing;
+  const estimate = listingForEstimate
+    ? estimateTripTZS(Number(listingForEstimate.priceTZS) || 0, String(listingForEstimate.unit || ''), groupSize)
+    : 0;
+
+  React.useEffect(() => {
+    if (!budgetEdited) setBudgetTZS(estimate > 0 ? formatTZS(estimate) : '');
+  }, [estimate, budgetEdited]);
+
+  if (!inquiryPackage?.provider || !inquiryPackage?.listing) return null;
 
   const { provider, listing } = inquiryPackage;
 
@@ -57,14 +103,8 @@ export const BookingRequestModal: React.FC = () => {
     if (!currentUser || isGuest) {
       requireAuth({
         type: 'request_quote',
-        data: {
-          providerId: provider.id,
-          listingId: listing.id,
-          date,
-          groupSize,
-          budgetTZS,
-          message
-        }
+        // The form reopens with this package after sign-in; its typed values stay in this component.
+        data: { provider, listing }
       });
       return;
     }
@@ -80,7 +120,8 @@ export const BookingRequestModal: React.FC = () => {
       touristContact: contact,
       date,
       groupSize: Number(groupSize),
-      budgetTZS: budgetTZS ? `${budgetTZS} TZS` : undefined,
+      budgetTZS: budgetTZS.trim() ? `${budgetTZS.trim().replace(/\s*TZS$/i, '')} TZS` : undefined,
+      pickupLocation: pickup.trim() || undefined,
       message: message || undefined
     });
 
@@ -156,6 +197,12 @@ export const BookingRequestModal: React.FC = () => {
                 <span className="text-[#6B7A72] dark:text-[#8DA195]">Travelers:</span>
                 <span className="font-semibold text-[#284435] dark:text-[#EDF3EF]">{groupSize} Guests</span>
               </div>
+              {pickup.trim() && (
+                <div className="flex justify-between gap-3 py-1 border-t border-[#E8DFC9]/60 dark:border-[#23352A]">
+                  <span className="text-[#6B7A72] dark:text-[#8DA195] shrink-0">Pickup:</span>
+                  <span className="font-semibold text-[#284435] dark:text-[#EDF3EF] text-right">{pickup.trim()}</span>
+                </div>
+              )}
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -178,13 +225,13 @@ export const BookingRequestModal: React.FC = () => {
           /* Form State */
           <form onSubmit={handleSubmit} className="p-5 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-6 overflow-y-auto space-y-4">
             {/* Selected Package summary pill */}
-            <div className="bg-[#FAF7F2] dark:bg-[#152019] p-3 rounded-xl border border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between text-xs">
-              <div>
+            <div className="bg-[#FAF7F2] dark:bg-[#152019] p-3 rounded-xl border border-[#E8DFC9] dark:border-[#23352A] flex items-center justify-between gap-3 text-xs">
+              <div className="min-w-0">
                 <span className="text-[#8A9790] dark:text-[#8DA195] block text-[10px] uppercase font-bold">Inquiring for:</span>
                 <span className="font-bold text-[#284435] dark:text-[#EDF3EF]">{listing.title}</span>
               </div>
-              <div className="text-right">
-                <span className="text-xs font-bold text-[#D97843]">{formatPrice(listing.priceTZS)}</span>
+              <div className="text-right shrink-0">
+                <span className="text-xs font-bold text-[#D97843] whitespace-nowrap">{formatPrice(listing.priceTZS, false)}</span>
                 <span className="text-[10px] text-[#6B7A72] dark:text-[#8DA195] block">{listing.unit}</span>
               </div>
             </div>
@@ -259,16 +306,67 @@ export const BookingRequestModal: React.FC = () => {
             <div className="space-y-1">
               <label className="text-xs font-bold text-[#284435] dark:text-[#EDF3EF] flex items-center gap-1">
                 <DollarSign className="w-3.5 h-3.5 text-[#D97843]" />
-                <span>Estimated Target Budget in TZS (Optional)</span>
+                <span>Your budget in TZS</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={budgetTZS}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/[^\d]/g, '').slice(0, 12);
+                    setBudgetTZS(digits ? formatTZS(Number(digits)) : '');
+                    setBudgetEdited(true);
+                  }}
+                  placeholder="e.g. 3,500,000"
+                  aria-describedby="budget-hint"
+                  className="w-full pl-3 pr-12 py-2 text-xs rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] bg-white dark:bg-[#101914] text-[#1F2A24] dark:text-[#EDF3EF] focus:outline-hidden focus:border-[#284435] dark:focus:border-emerald-500"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#8A9790]">TZS</span>
+              </div>
+              <p id="budget-hint" className="text-[10px] text-[#6B7A72] dark:text-[#8DA195] flex flex-wrap items-center gap-x-2">
+                {estimate > 0 ? (
+                  <span>
+                    Package estimate: TZS {formatTZS(listing.priceTZS)} {listing.unit}
+                    {estimate !== listing.priceTZS ? ` × ${groupSize} traveler${groupSize === 1 ? '' : 's'} ≈ TZS ${formatTZS(estimate)}` : ''}. Change it if your budget is different.
+                  </span>
+                ) : (
+                  <span>Helps the operator choose vehicles and lodges for you.</span>
+                )}
+                {budgetEdited && estimate > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setBudgetEdited(false)}
+                    className="inline-flex items-center gap-1 font-bold text-[#284435] dark:text-emerald-400 underline cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Use estimate
+                  </button>
+                )}
+              </p>
+            </div>
+
+            {/* Pickup location */}
+            <div className="space-y-1">
+              <label htmlFor="pickup-location" className="text-xs font-bold text-[#284435] dark:text-[#EDF3EF] flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-[#D97843]" />
+                <span>Pickup location</span>
               </label>
               <input
+                id="pickup-location"
                 type="text"
-                value={budgetTZS}
-                onChange={(e) => setBudgetTZS(e.target.value)}
-                placeholder="e.g. 3,500,000 TZS"
+                list="pickup-suggestions"
+                maxLength={160}
+                value={pickup}
+                onChange={(e) => setPickup(e.target.value)}
+                placeholder="e.g. Kilimanjaro Airport (JRO) or your hotel name"
                 className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] bg-white dark:bg-[#101914] text-[#1F2A24] dark:text-[#EDF3EF] focus:outline-hidden focus:border-[#284435] dark:focus:border-emerald-500"
               />
-              <p className="text-[10px] text-[#6B7A72] dark:text-[#8DA195]">Helps the operator customize vehicles, lodges, or private route concessions.</p>
+              <datalist id="pickup-suggestions">
+                {PICKUP_SUGGESTIONS.map((p) => (
+                  <option key={p} value={p} />
+                ))}
+              </datalist>
+              <p className="text-[10px] text-[#6B7A72] dark:text-[#8DA195]">Airport, hotel or address where the operator should collect you.</p>
             </div>
 
             {/* Message */}
@@ -281,7 +379,7 @@ export const BookingRequestModal: React.FC = () => {
                 rows={3}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="e.g. Celebrating an anniversary, need airport pickup at JRO, vegetarian meals, interested in photography pop-up roof..."
+                placeholder="e.g. Celebrating an anniversary, vegetarian meals, flight lands at 14:30, interested in photography pop-up roof..."
                 className="w-full px-3 py-2 text-xs rounded-xl border border-[#DED5C6] dark:border-[#2A3E31] bg-white dark:bg-[#101914] text-[#1F2A24] dark:text-[#EDF3EF] focus:outline-hidden focus:border-[#284435] dark:focus:border-emerald-500 resize-none"
               />
             </div>
