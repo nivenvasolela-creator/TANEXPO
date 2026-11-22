@@ -1,4 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
+import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -13,12 +14,149 @@ import { hashPassword } from './auth.js';
 import { isSeedDemoCatalogEnabled } from './config.js';
 import { normalizePhone, maskPhone } from './phone.js';
 
-let db: PGlite | null = null;
-let dbPromise: Promise<PGlite> | null = null;
+/**
+ * One small interface over two databases:
+ *  - Hosted Postgres (Supabase) when DATABASE_URL is set. Used on free web hosts, whose disks are
+ *    wiped on restart, and safe with more than one app instance.
+ *  - Embedded PGlite in PG_DATA_DIR otherwise (laptop demos and the test suites).
+ * Both are real Postgres, so the SQL is the same. Use transaction() for multi-statement changes:
+ * with a connection pool, separate BEGIN/COMMIT calls could run on different connections.
+ */
+export interface DbQueryable {
+  query<T = any>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
+  exec(sql: string): Promise<void>;
+}
+export interface Db extends DbQueryable {
+  readonly kind: 'pglite' | 'postgres';
+  transaction<T>(fn: (tx: DbQueryable) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
+}
 
-export async function getDb(): Promise<PGlite> {
+function wrapPglite(instance: PGlite): Db {
+  return {
+    kind: 'pglite',
+    query: async (sql, params) => ({ rows: (await instance.query<any>(sql, params as any[])).rows }),
+    exec: async (sql) => {
+      await instance.exec(sql);
+    },
+    transaction: (fn) =>
+      instance.transaction((tx) =>
+        fn({
+          query: async (sql, params) => ({ rows: (await tx.query<any>(sql, params as any[])).rows }),
+          exec: async (sql) => {
+            await tx.exec(sql);
+          }
+        })
+      ),
+    close: () => instance.close()
+  };
+}
+
+// COUNT(*) and other BIGINT results arrive as text from the pg driver; PGlite gives numbers.
+// Every id in this schema is INTEGER or TEXT, so parsing them as numbers is safe here.
+pg.types.setTypeParser(20, (v: string) => parseInt(v, 10));
+
+/** Pool options from DATABASE_URL. Supabase needs TLS; DATABASE_CA_CERT (PEM) enables verification. */
+export function postgresPoolConfig(databaseUrl: string): pg.PoolConfig {
+  const url = new URL(databaseUrl);
+  const isLocal = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+  const sslMode = url.searchParams.get('sslmode');
+  // The driver reads sslmode from the URL and would override the ssl options below.
+  url.searchParams.delete('sslmode');
+  const ca = process.env.DATABASE_CA_CERT?.trim();
+  let ssl: pg.PoolConfig['ssl'] = false;
+  if (ca) ssl = { ca, rejectUnauthorized: true };
+  else if (!isLocal && sslMode !== 'disable') ssl = { rejectUnauthorized: false };
+  return {
+    connectionString: url.toString(),
+    ssl,
+    max: Math.max(1, Math.min(20, Number(process.env.DB_POOL_MAX) || 5)),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 15_000
+  };
+}
+
+function wrapPostgres(pool: pg.Pool): Db {
+  const viaClient = (client: pg.PoolClient): DbQueryable => ({
+    query: async (sql, params) => ({ rows: (await client.query(sql, params as any[])).rows }),
+    exec: async (sql) => {
+      await client.query(sql);
+    }
+  });
+  return {
+    kind: 'postgres',
+    query: async (sql, params) => ({ rows: (await pool.query(sql, params as any[])).rows }),
+    exec: async (sql) => {
+      await pool.query(sql);
+    },
+    transaction: async (fn) => {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const result = await fn(viaClient(client));
+        await client.query('COMMIT');
+        return result;
+      } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw err;
+      } finally {
+        client.release();
+      }
+    },
+    close: () => pool.end()
+  };
+}
+
+/**
+ * Supabase publishes the `public` schema through its web API to anyone holding the project's
+ * public key, so the app's tables (users with password hashes, sessions, leads) live in their own
+ * schema, which that API does not expose. Needs a session connection (Supabase's "Session pooler"
+ * URL or the direct one), not the transaction pooler on port 6543.
+ */
+function postgresSchema(): string {
+  const schema = (process.env.DATABASE_SCHEMA?.trim() || 'tanexpo').toLowerCase();
+  if (!/^[a-z_][a-z0-9_]{0,62}$/.test(schema) || schema === 'public') {
+    throw new Error('DATABASE_SCHEMA must be a plain lowercase name other than "public"');
+  }
+  return schema;
+}
+
+let db: Db | null = null;
+let dbPromise: Promise<Db> | null = null;
+
+export async function getDb(): Promise<Db> {
   if (db) return db;
   if (dbPromise) return dbPromise;
+
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (databaseUrl) {
+    dbPromise = (async () => {
+      const schema = postgresSchema();
+      const pool = new pg.Pool(postgresPoolConfig(databaseUrl));
+      // A dropped idle connection must not crash the server; the pool replaces it.
+      pool.on('error', (err) => console.error('[DB] Idle Postgres connection error:', err.message));
+      // Every connection works in the app's own schema. Queued before any other query on it.
+      pool.on('connect', (client) => {
+        client.query(`SET search_path TO "${schema}"`).catch((err) => console.error('[DB] search_path:', err.message));
+      });
+      const wrapped = wrapPostgres(pool);
+      try {
+        await wrapped.exec(`CREATE SCHEMA IF NOT EXISTS "${schema}"`);
+        await initSchemaAndSeed(wrapped);
+      } catch (err: any) {
+        await pool.end().catch(() => {});
+        // Never fall back to a local database here: data would silently go to a throwaway disk.
+        console.error('[DB FATAL] Cannot use DATABASE_URL:', err?.message || err);
+        throw err;
+      }
+      db = wrapped;
+      return wrapped;
+    })().catch((err) => {
+      dbPromise = null;
+      throw err;
+    });
+    return dbPromise;
+  }
 
   dbPromise = (async () => {
     const isProd = process.env.NODE_ENV === 'production';
@@ -27,7 +165,7 @@ export async function getDb(): Promise<PGlite> {
     try {
       fs.mkdirSync(path.dirname(dataDir), { recursive: true });
       instance = new PGlite(dataDir);
-      await initSchemaAndSeed(instance);
+      await initSchemaAndSeed(wrapPglite(instance));
     } catch (err: any) {
       const msg = String(err?.message || err || '');
       const isCatalogOrDirErr =
@@ -56,7 +194,7 @@ export async function getDb(): Promise<PGlite> {
           fs.renameSync(dataDir, backupDir);
           fs.mkdirSync(path.dirname(dataDir), { recursive: true });
           instance = new PGlite(dataDir);
-          await initSchemaAndSeed(instance);
+          await initSchemaAndSeed(wrapPglite(instance));
         } catch (retryErr: any) {
           await instance?.close().catch(() => {});
           if (isProd) {
@@ -65,7 +203,7 @@ export async function getDb(): Promise<PGlite> {
           }
           console.warn('Fallback to in-memory PGlite in non-production due to persistent error:', retryErr);
           instance = new PGlite();
-          await initSchemaAndSeed(instance);
+          await initSchemaAndSeed(wrapPglite(instance));
         }
       } else {
         if (isProd) {
@@ -74,12 +212,12 @@ export async function getDb(): Promise<PGlite> {
         }
         console.warn('Fallback to in-memory PGlite in non-production due to directory/init error:', err);
         instance = new PGlite();
-        await initSchemaAndSeed(instance);
+        await initSchemaAndSeed(wrapPglite(instance));
       }
     }
 
-    db = instance;
-    return instance;
+    db = wrapPglite(instance);
+    return db;
   })().catch((err) => {
     dbPromise = null;
     throw err;
@@ -88,7 +226,7 @@ export async function getDb(): Promise<PGlite> {
   return dbPromise;
 }
 
-async function initSchemaAndSeed(database: PGlite) {
+async function initSchemaAndSeed(database: DbQueryable) {
   // Create base tables in Postgres
   await database.exec(`
     CREATE TABLE IF NOT EXISTS users (

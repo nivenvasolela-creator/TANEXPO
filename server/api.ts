@@ -566,15 +566,15 @@ apiRouter.delete('/auth/account', requireAuth, async (req: Request, res: Respons
       return;
     }
 
-    await db.exec('BEGIN');
-    try {
-      await db.query('DELETE FROM app_sessions WHERE user_id = $1', [authUser.id]);
-      await db.query('DELETE FROM saved_providers WHERE user_id = $1', [authUser.id]);
+    // One transaction: either all personal data is removed or nothing changes.
+    await db.transaction(async (tx) => {
+      await tx.query('DELETE FROM app_sessions WHERE user_id = $1', [authUser.id]);
+      await tx.query('DELETE FROM saved_providers WHERE user_id = $1', [authUser.id]);
 
       if (authUser.role === 'provider') {
         const pid = getUserProviderId(authUser);
         if (pid) {
-          const pRes = await db.query<any>('SELECT data FROM providers WHERE id = $1', [pid]);
+          const pRes = await tx.query<any>('SELECT data FROM providers WHERE id = $1', [pid]);
           if (pRes.rows.length) {
             const cleaned = {
               ...pRes.rows[0].data,
@@ -584,66 +584,62 @@ apiRouter.delete('/auth/account', requireAuth, async (req: Request, res: Respons
               about: 'This operator account has been closed.',
               showContactAfterBooking: true
             };
-            await db.query(
+            await tx.query(
               'UPDATE providers SET name = $1, owner_user_id = NULL, verified = FALSE, data = $2 WHERE id = $3',
               ['Closed Operator', JSON.stringify(cleaned), pid]
             );
           }
-          const lRes = await db.query<any>('SELECT id, data FROM listings WHERE provider_id = $1', [pid]);
+          const lRes = await tx.query<any>('SELECT id, data FROM listings WHERE provider_id = $1', [pid]);
           for (const row of lRes.rows) {
             const inactiveListing = { ...row.data, active: false };
-            await db.query('UPDATE listings SET data = $1 WHERE id = $2', [JSON.stringify(inactiveListing), row.id]);
+            await tx.query('UPDATE listings SET data = $1 WHERE id = $2', [JSON.stringify(inactiveListing), row.id]);
           }
         }
       }
 
       // Remove unbooked leads for this user; anonymize booked leads, bookings, and reviews
-      await db.query("DELETE FROM leads WHERE tourist_user_id = $1 AND status <> 'Booked'", [authUser.id]);
+      await tx.query("DELETE FROM leads WHERE tourist_user_id = $1 AND status <> 'Booked'", [authUser.id]);
 
-      const bookedLeads = await db.query<any>('SELECT id, data FROM leads WHERE tourist_user_id = $1', [authUser.id]);
+      const bookedLeads = await tx.query<any>('SELECT id, data FROM leads WHERE tourist_user_id = $1', [authUser.id]);
       for (const row of bookedLeads.rows) {
         const anonLead = {
           ...row.data,
           touristName: 'Deleted User',
           touristContact: ''
         };
-        await db.query('UPDATE leads SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
+        await tx.query('UPDATE leads SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
           JSON.stringify(anonLead),
           row.id
         ]);
       }
 
-      const userBookings = await db.query<any>('SELECT id, data FROM bookings WHERE tourist_user_id = $1', [authUser.id]);
+      const userBookings = await tx.query<any>('SELECT id, data FROM bookings WHERE tourist_user_id = $1', [authUser.id]);
       for (const row of userBookings.rows) {
         const anonBooking = {
           ...row.data,
           touristName: 'Deleted User',
           touristContact: ''
         };
-        await db.query('UPDATE bookings SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
+        await tx.query('UPDATE bookings SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
           JSON.stringify(anonBooking),
           row.id
         ]);
       }
 
-      const userReviews = await db.query<any>('SELECT id, data FROM reviews WHERE tourist_user_id = $1', [authUser.id]);
+      const userReviews = await tx.query<any>('SELECT id, data FROM reviews WHERE tourist_user_id = $1', [authUser.id]);
       for (const row of userReviews.rows) {
         const anonReview = {
           ...row.data,
           touristName: 'Former Traveler'
         };
-        await db.query('UPDATE reviews SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
+        await tx.query('UPDATE reviews SET tourist_user_id = NULL, data = $1 WHERE id = $2', [
           JSON.stringify(anonReview),
           row.id
         ]);
       }
 
-      await db.query('DELETE FROM users WHERE id = $1', [authUser.id]);
-      await db.exec('COMMIT');
-    } catch (txErr) {
-      await db.exec('ROLLBACK').catch(() => {});
-      throw txErr;
-    }
+      await tx.query('DELETE FROM users WHERE id = $1', [authUser.id]);
+    });
 
     res.json({ success: true, message: 'Account deleted and personal data removed' });
   } catch (err: any) {

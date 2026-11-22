@@ -30,7 +30,7 @@ production traffic. For launch, set `GEOAPIFY_API_KEY` on the server:
 1. Sign up at https://myprojects.geoapify.com (no credit card) and create a project.
 2. Copy its API key. Under the key's settings, restrict it to your site's domain (for example
    `tanexpo.onrender.com`). Map keys are public by design: every tile URL the browser loads shows it.
-3. Set `GEOAPIFY_API_KEY` in Render (Environment) or with `fly secrets set GEOAPIFY_API_KEY=...`, then redeploy.
+3. Set `GEOAPIFY_API_KEY` in Render (the service's Environment tab), then redeploy.
 
 Both maps then use Geoapify's "OSM Bright" street map (sharper tiles on high-density phone
 screens) with the required "Powered by Geoapify" credit. Satellite and Terrain stay as they are.

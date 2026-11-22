@@ -4,7 +4,7 @@ A 10-minute walkthrough on a phone. The goal is not compliments. Watch for: "whe
 
 ## Demo server settings
 
-`render.yaml` and `fly.toml` already contain these settings; follow "Deploying the demo" in `DEPLOYMENT.md`. You only supply the admin email and password.
+`render.yaml` already contains these settings; follow "Deploying the demo" in `DEPLOYMENT.md`. You only supply the admin email and password.
 
 `SEED_DEMO_CATALOG=true` fills the public catalog with invented sample operators. Use it on the demo site only, never on the site real travelers use. The header shows a demo badge while it is on.
 

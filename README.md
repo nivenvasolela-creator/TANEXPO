@@ -24,7 +24,7 @@ TANEXPO is a two-sided tourism marketplace and provider operating system built f
 ## Prerequisites & Lockfile Standard
 
 - **Node.js**: `>= 22` (see `engines` in `package.json`)
-- **Package Manager**: **npm**. `package-lock.json` is the only lockfile; the `Dockerfile` runs `npm ci`. If a tool regenerates `bun.lock`, delete it.
+- **Package Manager**: **npm**. `package-lock.json` is the only lockfile; Render's build runs `npm ci`. If a tool regenerates `bun.lock`, delete it.
 
 ---
 
@@ -75,7 +75,9 @@ All runtime variables are documented in [`.env.example`](./.env.example). Key va
 | Variable | Purpose | Production Default / Notes |
 | :--- | :--- | :--- |
 | `PORT` | HTTP server port | `3000` |
-| `PG_DATA_DIR` | PGlite persistence directory | `./.data/pg` (mount persistent disk in prod, e.g. `/data/pg`) |
+| `PG_DATA_DIR` | PGlite persistence directory | `./.data/pg` (mount persistent disk in prod, e.g. `/var/data/pg`) |
+| `DATABASE_URL` | Hosted Postgres (Supabase "Session pooler" URL). Overrides `PG_DATA_DIR` | empty (embedded database) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Store package photos/videos in Supabase Storage (secret key, server-only) | empty (local disk) |
 | `SESSION_SECRET` | HMAC/session signing secret | Set a strong random secret in production |
 | `ADMIN_SEED_EMAIL` / `ADMIN_SEED_PASSWORD` | Seeds the admin account at boot | Only way to create an `admin` user |
 | `COMMISSION_RATE` | Server-computed platform commission | `0.15` (15%) |
