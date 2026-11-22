@@ -37,6 +37,9 @@ curl -f http://127.0.0.1:3000/api/health
 
 ## Deploying the demo
 
+**Free option (recommended now): Supabase + Koyeb. Follow `docs/FREE_HOSTING.md`.** With `DATABASE_URL` set, the app uses hosted Postgres (tables in the `tanexpo` schema) instead of the embedded database, so it runs on hosts that wipe their disk, and with `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` package photos/videos go to Supabase Storage. The section below is the paid alternative with an embedded database on a persistent disk.
+
+
 Render runs the app as a plain Node.js web service (`render.yaml`: `npm ci --include=dev && npm run build`, then `node dist/server.cjs`) with exactly one instance and a persistent disk mounted at `/var/data`. The database lives in `/var/data/pg`.
 
 `render.yaml` has not been deployed yet. If Render rejects a field, its error message names it; the settings to keep are listed under "What must stay true".

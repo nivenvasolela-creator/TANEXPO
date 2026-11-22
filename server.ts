@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import path from 'path';
 import { apiRouter } from './server/api.js';
 import { getDb } from './server/db.js';
-import { getPaymentsMode } from './server/config.js';
+import { getPaymentsMode, getSupabaseStorage } from './server/config.js';
 import { bookingIntegrityGuard } from './server/guards.js';
 import { startScheduler } from './server/scheduler.js';
 import { mediaStatic } from './server/media.js';
@@ -33,9 +33,14 @@ async function startServer() {
       '[STARTUP WARNING] Running in production with PAYMENTS_MODE=simulated. Do not accept real customer funds until PAYMENTS_MODE=live.'
     );
   }
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL?.trim()) {
     console.warn(
-      '[STARTUP NOTICE] Embedded PGlite requires a single instance (replicas=1) with persistent PG_DATA_DIR. See DEPLOYMENT.md for hosted Postgres migration.'
+      '[STARTUP NOTICE] No DATABASE_URL: using the embedded database in PG_DATA_DIR. It needs exactly one instance and a disk that survives restarts. See DEPLOYMENT.md for Supabase.'
+    );
+  }
+  if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL?.trim() && !getSupabaseStorage()) {
+    console.warn(
+      '[STARTUP NOTICE] DATABASE_URL is set but Supabase Storage is not: package photos and videos go to the local disk. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on hosts that wipe their disk.'
     );
   }
 
@@ -55,6 +60,8 @@ async function startServer() {
               styleSrc: ["'self'", "'unsafe-inline'"],
               fontSrc: ["'self'", 'data:'],
               imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+              // Package videos may live in Supabase Storage (its exact origin only).
+              mediaSrc: ["'self'", 'blob:', ...(getSupabaseStorage() ? [getSupabaseStorage()!.url] : [])],
               connectSrc: ["'self'", 'https:'],
               manifestSrc: ["'self'"],
               workerSrc: ["'self'"],

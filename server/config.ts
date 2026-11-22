@@ -89,3 +89,30 @@ export function getGeoapifyKey(): string | null {
   const key = process.env.GEOAPIFY_API_KEY?.trim() || '';
   return /^[A-Za-z0-9]{20,64}$/.test(key) ? key : null;
 }
+
+/**
+ * Supabase Storage for operators' package photos and videos (optional). Needed on hosts whose
+ * disk is wiped on restart. SUPABASE_SERVICE_ROLE_KEY is a server-only secret: never send it to
+ * the browser. Files are served from a public bucket on Supabase's own domain.
+ */
+export interface SupabaseStorageConfig {
+  url: string;
+  serviceKey: string;
+  bucket: string;
+}
+export function getSupabaseStorage(): SupabaseStorageConfig | null {
+  const rawUrl = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '') || '';
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || '';
+  if (!rawUrl || !serviceKey) return null;
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return null;
+  }
+  const isLocal = ['localhost', '127.0.0.1'].includes(url.hostname);
+  if (url.protocol !== 'https:' && !isLocal) return null;
+  const bucket = (process.env.SUPABASE_STORAGE_BUCKET?.trim() || 'listing-media').toLowerCase();
+  if (!/^[a-z0-9][a-z0-9._-]{1,62}$/.test(bucket)) return null;
+  return { url: url.origin, serviceKey, bucket };
+}

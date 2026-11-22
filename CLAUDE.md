@@ -27,7 +27,7 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 ## 3. Repo and stack
 
 - GitHub: `nivenvasolela-creator/TANEXPO`, branch `main` (public). State described here: branch `claude/trusting-ride-17euiv` on 2026-11-16, built on `3faf797`. Check whether it has been merged before relying on this.
-- Stack: React 19 + Vite + Tailwind 4 frontend (`src/`), installable PWA (`vite-plugin-pwa`); Express backend (`server.ts`, `server/api.ts`, `server/auth.ts`, `server/db.ts`, `server/whatsapp.ts`, `server/scheduler.ts`, `server/guards.ts`, `server/phone.ts`, `server/config.ts`); embedded Postgres via **PGlite**; Leaflet maps; Gemini SDK (server-side only).
+- Stack: React 19 + Vite + Tailwind 4 frontend (`src/`), installable PWA (`vite-plugin-pwa`); Express backend (`server.ts`, `server/api.ts`, `server/auth.ts`, `server/db.ts`, `server/whatsapp.ts`, `server/scheduler.ts`, `server/guards.ts`, `server/phone.ts`, `server/config.ts`, `server/media.ts`); embedded Postgres via **PGlite** or hosted Postgres (Supabase) via `pg`; Leaflet maps; Gemini SDK (server-side only).
 - Features: tourist side (home, place/provider pages, compare, booking request, checkout, voucher, my requests, saved, reviews, compliance info). Provider side (overview, leads pipeline, WhatsApp tab, bookings, financials, listings editor, quote builder, reviews, profile/verification). English + Swahili, TZS + USD, legal pages (drafts), account deletion, admin backup export.
 - Much of the code was generated through **Google AI Studio (Gemini)**. Two AI Studio apps exist: **FORGE** (a different project, never touch) and **TANEXPO**. Gemini's own reports and tests describe its own work; verify by running.
 - Build/test: `npm ci`, `npx tsc --noEmit`, `npm run build`, `npm test` (runs all three suites, each against a fresh production-mode server). npm is the only lockfile.
@@ -47,9 +47,10 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - Package photos and videos: operators upload in the package editor (`ListingMediaManager`; photos resized and stripped of GPS on the phone, upload progress, cover photo). Server `server/media.ts`: owner-only, type sniffed from file bytes (JPEG/PNG/WebP, MP4/WebM/MOV), 8 MB photo / 40 MB video, 12 photos + 3 videos per package, stored in `MEDIA_DIR` (default next to PG_DATA_DIR) and served from `/media` with nosniff + sandbox CSP. Travelers see a swipeable gallery and full-screen viewer (`shared/MediaGallery.tsx`) and cover photos on operator cards.
 - Quote request form (2026-11-18): budget auto-fills from package price x travelers per pricing unit (person/couple/vehicle/group) until the traveler types their own; optional pickup location (airport/hotel suggestions) saved on the lead and shown on the operator's lead card, quote builder and WhatsApp alert. A guest who signs in mid-request keeps their entries and their real name.
 - Maps: both maps isolate their layers (`isolate`) so map controls never draw over dialogs. Optional `GEOAPIFY_API_KEY` (server env, sent via `/api/config`) switches the street layer to Geoapify OSM Bright (verified with a real key); without it, OpenStreetMap tiles. The List button sits above the map credit, which must stay visible. Leaflet kept over MapLibre for low-end Android (`docs/MAPS.md`).
+- Database: `server/db.ts` exposes one `Db` interface (query/exec/transaction) over embedded PGlite (default) or hosted Postgres via `pg` when `DATABASE_URL` is set. Hosted tables live in schema `tanexpo` (`DATABASE_SCHEMA`), never `public`, because Supabase publishes `public` through its web API. Use `db.transaction()` for multi-statement changes (account deletion does). Media go to Supabase Storage when `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` are set; `sb_secret_` keys are sent on the `apikey` header only. `TEST_PG_URL=postgres://user@host:port npm test` runs the suites against real Postgres (all pass on Postgres 16).
 - `npm run demo` rebuilds automatically when sources are newer than `dist/`. `touch-action: manipulation` stops double-tap zoom on quick taps.
 - Admin: account menu > **Verify operators** lists operators with their TALA licence and toggles verification (server re-checks the admin role).
-- Suites: 50 security, 27 integrity, 23 WhatsApp, 10 media checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
+- Suites: 50 security, 27 integrity, 23 WhatsApp, 10 media, 7 storage checks. Tourist and operator flows were also walked in a real browser, and every main screen was checked for overflow at 360, 768, 1024, 1280, 1440 and 1920px.
 
 ## 5. Not verified / needs a human
 
@@ -57,14 +58,14 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - No live Gemini call has been made (no key in the test environment). `GEMINI_MODEL` defaults to `gemini-3.8-flash`; confirm the model name with a real key.
 - Swahili bot copy was written by a non-native speaker; Selemani or Harrison should read it.
 - Legal claims in the UI (Bank of Tanzania TZS rules, Tourism Act, PDPA, "Registered in Dar es Salaam & Arusha") and the draft privacy policy/terms need a lawyer.
-- Not deployed anywhere yet. `render.yaml` (Render native Node runtime, disk at `/var/data`) is untested on a real host. Docker and Fly.io files were removed on 2026-11-22 at Niven's request.
+- Not deployed anywhere yet. Chosen path (2026-11-22): free Supabase + Koyeb (`docs/FREE_HOSTING.md`); not yet run against the real Supabase project (`tanexpo`, ref `tzucllooekayvrvprktr`, eu-central-1) or Koyeb. Supabase Storage was tested only against a stand-in of its documented API (`scripts/storage-test.mjs`). `render.yaml` (paid, native Node runtime, disk at `/var/data`) is also untested. Docker and Fly.io files were removed on 2026-11-22 at Niven's request. The Supabase `forge` project belongs to Forge: never touch it.
 
 ## 6. Known open issues
 
 1. Payments are simulated. Real mobile-money integration is the next big build after operator demos.
 2. Per-account login lockout (10 failures / 15 min, across IPs) can be abused to lock someone out. It also blocks distributed password guessing, so do not just key it by IP; use a progressive delay or a second factor instead.
 3. Fake reviews are harder but not impossible: a colluding traveler account plus a simulated payment still works until payments are real.
-4. PGlite is single-process: exactly ONE instance with a persistent disk (Render). Move to hosted Postgres with backups before real money. `wrangler.jsonc` is a leftover; Cloudflare Pages cannot run this server.
+4. Without `DATABASE_URL`, PGlite is single-process: exactly ONE instance with a persistent disk. With `DATABASE_URL` (Supabase), ids are still `MAX(id)+1`, so two simultaneous inserts into one table can collide (one request fails with a 500); switch to sequences before real traffic. Free Supabase has no point-in-time backups. `wrangler.jsonc` is a leftover; Cloudflare Pages cannot run this server.
 5. Rate limiters, WhatsApp sender limits and OTP attempt counters are in memory (reset on restart; fine for one instance).
 6. The app polls five endpoints every 10 seconds while open, which is heavy on mobile data.
 7. Operator sign-up is four steps; consider shortening it after watching operators use it.

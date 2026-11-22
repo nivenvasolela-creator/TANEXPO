@@ -55,7 +55,11 @@ npm run demo:public
 
 The first run prints your admin login and saves it in `.env.demo` (never committed). The public link appears in a box a few seconds later. Data is kept in `.data/demo-pg`, so it survives restarts. Without cloudflared, `npm run demo` runs it on `http://localhost:3000` only.
 
-## 2. Always-on demo on Render (this week, about USD 7 to 10 a month)
+## 2. Always-on demo, free: Supabase + Koyeb
+
+Follow `docs/FREE_HOSTING.md`. The database and package photos live in Supabase, the app runs on a free Koyeb instance, and the link stays the same.
+
+### Paid alternative: Render (about USD 7 to 10 a month)
 
 A permanent link operators can keep. Uses `render.yaml` from this repository.
 
