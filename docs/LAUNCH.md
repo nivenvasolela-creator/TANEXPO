@@ -67,15 +67,14 @@ A permanent link operators can keep. Uses `render.yaml` from this repository.
 | Blueprint reference, if a field is rejected | https://render.com/docs/blueprint-spec |
 
 1. In Render choose **New > Blueprint** and connect the GitHub repository `nivenvasolela-creator/TANEXPO`.
-2. Pick the branch that contains `render.yaml` (`claude/trusting-ride-17euiv` until it is merged into `main`).
-3. Fill in `ADMIN_SEED_EMAIL` and a strong `ADMIN_SEED_PASSWORD`. Leave `APP_URL` and `GEMINI_API_KEY` empty for now.
+2. Pick the `main` branch.
+3. Fill in `ADMIN_SEED_EMAIL` and a strong `ADMIN_SEED_PASSWORD`. Paste your `GEOAPIFY_API_KEY` (optional). Leave `APP_URL` and `GEMINI_API_KEY` empty for now.
 4. Click **Apply** and wait for the first build (several minutes). Open the `https://...onrender.com` address it shows.
 5. Set `APP_URL` to that address in the service's **Environment** settings.
 6. Check: sign in as admin, register a test operator, then **Manual Deploy > Restart service** and confirm the operator is still there.
 
 Keep the **starter** plan. A free instance has no persistent disk and would wipe every account on each restart.
 
-Alternative, Fly.io (command line, Johannesburg region): sign up at https://fly.io/app/sign-up, install flyctl from https://fly.io/docs/flyctl/install/, then follow "Option B" in `DEPLOYMENT.md`. Pricing: https://fly.io/pricing
 
 ## 3. Your own domain, with Cloudflare in front (when you are ready)
 

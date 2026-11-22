@@ -1,11 +1,14 @@
-# Render Blueprint for the TANEXPO demo: one Docker web service with a persistent disk.
-# In Render: New > Blueprint > pick this repository (and the branch that holds this file).
+# Render Blueprint for the TANEXPO demo: one Node.js web service with a persistent disk.
+# In Render: New > Blueprint > pick this repository (branch main).
 # You are asked for the values marked "sync: false" when you create it.
 services:
   - type: web
     name: tanexpo-demo
-    runtime: docker
-    dockerfilePath: ./Dockerfile
+    runtime: node
+    # --include=dev: NODE_ENV=production below also applies during the build, and plain `npm ci`
+    # would then skip Vite/esbuild, which the build needs.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: node dist/server.cjs
     plan: starter            # a persistent disk needs a paid instance; the free tier would wipe the database
     region: frankfurt        # closest Render region to East Africa
     numInstances: 1          # must stay 1: the embedded database is single-process
@@ -13,15 +16,17 @@ services:
     autoDeploy: true
     disk:
       name: tanexpo-data
-      mountPath: /data
+      mountPath: /var/data
       sizeGB: 5            # database plus operators' package photos and videos
     envVars:
+      - key: NODE_VERSION
+        value: "22"
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "3000"
       - key: PG_DATA_DIR
-        value: /data/pg
+        value: /var/data/pg     # photos/videos go next to it, in /var/data/media
       - key: PAYMENTS_MODE
         value: simulated
       - key: SEED_DEMO_CATALOG

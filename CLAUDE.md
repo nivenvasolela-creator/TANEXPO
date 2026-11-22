@@ -57,14 +57,14 @@ Read this first. Sections 1, 2 and 8 come from earlier chat sessions with Niven 
 - No live Gemini call has been made (no key in the test environment). `GEMINI_MODEL` defaults to `gemini-3.8-flash`; confirm the model name with a real key.
 - Swahili bot copy was written by a non-native speaker; Selemani or Harrison should read it.
 - Legal claims in the UI (Bank of Tanzania TZS rules, Tourism Act, PDPA, "Registered in Dar es Salaam & Arusha") and the draft privacy policy/terms need a lawyer.
-- Not deployed anywhere yet. `render.yaml`, `fly.toml` and `docker-entrypoint.sh` are untested on a real host (no registry or host access from the build sandbox).
+- Not deployed anywhere yet. `render.yaml` (Render native Node runtime, disk at `/var/data`) is untested on a real host. Docker and Fly.io files were removed on 2026-11-22 at Niven's request.
 
 ## 6. Known open issues
 
 1. Payments are simulated. Real mobile-money integration is the next big build after operator demos.
 2. Per-account login lockout (10 failures / 15 min, across IPs) can be abused to lock someone out. It also blocks distributed password guessing, so do not just key it by IP; use a progressive delay or a second factor instead.
 3. Fake reviews are harder but not impossible: a colluding traveler account plus a simulated payment still works until payments are real.
-4. PGlite is single-process: exactly ONE instance with a persistent disk (Fly.io/Render). Move to hosted Postgres with backups before real money. `wrangler.jsonc` is a leftover; Cloudflare Pages cannot run this server.
+4. PGlite is single-process: exactly ONE instance with a persistent disk (Render). Move to hosted Postgres with backups before real money. `wrangler.jsonc` is a leftover; Cloudflare Pages cannot run this server.
 5. Rate limiters, WhatsApp sender limits and OTP attempt counters are in memory (reset on restart; fine for one instance).
 6. The app polls five endpoints every 10 seconds while open, which is heavy on mobile data.
 7. Operator sign-up is four steps; consider shortening it after watching operators use it.

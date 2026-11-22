@@ -1,8 +1,7 @@
 {
-  // WARNING: TANEXPO's live Express backend + embedded PGlite database (/data/pg)
+  // WARNING: TANEXPO's live Express backend + embedded PGlite database
   // CANNOT run on Cloudflare Workers or Cloudflare Pages static hosting ("./dist" has no /api/*).
-  // Deploy using the root Dockerfile on a stateful Node.js host with a persistent volume
-  // (Fly.io, Render, Railway, etc.). See DEPLOYMENT.md for full instructions.
+  // Deploy on a Node.js host with a persistent disk (Render, see render.yaml and DEPLOYMENT.md).
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tanexpo",
   "compatibility_date": "2024-09-23",

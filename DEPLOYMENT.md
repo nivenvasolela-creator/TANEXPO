@@ -4,32 +4,30 @@
 
 1. **Cloudflare Workers & Cloudflare Pages Are Not Supported for the Full App**
    - `wrangler.jsonc` targets static `./dist` Pages output, which only builds the React frontend and does **not** run the Node.js Express server (`dist/server.cjs`) or `@electric-sql/pglite`.
-   - Deploy TANEXPO as a **containerized Node.js (>= 22) service** with persistent disk storage (or an external managed Postgres database).
+   - Deploy TANEXPO as a **Node.js (>= 22) web service** with persistent disk storage (or an external managed Postgres database).
 
 2. **Single-Instance Requirement for Embedded PGlite (`replicas = 1`)**
    - Embedded PGlite writes directly to `PG_DATA_DIR` on local disk and holds an exclusive lock.
    - **Never run more than 1 replica** against PGlite. To scale horizontally (`replicas > 1`), follow the [Migrating from PGlite to Managed Postgres](#migrating-from-pglite-to-managed-postgres) section below.
 
 3. **Lockfile Standardization**
-   - `package-lock.json` is the only lockfile and the `Dockerfile` runs `npm ci`. If a tool regenerates `bun.lock`, delete it before committing.
+   - `package-lock.json` is the only lockfile and the build runs `npm ci`. If a tool regenerates `bun.lock`, delete it before committing.
 
 ---
 
-## Container Build & Local Smoke Test
+## Production Build & Local Smoke Test
+
+This is what the host runs. Use bash (Git Bash on Windows):
 
 ```bash
-docker build -t tanexpo:latest .
-docker run --rm -p 3000:3000 \
-  -e NODE_ENV=production \
-  -e PAYMENTS_MODE=simulated \
-  -e SEED_DEMO_CATALOG=false \
-  -e ADMIN_SEED_EMAIL="admin@yourdomain.co.tz" \
-  -e ADMIN_SEED_PASSWORD="replace-with-strong-password" \
-  -v tanexpo_pg:/data/pg \
-  tanexpo:latest
+npm ci --include=dev && npm run build
 ```
 
-Verify health:
+```bash
+NODE_ENV=production PAYMENTS_MODE=simulated SEED_DEMO_CATALOG=true PG_DATA_DIR=./.data/smoke-pg ADMIN_SEED_EMAIL="admin@yourdomain.co.tz" ADMIN_SEED_PASSWORD="replace-with-strong-password" node dist/server.cjs
+```
+
+Verify health in a second terminal:
 
 ```bash
 curl -f http://127.0.0.1:3000/api/health
@@ -39,51 +37,32 @@ curl -f http://127.0.0.1:3000/api/health
 
 ## Deploying the demo
 
-Both options use the root `Dockerfile` and run exactly one instance with a persistent disk mounted at `/data`. The container starts as root only to take ownership of that disk, then runs the app as the unprivileged `node` user (`docker-entrypoint.sh`).
+Render runs the app as a plain Node.js web service (`render.yaml`: `npm ci --include=dev && npm run build`, then `node dist/server.cjs`) with exactly one instance and a persistent disk mounted at `/var/data`. The database lives in `/var/data/pg`.
 
-The config files below were written without access to Render's and Fly's current documentation and have not been deployed yet. If a field name is rejected, the host's error message names it; the settings to keep are listed under "What must stay true".
+`render.yaml` has not been deployed yet. If Render rejects a field, its error message names it; the settings to keep are listed under "What must stay true".
 
 ### Option A: Render (no command line)
 
-1. Push this code to GitHub. In Render choose **New > Blueprint**, pick the repository and the branch that contains `render.yaml`.
+1. Push this code to GitHub. In Render choose **New > Blueprint**, pick the repository and the `main` branch.
 2. Render reads `render.yaml` and asks for:
    - `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` (your admin login; use a strong password)
    - `APP_URL` (leave empty the first time, then set it to the `https://...onrender.com` address)
    - `GEMINI_API_KEY` (optional)
+   - `GEOAPIFY_API_KEY` (optional; map tiles, see `docs/MAPS.md`)
 3. Click **Apply**. The first build takes a few minutes. Open the address Render shows.
 
 A persistent disk needs a paid instance (`plan: starter` in the file). Do not switch to a free instance: the database would be wiped on every restart.
 
-### Option B: Fly.io (command line)
-
-```bash
-fly launch --copy-config --no-deploy
-```
-
-```bash
-fly volumes create tanexpo_data --region jnb --size 1
-```
-
-```bash
-fly secrets set ADMIN_SEED_EMAIL="you@example.com" ADMIN_SEED_PASSWORD="a-strong-password"
-```
-
-```bash
-fly deploy --ha=false
-```
-
-`fly.toml` holds the rest (Johannesburg region, volume at `/data`, health check, one always-on machine).
-
 ### Photos and videos
 
-Operators' package photos and videos are stored next to the database, in `/data/media`, so they live on the same persistent disk (override with `MEDIA_DIR`). Size the disk for them: up to 12 photos (about 0.5 MB each after phone-side resizing) and 3 videos (up to 40 MB each) per package. The configs ask for 5 GB. The admin backup export covers the database only; back up `/data/media` with a disk snapshot.
+Operators' package photos and videos are stored next to the database, in the `media` folder beside `PG_DATA_DIR`, so they live on the same persistent disk (`/var/data/media` on Render; override with `MEDIA_DIR`). Size the disk for them: up to 12 photos (about 0.5 MB each after phone-side resizing) and 3 videos (up to 40 MB each) per package. `render.yaml` asks for 5 GB. The admin backup export covers the database only; back up the media folder with a disk snapshot.
 
 ### What must stay true on any host
 
-- One instance only, never autoscaled, with a persistent disk mounted at `/data` and `PG_DATA_DIR=/data/pg`.
+- One instance only, never autoscaled, with a persistent disk (Render: mounted at `/var/data`, `PG_DATA_DIR=/var/data/pg`).
 - `NODE_ENV=production`, port `3000`, health check `GET /api/health`.
 - Demo flags: `PAYMENTS_MODE=simulated`, `SEED_DEMO_CATALOG=true`, `ALLOW_WHATSAPP_SIMULATOR=true`, `WHATSAPP_ENABLED=false`. For a site real travelers use, set `SEED_DEMO_CATALOG=false`, and turn the simulator off once real WhatsApp is live.
-- HTTPS (both hosts provide it). The app installs as a phone app (PWA) only over HTTPS.
+- HTTPS (Render provides it). The app installs as a phone app (PWA) only over HTTPS.
 
 ### After the first deploy
 
@@ -113,7 +92,7 @@ gzip -t tanexpo-backup-*.json.gz && zcat tanexpo-backup-*.json.gz | head -c 300
 
 ### Volume Snapshot Recovery (PGlite)
 
-For full disaster recovery (including password hashes and active sessions), rely on Fly/Render daily persistent volume snapshots of `/data/pg`. If PGlite encounters catalog corruption on startup, TANEXPO automatically renames the damaged folder to `<PG_DATA_DIR>.corrupt-<timestamp>` without deleting any files.
+For full disaster recovery (including password hashes and active sessions), rely on Render's daily disk snapshots of `/var/data`. If PGlite encounters catalog corruption on startup, TANEXPO automatically renames the damaged folder to `<PG_DATA_DIR>.corrupt-<timestamp>` without deleting any files.
 
 ---
 
@@ -135,4 +114,4 @@ For full disaster recovery (including password hashes and active sessions), rely
 - [ ] `ALLOW_FRAME_ANCESTORS` unset (defaults to `'none'` in production) unless intentionally embedded on a trusted domain.
 - [ ] `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` set to strong unique credentials; demo passwords removed.
 - [ ] `/privacy` and `/terms` reviewed and approved by Tanzanian legal counsel (Personal Data Protection Act, 2022 & Tourism Act No. 29 of 2008).
-- [ ] Daily persistent volume snapshots enabled for `/data/pg` and `/api/admin/backup` tested.
+- [ ] Daily disk snapshots enabled for `/var/data` and `/api/admin/backup` tested.
